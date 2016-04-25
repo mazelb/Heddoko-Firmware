@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Atmel Studio Solution File, Format Version 11.00
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "BrainMCU", "BrainMCU\BrainMCU.cproj", "{CEA841EE-BFD4-4754-AE1B-6D66475EB614}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Bootloader|ARM = Bootloader|ARM
+		Debug|ARM = Debug|ARM
+		Release|ARM = Release|ARM
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CEA841EE-BFD4-4754-AE1B-6D66475EB614}.Bootloader|ARM.ActiveCfg = Bootloader|ARM
+		{CEA841EE-BFD4-4754-AE1B-6D66475EB614}.Bootloader|ARM.Build.0 = Bootloader|ARM
+		{CEA841EE-BFD4-4754-AE1B-6D66475EB614}.Debug|ARM.ActiveCfg = Debug|ARM
+		{CEA841EE-BFD4-4754-AE1B-6D66475EB614}.Debug|ARM.Build.0 = Debug|ARM
+		{CEA841EE-BFD4-4754-AE1B-6D66475EB614}.Release|ARM.ActiveCfg = Release|ARM
+		{CEA841EE-BFD4-4754-AE1B-6D66475EB614}.Release|ARM.Build.0 = Release|ARM
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

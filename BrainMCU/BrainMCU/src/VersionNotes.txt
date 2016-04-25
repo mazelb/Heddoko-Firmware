@@ -1,0 +1,37 @@
+/**
+ * \file
+ *
+* Copyright Heddoko(TM) 2015, all rights reserved
+ * \brief keeps track of the version changes
+ *
+ */
+/*
+ * VersionNotes.txt
+ *
+ * Created: 3/2/2016 11:05:17 AM
+ *  Author: Hriday Mehta
+ */ 
+
+ VERSION 0.3c:
+ 1. Added in the changes according to the code review
+ 2. Changed bootloader to check for LBO (line: 68, bootloader.c)
+ 3. Changed for loop to execute till expected number of nods for scan and connect commands (line: 578, 645, tas_quinticInterface.c) 
+
+ VERSION 0.3d:
+ 1. Added in the functionality to store the LED-GPIO mapping in the NVM settings
+ 2. Added in CR+LF at the end of imuSet string after it is loaded from settings file
+
+ VERSION 0.4a
+ 1. Removed sleep mode for compatibility with new power board
+ 2. this is not a release version
+
+ VERSION 0.4b
+ 1. Added #ifdef for compiling the code with the new powerboard
+ 2. Modified the STAT pin to be used for communication with the new power board. 
+ 3. Released as test version for new power board.  
+ 
+ VERSION 0.4c
+ 1. Added multiple blinks and multi color functionality to the LED driver
+ 2. Added in SD-card size check in reloadConfigSettings function. The check prevents the system to enter Idle state if free space is below threshold (300MB).
+ 3. Added in dual events on Reset button. Long press enters the system to reset state, single press marks the data row at that instant in movement 
+    log with appended "BTN" text.

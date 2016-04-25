@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Atmel Studio Solution File, Format Version 11.00
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "PowerBoardMCU", "PowerBoardMCU\PowerBoardMCU.cproj", "{D9C22329-91B8-46B0-A840-8C7EA330BC66}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM = Debug|ARM
+		Release|ARM = Release|ARM
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D9C22329-91B8-46B0-A840-8C7EA330BC66}.Debug|ARM.ActiveCfg = TargetBuild|ARM
+		{D9C22329-91B8-46B0-A840-8C7EA330BC66}.Debug|ARM.Build.0 = TargetBuild|ARM
+		{D9C22329-91B8-46B0-A840-8C7EA330BC66}.Release|ARM.ActiveCfg = Release|ARM
+		{D9C22329-91B8-46B0-A840-8C7EA330BC66}.Release|ARM.Build.0 = Release|ARM
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

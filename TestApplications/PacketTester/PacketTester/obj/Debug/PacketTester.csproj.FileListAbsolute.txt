@@ -1,0 +1,9 @@
+C:\Working Directory\Heddoko-src\Testing\PacketTester\PacketTester\bin\Debug\PacketTester.exe.config
+C:\Working Directory\Heddoko-src\Testing\PacketTester\PacketTester\obj\Debug\PacketTester.csprojResolveAssemblyReference.cache
+C:\Working Directory\Heddoko-src\Testing\PacketTester\PacketTester\obj\Debug\PacketTester.mainForm.resources
+C:\Working Directory\Heddoko-src\Testing\PacketTester\PacketTester\obj\Debug\PacketTester.Properties.Resources.resources
+C:\Working Directory\Heddoko-src\Testing\PacketTester\PacketTester\obj\Debug\PacketTester.csproj.GenerateResource.Cache
+C:\Working Directory\Heddoko-src\Testing\PacketTester\PacketTester\bin\Debug\PacketTester.exe
+C:\Working Directory\Heddoko-src\Testing\PacketTester\PacketTester\bin\Debug\PacketTester.pdb
+C:\Working Directory\Heddoko-src\Testing\PacketTester\PacketTester\obj\Debug\PacketTester.exe
+C:\Working Directory\Heddoko-src\Testing\PacketTester\PacketTester\obj\Debug\PacketTester.pdb
