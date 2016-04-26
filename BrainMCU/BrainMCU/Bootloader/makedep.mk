@@ -22,6 +22,12 @@ src\drv_i2c.c
 
 src\drv_led.c
 
+src\heddokoPacket.pb-c.c
+
+src\pkt_packetParser.c
+
+src\protobuf-c.c
+
 src\task_commandProc.c
 
 src\task_emInterface.c

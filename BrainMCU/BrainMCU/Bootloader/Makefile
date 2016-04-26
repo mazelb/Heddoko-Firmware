@@ -141,6 +141,9 @@ C_SRCS +=  \
 ../src/bootloader.c \
 ../src/drv_i2c.c \
 ../src/drv_led.c \
+../src/heddokoPacket.pb-c.c \
+../src/pkt_packetParser.c \
+../src/protobuf-c.c \
 ../src/task_commandProc.c \
 ../src/task_emInterface.c \
 ../src/task_sdCardWrite.c \
@@ -210,6 +213,9 @@ src/ASF/sam/drivers/twi/twi.o \
 src/bootloader.o \
 src/drv_i2c.o \
 src/drv_led.o \
+src/heddokoPacket.pb-c.o \
+src/pkt_packetParser.o \
+src/protobuf-c.o \
 src/task_commandProc.o \
 src/task_emInterface.o \
 src/task_sdCardWrite.o \
@@ -272,6 +278,9 @@ src/ASF/sam/drivers/twi/twi.o \
 src/bootloader.o \
 src/drv_i2c.o \
 src/drv_led.o \
+src/heddokoPacket.pb-c.o \
+src/pkt_packetParser.o \
+src/protobuf-c.o \
 src/task_commandProc.o \
 src/task_emInterface.o \
 src/task_sdCardWrite.o \
@@ -334,6 +343,9 @@ src/ASF/sam/drivers/twi/twi.d \
 src/bootloader.d \
 src/drv_i2c.d \
 src/drv_led.d \
+src/heddokoPacket.pb-c.d \
+src/pkt_packetParser.d \
+src/protobuf-c.d \
 src/task_commandProc.d \
 src/task_emInterface.d \
 src/task_sdCardWrite.d \
@@ -396,6 +408,9 @@ src/ASF/sam/drivers/twi/twi.d \
 src/bootloader.d \
 src/drv_i2c.d \
 src/drv_led.d \
+src/heddokoPacket.pb-c.d \
+src/pkt_packetParser.d \
+src/protobuf-c.d \
 src/task_commandProc.d \
 src/task_emInterface.d \
 src/task_sdCardWrite.d \
@@ -463,6 +478,12 @@ LINKER_SCRIPT_DEP+=  \
 
 
 # AVR32/GNU C Compiler
+
+
+
+
+
+
 
 
 

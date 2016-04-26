@@ -45,7 +45,6 @@
 #include "GPIO.h"
 #include "drv_uart.h"
 #include "drv_gpio.h"
-#include "DebugLog.h"
 #include "task_quinticInterface.h"
 #include "task_commandProc.h"
 

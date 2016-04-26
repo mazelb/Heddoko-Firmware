@@ -13,12 +13,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "conf_board.h"
-#include "Functionality_Tests.h"
 #include "settings.h"
 #include "drv_uart.h"
 #include "drv_gpio.h"
 #include "task_main.h"
-#include "DebugLog.h"
 #include "common.h"
 #include "drv_led.h"
 #include "rtc.h"
@@ -175,7 +173,7 @@ void powerOnInit(void)
 		loadSerialNumberFromNvm();
 		drv_led_init(&ledConfiguration);
 		drv_led_set(DRV_LED_WHITE,DRV_LED_SOLID);
-		vTaskDelay(200);  
+		vTaskDelay(200);
 		
 		pmc_switch_sclk_to_32kxtal(PMC_OSC_XTAL);
 		while (!pmc_osc_is_ready_32kxtal());
@@ -185,31 +183,9 @@ void powerOnInit(void)
 		drv_led_set(DRV_LED_OFF,DRV_LED_SOLID);
 		//drv_gpio_ConfigureBLEForProgramming(); 
 
-		//initialize the 
-		//configure the bluetooth dongle, if brand new
-		//TODO add a check to make sure it needs to be reconfigured first.
-		//drv_uart_deInit(config->uart);
-		//uart0Config.uart_options.baudrate = 9600; 
-		//drv_gpio_setPinState(DRV_GPIO_PIN_BT_PWR_EN, DRV_GPIO_PIN_STATE_HIGH);
-			//
-		//drv_uart_init(&uart0Config);	
-		//vTaskDelay(1000);	
-		//char tempString[50] = {0};
-		////drv_uart_putString(&uart0Config,"\r\n\r\n");	
-		////vTaskDelay(200);
-		//drv_uart_putString(&uart0Config,"AT+NAMEHEDDOKO05");	
-		//drv_uart_getlineTimed(&uart0Config,tempString,50,2000); 	
-		//vTaskDelay(2000);
-		//drv_uart_putString(&uart0Config,"AT+BAUD8");
-		//drv_uart_getlineTimed(&uart0Config,tempString,50,2000);
-		//vTaskDelay(2000);		
-		////drv_gpio_setPinState(DRV_GPIO_PIN_BT_PWR_EN, DRV_GPIO_PIN_STATE_LOW);
-		//drv_uart_deInit(&uart0Config); 
-		//uart0Config.uart_options.baudrate = CONF_BAUDRATE;		
-		//configure UART1 to be used as a STDIO function
 		configure_console();		
 		initAllUarts();
-		
+		configureWatchDog();
 }
 
 void initAllUarts()

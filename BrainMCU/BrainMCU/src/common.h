@@ -18,7 +18,7 @@
 #ifndef COMMON_H_
 #define COMMON_H_
 
-#define VERSION "V0.4c"
+#define VERSION "V0.4d"
 /*
 * Changes from previous version:
 * @brief: see VersionNotes.txt for details
@@ -41,7 +41,7 @@
 //#define USE_Q1_Q2
 #define CREATE_DUMMY_PACKETS 
 
-#define USES_NEW_POWER_BOARD 
+//#define USES_NEW_POWER_BOARD 
 
 //#define OBFUSCATION_ENABLED	//no need as the setting is saved in NVM
 //#define TEST_JACK_DETECTS	//Enables toggling of LED for an indication
@@ -52,7 +52,8 @@ typedef enum
 {
 	STATUS_PASS = 0,
 	STATUS_FAIL = 1,
-	STATUS_EOF = 2 //end of file, used in getChar	
+	STATUS_EOF = 2, //end of file, used in getChar	
+	STATUS_EAGAIN = 3 //This is used in the get packet, is called when the packet is not complete
 }status_t;
 
 //TASK Dependent defines
@@ -79,7 +80,7 @@ typedef enum
 #endif
 
 /* Board Init configuration */
-#define WDT_PERIOD                        10000
+#define WDT_PERIOD                        (10 * SECONDS)
 
 
 /*	task_dataProcessor.c	*/
@@ -95,8 +96,8 @@ typedef enum
 #define RESET_SW_LONG_PRESS_DELAY				(1 * SECONDS)
 
 //Time conversions defines
-#define SECONDS									1000	//converts seconds to milli-seconds
-#define MINS									60 * 1000	//converts minutes to milli-seconds
+#define SECONDS									1000	//converts seconds to milliseconds
+#define MINS									60 * 1000	//converts minutes to milliseconds
 
 //EM7180 defines
 #define	EM_TWI_MASTER	TWI0

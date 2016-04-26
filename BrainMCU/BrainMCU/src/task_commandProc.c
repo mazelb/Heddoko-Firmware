@@ -384,11 +384,11 @@ static status_t processCommand(char* command, size_t cmdSize)
 	}	
 	else
 	{		
-		debugPrintString("Received invalid command\r\n");
+		//debugPrintString("Received invalid command\r\n");
 		status = STATUS_PASS; 
 	}
-	snprintf(stringBuf,50*10,"Received Command: %s \r\n",command);
-	debugPrintString(stringBuf);
+	//snprintf(stringBuf,50*10,"Received Command: %s \r\n",command);
+	//debugPrintString(stringBuf);
 	return status;	
 }
 

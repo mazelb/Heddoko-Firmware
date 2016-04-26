@@ -1,6 +1,6 @@
 src/ASF/sam/drivers/hsmci/hsmci.d src/ASF/sam/drivers/hsmci/hsmci.o: \
  ../src/ASF/sam/drivers/hsmci/hsmci.c ../src/asf.h \
- ../src/ASF/sam/utils/compiler.h \
+ ../src/ASF/sam/drivers/crccu/crccu.h ../src/ASF/sam/utils/compiler.h \
  c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu-toolchain\lib\gcc\arm-none-eabi\4.8.4\include\stddef.h \
  ../src/ASF/common/utils/parts.h \
  ../src/ASF/sam/utils/preprocessor/preprocessor.h \
@@ -105,6 +105,7 @@ src/ASF/sam/drivers/hsmci/hsmci.d src/ASF/sam/drivers/hsmci/hsmci.o: \
  ../src/ASF/sam/drivers/pmc/pmc.h ../src/ASF/common/services/clock/pll.h \
  ../src/ASF/common/services/clock/sam4s/pll.h \
  ../src/ASF/common/services/delay/sam/cycle_counter.h \
+ ../src/ASF/sam/drivers/efc/efc.h \
  ../src/ASF/thirdparty/fatfs/fatfs-r0.09/src/diskio.h \
  ../src/ASF/thirdparty/fatfs/fatfs-r0.09/src/integer.h \
  ../src/ASF/thirdparty/fatfs/fatfs-r0.09/src/ff.h \
@@ -112,23 +113,32 @@ src/ASF/sam/drivers/hsmci/hsmci.d src/ASF/sam/drivers/hsmci/hsmci.o: \
  ../src/config/conf_fatfs.h \
  ../src/ASF/thirdparty/fatfs/fatfs-r0.09/src/ffconf.h \
  ../src/ASF/thirdparty/fatfs/fatfs-r0.09/src/integer.h \
+ ../src/ASF/sam/services/flash_efc/flash_efc.h \
+ ../src/ASF/common/services/freertos/sam/freertos_peripheral_control.h \
+ ../src/ASF/sam/drivers/pdc/pdc.h \
  ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/FreeRTOS.h \
  ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/projdefs.h \
  ../src/config/FreeRTOSConfig.h \
  ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/portable.h \
  ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/portable/gcc/sam/portmacro.h \
  ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/mpu_wrappers.h \
+ ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/semphr.h \
+ ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/queue.h \
+ ../src/ASF/common/services/freertos/sam/freertos_peripheral_control_private.h \
+ ../src/ASF/common/services/freertos/sam/freertos_twi_master.h \
+ ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/task.h \
+ ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/list.h \
+ ../src/ASF/common/services/twi/twi_master.h \
+ ../src/ASF/common/services/twi/sam_twi/twi_master.h \
+ ../src/ASF/sam/drivers/twi/twi.h \
+ ../src/ASF/common/services/freertos/sam/freertos_peripheral_control.h \
  ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/StackMacros.h \
  ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/croutine.h \
- ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/list.h \
  ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/list.h \
  ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/mpu_wrappers.h \
  ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/portable.h \
  ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/projdefs.h \
  ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/queue.h \
- ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/semphr.h \
- ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/queue.h \
- ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/task.h \
  ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/timers.h \
  ../src/ASF/common/services/gpio/gpio.h \
  ../src/ASF/common/services/gpio/sam_gpio/sam_gpio.h \
@@ -139,22 +149,28 @@ src/ASF/sam/drivers/hsmci/hsmci.d src/ASF/sam/drivers/hsmci/hsmci.o: \
  ../src/ASF/common/services/storage/ctrl_access/ctrl_access.h \
  ../src/config/conf_access.h \
  ../src/ASF/common/components/memory/sd_mmc/sd_mmc_mem.h \
- ../src/ASF/sam/drivers/pdc/pdc.h ../src/ASF/sam/drivers/pmc/sleep.h \
- ../src/ASF/sam/drivers/rstc/rstc.h ../src/ASF/sam/drivers/rtc/rtc.h \
+ ../src/ASF/sam/drivers/pmc/sleep.h ../src/ASF/sam/drivers/rstc/rstc.h \
+ ../src/ASF/sam/drivers/rtc/rtc.h \
  ../src/ASF/sam/boards/sam4s_xplained_pro/led.h \
  ../src/ASF/common/components/memory/sd_mmc/sd_mmc.h \
- ../src/config/conf_sd_mmc.h ../src/ASF/sam/drivers/supc/supc.h \
+ ../src/config/conf_sd_mmc.h \
  ../src/ASF/common/utils/stdio/stdio_serial/stdio_serial.h \
  ../src/ASF/common/services/serial/serial.h \
  ../src/ASF/common/services/serial/sam_uart/uart_serial.h \
  ../src/ASF/sam/drivers/uart/uart.h ../src/ASF/sam/drivers/usart/usart.h \
  ../src/config/conf_uart_serial.h \
  ../src/ASF/common/services/serial/sam_uart/uart_serial.h \
+ ../src/ASF/common/services/twi/sam_twi/twi_master.h \
+ ../src/ASF/common/services/twi/sam_twi/twi_slave.h \
+ ../src/ASF/common/services/twi/twi_slave.h \
+ ../src/ASF/common/services/twi/sam_twi/twi_slave.h \
  ../src/ASF/sam/drivers/wdt/wdt.h \
  ../src/ASF/sam/drivers/pio/pio_handler.h ../src/config/conf_board.h \
  ../src/ASF/sam/drivers/hsmci/hsmci.h
 
 ../src/asf.h:
+
+../src/ASF/sam/drivers/crccu/crccu.h:
 
 ../src/ASF/sam/utils/compiler.h:
 
@@ -370,6 +386,8 @@ c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu
 
 ../src/ASF/common/services/delay/sam/cycle_counter.h:
 
+../src/ASF/sam/drivers/efc/efc.h:
+
 ../src/ASF/thirdparty/fatfs/fatfs-r0.09/src/diskio.h:
 
 ../src/ASF/thirdparty/fatfs/fatfs-r0.09/src/integer.h:
@@ -384,6 +402,12 @@ c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu
 
 ../src/ASF/thirdparty/fatfs/fatfs-r0.09/src/integer.h:
 
+../src/ASF/sam/services/flash_efc/flash_efc.h:
+
+../src/ASF/common/services/freertos/sam/freertos_peripheral_control.h:
+
+../src/ASF/sam/drivers/pdc/pdc.h:
+
 ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/FreeRTOS.h:
 
 ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/projdefs.h:
@@ -396,11 +420,29 @@ c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu
 
 ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/mpu_wrappers.h:
 
+../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/semphr.h:
+
+../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/queue.h:
+
+../src/ASF/common/services/freertos/sam/freertos_peripheral_control_private.h:
+
+../src/ASF/common/services/freertos/sam/freertos_twi_master.h:
+
+../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/task.h:
+
+../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/list.h:
+
+../src/ASF/common/services/twi/twi_master.h:
+
+../src/ASF/common/services/twi/sam_twi/twi_master.h:
+
+../src/ASF/sam/drivers/twi/twi.h:
+
+../src/ASF/common/services/freertos/sam/freertos_peripheral_control.h:
+
 ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/StackMacros.h:
 
 ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/croutine.h:
-
-../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/list.h:
 
 ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/list.h:
 
@@ -411,12 +453,6 @@ c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu
 ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/projdefs.h:
 
 ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/queue.h:
-
-../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/semphr.h:
-
-../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/queue.h:
-
-../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/task.h:
 
 ../src/ASF/thirdparty/freertos/freertos-7.0.0/source/include/timers.h:
 
@@ -440,8 +476,6 @@ c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu
 
 ../src/ASF/common/components/memory/sd_mmc/sd_mmc_mem.h:
 
-../src/ASF/sam/drivers/pdc/pdc.h:
-
 ../src/ASF/sam/drivers/pmc/sleep.h:
 
 ../src/ASF/sam/drivers/rstc/rstc.h:
@@ -453,8 +487,6 @@ c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu
 ../src/ASF/common/components/memory/sd_mmc/sd_mmc.h:
 
 ../src/config/conf_sd_mmc.h:
-
-../src/ASF/sam/drivers/supc/supc.h:
 
 ../src/ASF/common/utils/stdio/stdio_serial/stdio_serial.h:
 
@@ -469,6 +501,14 @@ c:\program\ files\ (x86)\atmel\atmel\ toolchain\arm\ gcc\native\4.8.1443\arm-gnu
 ../src/config/conf_uart_serial.h:
 
 ../src/ASF/common/services/serial/sam_uart/uart_serial.h:
+
+../src/ASF/common/services/twi/sam_twi/twi_master.h:
+
+../src/ASF/common/services/twi/sam_twi/twi_slave.h:
+
+../src/ASF/common/services/twi/twi_slave.h:
+
+../src/ASF/common/services/twi/sam_twi/twi_slave.h:
 
 ../src/ASF/sam/drivers/wdt/wdt.h:
 

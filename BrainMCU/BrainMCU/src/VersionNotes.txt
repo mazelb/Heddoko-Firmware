@@ -35,3 +35,9 @@
  2. Added in SD-card size check in reloadConfigSettings function. The check prevents the system to enter Idle state if free space is below threshold (300MB).
  3. Added in dual events on Reset button. Long press enters the system to reset state, single press marks the data row at that instant in movement 
     log with appended "BTN" text.
+
+ VERSION 0.4d
+ 1. Added in changes in stateEntryPowerDown() for fast boot-up.
+ 2. Removed bug from SD-card size check function, THIS MAKES THE VERSION 0.4C A NON-RELEASE VERSION.
+ 3. Added in necessary calls for opening debug log file to statemachine.c.
+ 4. Added in vTaskDelay inside while loop of reloadConfigSettings() to let it service timers.

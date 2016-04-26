@@ -396,8 +396,15 @@ void processEvent(eventMessage_t eventMsg)
 		{
 			if(reloadConfigSettings() == STATUS_PASS)
 			{
-				//perform reset only if loading the settings was successful
-				stateEntry_Reset();
+				if(task_debugLog_OpenFile() == STATUS_PASS)
+				{
+					//perform reset only if loading the settings was successful
+					stateEntry_Reset();
+				}
+				else
+				{
+					stateEntry_Error();
+				}
 			}
 			else
 			{
@@ -461,83 +468,101 @@ void stateEntry_PowerDown()
 	bool pwrSwFlag = FALSE; 
 	setCurrentSystemState(SYS_STATE_POWER_DOWN);	
 	drv_led_set(DRV_LED_OFF, DRV_LED_SOLID);
-	//disable the interrupts, except for the power button
-	//it is assumed that the button has already been held for 5 seconds
-
-	DisconnectImus(&quinticConfig[0]);
-	DisconnectImus(&quinticConfig[1]);
-	DisconnectImus(&quinticConfig[2]);
-	task_fabSense_stop(&fsConfig);
-	task_debugLog_CloseFile();
 	
-	//clear the settings loaded bit
-	brainSettings.isLoaded = 0;
-	
-	//turn off the JACK power supplies (they're negatively asserted) 
-	//drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_HIGH);
-	//drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
-	toggleJackEnables(DRV_GPIO_PIN_STATE_HIGH);
-	//Put the BLE's in reset. 
-	drv_gpio_setPinState(quinticConfig[0].resetPin, DRV_GPIO_PIN_STATE_LOW);
-	drv_gpio_setPinState(quinticConfig[1].resetPin, DRV_GPIO_PIN_STATE_LOW);
-	drv_gpio_setPinState(quinticConfig[2].resetPin, DRV_GPIO_PIN_STATE_LOW);	
-	drv_gpio_setPinState(DRV_GPIO_PIN_BT_PWR_EN, DRV_GPIO_PIN_STATE_LOW);
-	/* Put the processor to sleep, in this context with the systick timer
-	*  dead, we will never leave, so initialization has to be done here too. 
-	*   
-	*/	
-	debugPrintString("Sleep mode enabled\r\n");
-	PreSleepProcess();
-	//
-	
-	while (pwrSwFlag == FALSE)	//Stay in sleep mode until wakeup
+	if (firstBoot == TRUE)
 	{
-		//if first boot, don't go to sleep, wake up. 
-		if(firstBoot == true)
-		{			
-			firstBoot = false; 
-			#ifdef USES_NEW_POWER_BOARD
-			drv_gpio_setPinState(DRV_GPIO_PIN_PB_GPIO, DRV_GPIO_PIN_STATE_HIGH);
-			#endif
-			break;
-		}
-		else
+		//Put the BLE's in reset. 
+		drv_gpio_setPinState(quinticConfig[0].resetPin, DRV_GPIO_PIN_STATE_LOW);
+		drv_gpio_setPinState(quinticConfig[1].resetPin, DRV_GPIO_PIN_STATE_LOW);
+		drv_gpio_setPinState(quinticConfig[2].resetPin, DRV_GPIO_PIN_STATE_LOW);
+	}
+	
+	if (firstBoot == FALSE)
+	{
+		//disable the interrupts, except for the power button
+		//it is assumed that the button has already been held for 5 seconds
+		DisconnectImus(&quinticConfig[0]);
+		DisconnectImus(&quinticConfig[1]);
+		DisconnectImus(&quinticConfig[2]);
+		task_fabSense_stop(&fsConfig);
+		task_debugLog_CloseFile();
+	
+		//clear the settings loaded bit
+		brainSettings.isLoaded = 0;
+	
+		//turn off the JACK power supplies (they're negatively asserted) 
+		//drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_HIGH);
+		//drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
+		toggleJackEnables(DRV_GPIO_PIN_STATE_HIGH);
+		//Put the BLE's in reset. 
+		drv_gpio_setPinState(quinticConfig[0].resetPin, DRV_GPIO_PIN_STATE_LOW);
+		drv_gpio_setPinState(quinticConfig[1].resetPin, DRV_GPIO_PIN_STATE_LOW);
+		drv_gpio_setPinState(quinticConfig[2].resetPin, DRV_GPIO_PIN_STATE_LOW);	
+		drv_gpio_setPinState(DRV_GPIO_PIN_BT_PWR_EN, DRV_GPIO_PIN_STATE_LOW);
+		/* Put the processor to sleep, in this context with the systick timer
+		*  dead, we will never leave, so initialization has to be done here too. 
+		*   
+		*/	
+		debugPrintString("Sleep mode enabled\r\n");
+		PreSleepProcess();
+		//
+	
+		while (pwrSwFlag == FALSE)	//Stay in sleep mode until wakeup
 		{
-			#ifdef USES_NEW_POWER_BOARD			
-			drv_gpio_setPinState(DRV_GPIO_PIN_PB_GPIO, DRV_GPIO_PIN_STATE_LOW);
-			while(1); //loop here forever... wait for power board to turn us off
-			#endif
-		}
-		
-		#ifndef USES_NEW_POWER_BOARD
-		
-		//cpu_irq_disable();	
-		pmc_enable_sleepmode(0);	
-		//Processor wakes up from sleep		
-		delay_ms(WAKEUP_DELAY);
-		drv_gpio_getPinState(DRV_GPIO_PIN_PW_SW, &pwSwState);	//poll the power switch
-		drv_gpio_getPinState(DRV_GPIO_PIN_LBO, &lboState);	//poll Low battery out
-		if(pwSwState == DRV_GPIO_PIN_STATE_LOW)	//check if it is a false wakeup
-		{
-			if (lboState == DRV_GPIO_PIN_STATE_HIGH)
-			{
-				pwrSwFlag = TRUE;
+			//if first boot, don't go to sleep, wake up. 
+			if(firstBoot == true)
+			{			
+				firstBoot = false; 
+				#ifdef USES_NEW_POWER_BOARD
+				drv_gpio_setPinState(DRV_GPIO_PIN_PB_GPIO, DRV_GPIO_PIN_STATE_HIGH);
+				#endif
+				return;
 			}
 			else
 			{
-				lowBatteryBlink();	//the battery is low, blink to indicate
-				pwrSwFlag = FALSE;	//move back to Sleep state
+				#ifdef USES_NEW_POWER_BOARD			
+				drv_gpio_setPinState(DRV_GPIO_PIN_PB_GPIO, DRV_GPIO_PIN_STATE_LOW);
+				while(1); //loop here forever... wait for power board to turn us off
+				#endif
 			}
+			#ifndef USES_NEW_POWER_BOARD
+			//cpu_irq_disable();	
+			pmc_enable_sleepmode(0);	
+			//Processor wakes up from sleep		
+			delay_ms(WAKEUP_DELAY);
+			drv_gpio_getPinState(DRV_GPIO_PIN_PW_SW, &pwSwState);	//poll the power switch
+			drv_gpio_getPinState(DRV_GPIO_PIN_LBO, &lboState);	//poll Low battery out
+			if(pwSwState == DRV_GPIO_PIN_STATE_LOW)	//check if it is a false wakeup
+			{
+				if (lboState == DRV_GPIO_PIN_STATE_HIGH)
+				{
+					pwrSwFlag = TRUE;
+				}
+				else
+				{
+					lowBatteryBlink();	//the battery is low, blink to indicate
+					pwrSwFlag = FALSE;	//move back to Sleep state
+				}
+			}
+			else
+			{
+				pwrSwFlag = FALSE;
+			}
+			#endif
 		}
-		else
-		{
-			pwrSwFlag = FALSE;
-		}
-		#endif
+		PostSleepProcess();
+		//blink BLUE to indicate wake up
+		drv_led_activate_timer();
 	}
-	PostSleepProcess();
-	//blink BLUE to indicate wake up
-	drv_led_activate_timer();
+	if (firstBoot == TRUE)
+	{
+		vTaskDelay(10);
+		drv_gpio_setPinState(quinticConfig[0].resetPin, DRV_GPIO_PIN_STATE_HIGH);
+		drv_gpio_setPinState(quinticConfig[1].resetPin, DRV_GPIO_PIN_STATE_HIGH);
+		drv_gpio_setPinState(quinticConfig[2].resetPin, DRV_GPIO_PIN_STATE_HIGH);
+		firstBoot = FALSE;
+	}
+	
 	drv_led_set(DRV_LED_BLUE, DRV_LED_SOLID);
 	//enable the jacks
 	//drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
@@ -881,7 +906,7 @@ static void PostSleepProcess()
  * @param void
  * @return void
  ***********************************************************************************************/
-status_t reloadConfigSettings()
+status_t  __attribute__((optimize("O0"))) reloadConfigSettings()
 {
 	static FATFS fs;
 	static FATFS* fs1;	//pointer to FATFS structure used to check free space
@@ -919,8 +944,10 @@ status_t reloadConfigSettings()
 			debugPrintString("Please unplug and re-plug the card.\n\r");
 			while ((CTRL_NO_PRESENT != sd_mmc_check(0)) && (sdInsertWaitTimeoutFlag == FALSE))
 			{
+				vTaskDelay(1);
 			}
 		}
+		vTaskDelay(1);
 	} while ((CTRL_GOOD != status) && (sdInsertWaitTimeoutFlag == FALSE));
 	
 	sdInsertWaitTimeoutFlag = FALSE;	//clear the flag for reuse
@@ -946,9 +973,9 @@ status_t reloadConfigSettings()
 			debugPrintString("Error: Cannot calculate free space\r\n");
 			return result;
 		}
-		totalSectors = (fs1->n_fatent -2) * fs1->csize;
-		freeSectors = freeClusters * fs1->csize;	
-		if ((totalSectors/2) - (freeSectors/2) > SD_DISK_SPACE_LOW_THRESHOLD)	
+		totalSectors = (fs1->n_fatent -2) * fs1->csize;	//only needed to calculate used space
+		freeSectors = freeClusters * fs1->csize;	//assuming 512 bytes/sector
+		if ((freeSectors/2) < SD_DISK_SPACE_LOW_THRESHOLD)	
 		{
 			result = STATUS_FAIL;
 			debugPrintString("Error: Low disk space on SD-card\r\n");

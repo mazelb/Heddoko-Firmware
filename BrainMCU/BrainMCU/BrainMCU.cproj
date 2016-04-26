@@ -371,7 +371,6 @@
     <com_atmel_avrdbg_tool_atmelice>
       <ToolOptions>
         <InterfaceProperties>
-          <JtagDbgClock>7500000</JtagDbgClock>
           <SwdClock>2000000</SwdClock>
         </InterfaceProperties>
         <InterfaceName>SWD</InterfaceName>
@@ -546,9 +545,9 @@
       <Value>__SAM4S4B__</Value>
       <Value>scanf=iscanf</Value>
       <Value>ARM_MATH_CM4=true</Value>
-      <Value>printf=iprintf</Value>
       <Value>__FREERTOS__</Value>
       <Value>SD_MMC_ENABLE</Value>
+      <Value>printf=iprintf</Value>
     </ListValues>
   </armgcc.compiler.symbols.DefSymbols>
   <armgcc.compiler.directories.DefaultIncludePath>False</armgcc.compiler.directories.DefaultIncludePath>
@@ -599,6 +598,7 @@
       <Value>../src/ASF/common/services/freertos/sam</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
+  <armgcc.compiler.optimization.level>Optimize more (-O2)</armgcc.compiler.optimization.level>
   <armgcc.compiler.optimization.OtherFlags>-fdata-sections</armgcc.compiler.optimization.OtherFlags>
   <armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>True</armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>
   <armgcc.compiler.optimization.DebugLevel>Maximum (-g3)</armgcc.compiler.optimization.DebugLevel>
@@ -1402,12 +1402,6 @@
     <Compile Include="src\settings.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\DebugLog.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\DebugLog.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\drv_gpio.c">
       <SubType>compile</SubType>
     </Compile>
@@ -1418,12 +1412,6 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\drv_uart.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\Functionality_Tests.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\Functionality_Tests.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\task_dataProcessor.c">

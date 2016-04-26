@@ -2,13 +2,35 @@
 # Automatically-generated file. Do not edit or delete the file
 ################################################################################
 
+src\ASF\common\services\freertos\sam\freertos_peripheral_control.c
+
+src\ASF\common\services\freertos\sam\freertos_twi_master.c
+
+src\ASF\sam\drivers\crccu\crccu.c
+
+src\ASF\sam\drivers\efc\efc.c
+
+src\ASF\sam\drivers\pmc\services\flash_efc\flash_efc.c
+
 src\ASF\sam\drivers\rstc\rstc.c
 
-src\ASF\sam\drivers\supc\supc.c
+src\ASF\sam\drivers\twi\twi.c
+
+src\bootloader.c
+
+src\drv_i2c.c
 
 src\drv_led.c
 
+src\heddokoPacket.pb-c.c
+
+src\pkt_packetParser.c
+
+src\protobuf-c.c
+
 src\task_commandProc.c
+
+src\task_emInterface.c
 
 src\task_sdCardWrite.c
 

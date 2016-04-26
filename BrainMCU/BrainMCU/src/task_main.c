@@ -19,9 +19,7 @@
 #include "task_stateMachine.h"
 #include "task_commandProc.h"
 #include "task_emInterface.h"
-#include "Functionality_Tests.h"
 #include <string.h>
-#include "DebugLog.h"
 #include "drv_led.h"
 #include "bootloader.h"
 #include "drv_i2c.h"
@@ -189,12 +187,12 @@ void __attribute__((optimize("O0"))) TaskMain(void *pvParameters)
 	retCode = xTaskCreate(task_sdCardHandler, "SD", TASK_SD_CARD_WRITE_STACK_SIZE, NULL, TASK_SD_CARD_WRITE_PRIORITY, &sdCardTaskHandle );
 	if (retCode != pdPASS)
 	{
-		printf("Failed to sd card task code %d\r\n", retCode);
+		printf("Failed to create sd card task code %d\r\n", retCode);
 	}
 	retCode = xTaskCreate(task_stateMachineHandler, "SM", TASK_STATE_MACHINE_STACK_SIZE, NULL, TASK_STATE_MACHINE_PRIORITY, &stateMachineTaskHandle );
 	if (retCode != pdPASS)
 	{
-		printf("Failed to sd card task code %d\r\n", retCode);
+		printf("Failed to state machine task code %d\r\n", retCode);
 	}
 	
 	uint8_t interval = 0;
@@ -397,6 +395,7 @@ static void checkInputGpio(void)
 		{
 			debugPrintString("SD-card inserted\r\n");
 			//SD card present or inserted, set the respective event
+			//drv_gpio_config_interrupt(DRV_GPIO_PIN_SD_CD, DRV_GPIO_INTERRUPT_LOW_EDGE);	//set in reloadConfigSettings()
 			task_stateMachine_EnqueueEvent(SYS_EVENT_SD_CARD_DETECT,0);
 		}
 	}

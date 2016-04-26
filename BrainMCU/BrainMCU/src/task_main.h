@@ -17,7 +17,6 @@
 #include <stdbool.h>
 #include "Serial.h"
 #include "GPIO.h"
-#include "DebugLog.h"
 #include "drv_gpio.h"
 
 extern void vApplicationStackOverflowHook(xTaskHandle *pxTask, signed char *pcTaskName);
