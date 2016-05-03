@@ -41,7 +41,7 @@
 //#define USE_Q1_Q2
 #define CREATE_DUMMY_PACKETS 
 
-//#define USES_NEW_POWER_BOARD 
+#define USES_NEW_POWER_BOARD 
 
 //#define OBFUSCATION_ENABLED	//no need as the setting is saved in NVM
 //#define TEST_JACK_DETECTS	//Enables toggling of LED for an indication
