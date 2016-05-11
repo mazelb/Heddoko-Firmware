@@ -187,6 +187,7 @@ status_t drv_uart_putChar(drv_uart_config_t* uartConfig, char c)
 {
 	status_t status = STATUS_PASS;
 	//disable the interrupts so we don't fuck up the pointers	
+	taskENTER_CRITICAL();
 	usart_disable_interrupt(uartConfig->p_usart, UART_IER_TXEMPTY);	
 	uint32_t val = 0;
 	drv_uart_memory_buf_t* memBuf = &uartMemBuf[uartConfig->mem_index]; 
@@ -214,6 +215,7 @@ status_t drv_uart_putChar(drv_uart_config_t* uartConfig, char c)
 		memBuf->tx_fifo.i_last = 0;                            // roll over the index counter
 	}
 	memBuf->uart_tx_fifo_not_empty_flag = 1;                 // set tx-data ready flag	
+	taskEXIT_CRITICAL();
 	//re-enable the interrupts
 	usart_enable_interrupt(uartConfig->p_usart, UART_IER_TXEMPTY);		
 	return status;	
@@ -491,7 +493,14 @@ void drv_uart_flushRx(drv_uart_config_t* uartConfig)
 		uartMemBuf[uartConfig->mem_index].uart_rx_fifo_full_flag = 0;
 		uartMemBuf[uartConfig->mem_index].uart_rx_fifo_not_empty_flag = 0;
 		uartMemBuf[uartConfig->mem_index].uart_rx_fifo_ovf_flag = 0;		
-		//re-enable the interrupts
+		//flush the RX buffer as well. 
+		uartMemBuf[uartConfig->mem_index].tx_fifo.i_first = 0;
+		uartMemBuf[uartConfig->mem_index].tx_fifo.i_last = 0;
+		uartMemBuf[uartConfig->mem_index].tx_fifo.num_bytes = 0;
+		uartMemBuf[uartConfig->mem_index].uart_tx_fifo_full_flag = 0;
+		uartMemBuf[uartConfig->mem_index].uart_tx_fifo_not_empty_flag = 0;
+		uartMemBuf[uartConfig->mem_index].uart_tx_fifo_ovf_flag = 0;
+		//re-enable the interrupts		
 		usart_enable_interrupt(uartConfig->p_usart, UART_IER_RXRDY);	
 	}
 }

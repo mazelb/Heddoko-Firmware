@@ -29,7 +29,7 @@ volatile Bool dataLogFileOpen = false, debugLogFileOpen = false;
 uint8_t closeLogFileFlag = 0, closeDebugLogFileFlag = 0; 
 volatile char dataLogFileName[SD_CARD_FILENAME_LENGTH] = {0};
 	
-char debugLogNewFileName[] = "0:DebugLog.txt", debugLogOldFileName[] = "0:DebugLog_old.txt";
+char debugLogNewFileName[] = "0:sysHdk.bin", debugLogOldFileName[] = "0:sysHdk_old.bin";
 	
 void task_sdCardHandler(void *pvParameters)
 {

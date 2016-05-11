@@ -198,6 +198,10 @@ void task_quintic_initializeImus(void *pvParameters)
 	drv_gpio_setPinState(qConfig->resetPin,DRV_GPIO_PIN_STATE_LOW);
 	vTaskDelay(100);
 	drv_gpio_setPinState(qConfig->resetPin,DRV_GPIO_PIN_STATE_HIGH);
+	#ifdef USES_NEW_POWER_BOARD
+	cmd_sendJackToggleToPowerBoard(); 
+	#endif
+	
 	#ifndef USE_Q1_Q2
 	//drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_HIGH);
 	//drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
@@ -228,6 +232,7 @@ void task_quintic_initializeImus(void *pvParameters)
 	result |= getAck(qConfig->uartDevice);
 	if (result != STATUS_PASS)
 	{
+		debugPrintString("No response on Begin command from Q\r\n");
 		task_stateMachine_EnqueueEvent(SYS_EVENT_RESET_FAILED, 0xff);
 		vTaskDelete(NULL);
 		return;
@@ -242,6 +247,7 @@ void task_quintic_initializeImus(void *pvParameters)
 		result |= getAck(qConfig->uartDevice);
 		if (result != STATUS_PASS)
 		{
+			debugPrintString("No ACK from Q after sending IMU address\r\n");
 			task_stateMachine_EnqueueEvent(SYS_EVENT_RESET_FAILED, 0xff);
 			vTaskDelete(NULL);
 			return;
@@ -252,6 +258,7 @@ void task_quintic_initializeImus(void *pvParameters)
 	result |= getAck(qConfig->uartDevice);
 	if (result != STATUS_PASS)
 	{
+		debugPrintString("No ACK from Q after sending end\r\n");
 		task_stateMachine_EnqueueEvent(SYS_EVENT_RESET_FAILED, 0xff);
 		vTaskDelete(NULL);
 		return;
@@ -265,6 +272,7 @@ void task_quintic_initializeImus(void *pvParameters)
 	result |= getAck(qConfig->uartDevice);
 	if (result != STATUS_PASS)
 	{
+		debugPrintString("No ACK from Q after sending channel map\r\n");
 		task_stateMachine_EnqueueEvent(SYS_EVENT_RESET_FAILED, 0xff);
 		vTaskDelete(NULL);
 		return;

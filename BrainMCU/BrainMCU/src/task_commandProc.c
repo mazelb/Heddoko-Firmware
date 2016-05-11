@@ -87,7 +87,15 @@ void task_commandHandler(void *pvParameters)
 	}
 }
 
+void cmd_sendJackToggleToPowerBoard()
+{
+	drv_uart_putChar(config->uart, 0xAA); 
+}
 
+void cmd_sendPowerDownCompleteToPb()
+{
+	drv_uart_putChar(config->uart, 0xBB);
+}
 
 /***********************************************************************************************
  * printStats()
@@ -313,9 +321,10 @@ static status_t processCommand(char* command, size_t cmdSize)
 	}
 	else if(strncmp(command, "flushUarts\r\n",cmdSize) == 0)
 	{
-		drv_uart_flushRx(&usart1Config);
-		drv_uart_flushRx(&uart0Config);
+		drv_uart_flushRx(&uart0Config);		
+		drv_uart_flushRx(&uart1Config);		
 		drv_uart_flushRx(&usart0Config);
+		drv_uart_flushRx(&usart1Config);
 	}
 	else if(strncmp(command,"getStats\r\n", cmdSize) == 0)
 	{
@@ -372,6 +381,12 @@ static status_t processCommand(char* command, size_t cmdSize)
 			printString("Low\r\n");
 		}
 	}
+	else if (strncmp(command, "disconnectImus", 14) == 0)
+	{
+		DisconnectImus(&quinticConfig[0]);
+		DisconnectImus(&quinticConfig[1]);
+		DisconnectImus(&quinticConfig[2]);
+	}
 	else if (strncmp(command, "LowBattery", 10) == 0)
 	{
 		//this message is sent from the power board to indicate that the battery is low
@@ -381,10 +396,12 @@ static status_t processCommand(char* command, size_t cmdSize)
 	else if(strncmp(command, "PwrBrdMsg:", 10) == 0)
 	{
 		//do nothing, the message will be logged to file below. 
+		
+		debugPrintString(command);
 	}	
 	else
 	{		
-		//debugPrintString("Received invalid command\r\n");
+		debugPrintString("Received invalid command\r\n");
 		status = STATUS_PASS; 
 	}
 	//snprintf(stringBuf,50*10,"Received Command: %s \r\n",command);

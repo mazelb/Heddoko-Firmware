@@ -257,7 +257,22 @@ void processEvent(eventMessage_t eventMsg)
 			}
 			else
 			{
-				stateEntry_Error();
+				if(reloadConfigSettings() == STATUS_PASS)
+				{
+					if(task_debugLog_OpenFile() == STATUS_PASS)
+					{
+						//perform reset only if loading the settings was successful
+						stateEntry_Reset();
+					}
+					else
+					{
+						stateEntry_Error();
+					}
+				}
+				else
+				{
+					stateEntry_Error();
+				}
 			}
 			 
 		}
@@ -472,9 +487,9 @@ void stateEntry_PowerDown()
 	if (firstBoot == TRUE)
 	{
 		//Put the BLE's in reset. 
-		drv_gpio_setPinState(quinticConfig[0].resetPin, DRV_GPIO_PIN_STATE_LOW);
-		drv_gpio_setPinState(quinticConfig[1].resetPin, DRV_GPIO_PIN_STATE_LOW);
-		drv_gpio_setPinState(quinticConfig[2].resetPin, DRV_GPIO_PIN_STATE_LOW);
+		//drv_gpio_setPinState(quinticConfig[0].resetPin, DRV_GPIO_PIN_STATE_LOW);
+		//drv_gpio_setPinState(quinticConfig[1].resetPin, DRV_GPIO_PIN_STATE_LOW);
+		//drv_gpio_setPinState(quinticConfig[2].resetPin, DRV_GPIO_PIN_STATE_LOW);
 	}
 	
 	if (firstBoot == FALSE)
@@ -522,7 +537,10 @@ void stateEntry_PowerDown()
 			{
 				#ifdef USES_NEW_POWER_BOARD			
 				drv_gpio_setPinState(DRV_GPIO_PIN_PB_GPIO, DRV_GPIO_PIN_STATE_LOW);
-				while(1); //loop here forever... wait for power board to turn us off
+				while(1)
+				{
+					vTaskDelay(10); //loop here forever... wait for power board to turn us off
+				}
 				#endif
 			}
 			#ifndef USES_NEW_POWER_BOARD
@@ -556,10 +574,10 @@ void stateEntry_PowerDown()
 	}
 	if (firstBoot == TRUE)
 	{
-		vTaskDelay(10);
-		drv_gpio_setPinState(quinticConfig[0].resetPin, DRV_GPIO_PIN_STATE_HIGH);
-		drv_gpio_setPinState(quinticConfig[1].resetPin, DRV_GPIO_PIN_STATE_HIGH);
-		drv_gpio_setPinState(quinticConfig[2].resetPin, DRV_GPIO_PIN_STATE_HIGH);
+		vTaskDelay(100);
+		//drv_gpio_setPinState(quinticConfig[0].resetPin, DRV_GPIO_PIN_STATE_HIGH);
+		//drv_gpio_setPinState(quinticConfig[1].resetPin, DRV_GPIO_PIN_STATE_HIGH);
+		//drv_gpio_setPinState(quinticConfig[2].resetPin, DRV_GPIO_PIN_STATE_HIGH);
 		firstBoot = FALSE;
 	}
 	

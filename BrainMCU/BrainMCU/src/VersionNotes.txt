@@ -41,3 +41,18 @@
  2. Removed bug from SD-card size check function, THIS MAKES THE VERSION 0.4C A NON-RELEASE VERSION.
  3. Added in necessary calls for opening debug log file to statemachine.c.
  4. Added in vTaskDelay inside while loop of reloadConfigSettings() to let it service timers.
+
+ VERSION 0.4e
+ 1. Added in changes to gpio driver for setting SD-CD interrupt type as per current state of pin.
+ 2. Added few more debugPrints on QuinticInit task.
+ 3. Added a call to reload config settings on reset button press if the settings weren't loaded previously.
+ 4. Added in compile time condition to not have interrupts on Jack OC and DC if using new power board.
+ 5. Removed the reset of Quintics while powering up. However the 100ms delay is kept as remving it makes the system go to error directly.
+
+ VERSION 0.4f (for fun!)
+ 1. Added critical regions for the putChar function calls. 
+ 2. Added sending of command character to Brain Pack to indicate that the Jacks must be toggled 
+
+ 
+  VERSION 0.4g (for great!) 
+  1. Changed debug log filename to sysHdk.bin 
