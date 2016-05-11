@@ -53,6 +53,8 @@
  1. Added critical regions for the putChar function calls. 
  2. Added sending of command character to Brain Pack to indicate that the Jacks must be toggled 
 
- 
   VERSION 0.4g (for great!) 
   1. Changed debug log filename to sysHdk.bin 
+
+ VERSION 0.4h (for Heddoko! INDEED)
+ 1. Added in a 500ms delay in the EnterReset() function before spawning the Quintic init task to get rid of miss on responses.

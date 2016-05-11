@@ -195,6 +195,7 @@ void task_quintic_initializeImus(void *pvParameters)
 	int vScanLoopCount=0;
 	//reset the quintic here...
 	drv_uart_flushRx(qConfig->uartDevice);	//flush the uart first
+	
 	drv_gpio_setPinState(qConfig->resetPin,DRV_GPIO_PIN_STATE_LOW);
 	vTaskDelay(100);
 	drv_gpio_setPinState(qConfig->resetPin,DRV_GPIO_PIN_STATE_HIGH);
@@ -216,7 +217,6 @@ void task_quintic_initializeImus(void *pvParameters)
 	vTaskDelay(100);
 	//wait for first ACK
 	result = getResponse(qConfig->uartDevice, "AppStart\r\n"); 
-	drv_uart_flushRx(qConfig->uartDevice);	//flush the uart first
 	vTaskDelay(10);
 	//get quintic ready to receive the
 	if (result != STATUS_PASS)
@@ -227,6 +227,7 @@ void task_quintic_initializeImus(void *pvParameters)
 		return;
 	}
 	
+	drv_uart_flushRx(qConfig->uartDevice);	//flush the uart first
 	sendString(qConfig->uartDevice,QCMD_BEGIN);
 	vTaskDelay(10);
 	result |= getAck(qConfig->uartDevice);

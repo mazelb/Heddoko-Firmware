@@ -17,6 +17,7 @@
 #include <interrupt.h>
 #include <string.h>
 #include <stdio.h>
+
 typedef struct
 {
 	sw_fifo_typedef rx_fifo; 
@@ -239,7 +240,7 @@ status_t drv_uart_getChar(drv_uart_config_t* uartConfig, char* c)
 		//disable the interrupts so we don't fuck up the pointers		
 		status = uart_get_byte(&(uartMemBuf[uartConfig->mem_index]), c); //get the byte from the buffer	
 		//re-enable the interrupts
-		usart_enable_interrupt(uartConfig->p_usart, UART_IER_RXRDY);				
+		usart_enable_interrupt(uartConfig->p_usart, UART_IER_RXRDY);
 	}
 	else
 	{
@@ -345,7 +346,7 @@ status_t drv_uart_getlineTimed(drv_uart_config_t* uartConfig, char* str, size_t 
 	status_t result = STATUS_PASS;
 	char val;
 	int pointer = 0;
-	uint32_t startTime = sgSysTickCount; 
+	uint32_t startTime = sgSysTickCount;
 	while(1) //TODO add timeout
 	{
 		result = drv_uart_getChar(uartConfig,&val);
@@ -658,7 +659,7 @@ static void uart_process_byte(Usart *p_usart, drv_uart_memory_buf_t* memBuf)
 	{         // if the index has reached the end of the buffer,
 		memBuf->rx_fifo.i_last = 0;                            // roll over the index counter
 	}
-	memBuf->uart_rx_fifo_not_empty_flag = 1;                 // set received-data flag	
+	memBuf->uart_rx_fifo_not_empty_flag = 1;                 // set received-data flag
 }
 
 static void uart_process_tx_byte(Usart *p_usart, drv_uart_memory_buf_t* memBuf)

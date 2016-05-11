@@ -141,9 +141,6 @@ C_SRCS +=  \
 ../src/bootloader.c \
 ../src/drv_i2c.c \
 ../src/drv_led.c \
-../src/heddokoPacket.pb-c.c \
-../src/pkt_packetParser.c \
-../src/protobuf-c.c \
 ../src/task_commandProc.c \
 ../src/task_emInterface.c \
 ../src/task_sdCardWrite.c \
@@ -174,10 +171,8 @@ C_SRCS +=  \
 ../src/Board_Init.c \
 ../src/common.c \
 ../src/settings.c \
-../src/DebugLog.c \
 ../src/drv_gpio.c \
 ../src/drv_uart.c \
-../src/Functionality_Tests.c \
 ../src/task_dataProcessor.c \
 ../src/task_fabricSense.c \
 ../src/task_main.c \
@@ -213,9 +208,6 @@ src/ASF/sam/drivers/twi/twi.o \
 src/bootloader.o \
 src/drv_i2c.o \
 src/drv_led.o \
-src/heddokoPacket.pb-c.o \
-src/pkt_packetParser.o \
-src/protobuf-c.o \
 src/task_commandProc.o \
 src/task_emInterface.o \
 src/task_sdCardWrite.o \
@@ -246,10 +238,8 @@ src/ASF/thirdparty/freertos/freertos-7.0.0/source/timers.o \
 src/Board_Init.o \
 src/common.o \
 src/settings.o \
-src/DebugLog.o \
 src/drv_gpio.o \
 src/drv_uart.o \
-src/Functionality_Tests.o \
 src/task_dataProcessor.o \
 src/task_fabricSense.o \
 src/task_main.o \
@@ -278,9 +268,6 @@ src/ASF/sam/drivers/twi/twi.o \
 src/bootloader.o \
 src/drv_i2c.o \
 src/drv_led.o \
-src/heddokoPacket.pb-c.o \
-src/pkt_packetParser.o \
-src/protobuf-c.o \
 src/task_commandProc.o \
 src/task_emInterface.o \
 src/task_sdCardWrite.o \
@@ -311,10 +298,8 @@ src/ASF/thirdparty/freertos/freertos-7.0.0/source/timers.o \
 src/Board_Init.o \
 src/common.o \
 src/settings.o \
-src/DebugLog.o \
 src/drv_gpio.o \
 src/drv_uart.o \
-src/Functionality_Tests.o \
 src/task_dataProcessor.o \
 src/task_fabricSense.o \
 src/task_main.o \
@@ -343,9 +328,6 @@ src/ASF/sam/drivers/twi/twi.d \
 src/bootloader.d \
 src/drv_i2c.d \
 src/drv_led.d \
-src/heddokoPacket.pb-c.d \
-src/pkt_packetParser.d \
-src/protobuf-c.d \
 src/task_commandProc.d \
 src/task_emInterface.d \
 src/task_sdCardWrite.d \
@@ -376,10 +358,8 @@ src/ASF/thirdparty/freertos/freertos-7.0.0/source/timers.d \
 src/Board_Init.d \
 src/common.d \
 src/settings.d \
-src/DebugLog.d \
 src/drv_gpio.d \
 src/drv_uart.d \
-src/Functionality_Tests.d \
 src/task_dataProcessor.d \
 src/task_fabricSense.d \
 src/task_main.d \
@@ -408,9 +388,6 @@ src/ASF/sam/drivers/twi/twi.d \
 src/bootloader.d \
 src/drv_i2c.d \
 src/drv_led.d \
-src/heddokoPacket.pb-c.d \
-src/pkt_packetParser.d \
-src/protobuf-c.d \
 src/task_commandProc.d \
 src/task_emInterface.d \
 src/task_sdCardWrite.d \
@@ -441,10 +418,8 @@ src/ASF/thirdparty/freertos/freertos-7.0.0/source/timers.d \
 src/Board_Init.d \
 src/common.d \
 src/settings.d \
-src/DebugLog.d \
 src/drv_gpio.d \
 src/drv_uart.d \
-src/Functionality_Tests.d \
 src/task_dataProcessor.d \
 src/task_fabricSense.d \
 src/task_main.d \
@@ -478,16 +453,6 @@ LINKER_SCRIPT_DEP+=  \
 
 
 # AVR32/GNU C Compiler
-
-
-
-
-
-
-
-
-
-
 
 
 

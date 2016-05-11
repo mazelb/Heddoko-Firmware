@@ -18,7 +18,7 @@
 #ifndef COMMON_H_
 #define COMMON_H_
 
-#define VERSION "V0.4g"
+#define VERSION "V0.4h"
 /*
 * Changes from previous version:
 * @brief: see VersionNotes.txt for details

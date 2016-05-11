@@ -22,12 +22,6 @@ src\drv_i2c.c
 
 src\drv_led.c
 
-src\heddokoPacket.pb-c.c
-
-src\pkt_packetParser.c
-
-src\protobuf-c.c
-
 src\task_commandProc.c
 
 src\task_emInterface.c
@@ -88,13 +82,9 @@ src\common.c
 
 src\settings.c
 
-src\DebugLog.c
-
 src\drv_gpio.c
 
 src\drv_uart.c
-
-src\Functionality_Tests.c
 
 src\task_dataProcessor.c
 

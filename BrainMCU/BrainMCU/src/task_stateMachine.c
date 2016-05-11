@@ -639,7 +639,9 @@ void stateEntry_Reset()
 	//drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW); 
 	//drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW); 
 	toggleJackEnables(DRV_GPIO_PIN_STATE_LOW);
-	vTaskDelay(100); 
+	vTaskDelay(400); 
+	#else
+	vTaskDelay(500);
 	#endif
 	
 	//Reset/init Qn
