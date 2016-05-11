@@ -35,7 +35,7 @@ typedef struct
 
 extern unsigned long sgSysTickCount;
 //global variables
-volatile drv_uart_memory_buf_t uartMemBuf[4]; //4 UARTS, 4 buffers
+volatile drv_uart_memory_buf_t uartMemBuf[2]; //4 UARTS, 4 buffers
 //static function declarations
 static int uart_get_byte(drv_uart_memory_buf_t* memBuf, char* c); 
 static void uart_process_byte(Usart *p_usart, drv_uart_memory_buf_t* memBuf);
@@ -58,10 +58,6 @@ status_t drv_uart_init(drv_uart_config_t* uartConfig)
 	{	
 		uartConfig->mem_index = 1;
 	}
-	else if(uartConfig->p_usart == USART0)
-	{	
-		uartConfig->mem_index = 2;
-	}
 	else
 	{
 		//ERROR! The config settings have an invalid UART pointer
@@ -69,7 +65,7 @@ status_t drv_uart_init(drv_uart_config_t* uartConfig)
 	}
 
 	//initialize the circular buffers. 
-	if(uartConfig->mem_index < 0 || uartConfig->mem_index > 4)
+	if(uartConfig->mem_index < 0 || uartConfig->mem_index > 2)
 	{
 		//ERROR! an incorrect buffer index has been used.  
 		return STATUS_FAIL; 
@@ -252,7 +248,7 @@ status_t drv_uart_deInit(drv_uart_config_t* uartConfig)
 		sysclk_disable_peripheral_clock(ID_UART0);
 
 		//enable the pin
-		PIOA->PIO_PDR        |=  (PIO_PA9A_URXD0 | PIO_PA10A_UTXD0);			
+		PIOA->PIO_PDR    |=  (PIO_PA9A_URXD0 | PIO_PA10A_UTXD0);			
 		PIOA->PIO_PUDR   |=  (PIO_PA9A_URXD0 | PIO_PA10A_UTXD0);
 		PIOA->PIO_CODR   |=  (PIO_PA9A_URXD0 | PIO_PA10A_UTXD0);
 		//disable pin as output
@@ -544,6 +540,7 @@ void UART1_Handler()
 		if(uartMemBuf[1].isinit) //only handle the interrupt if the driver is initialized.
 		{
 			uart_process_byte(UART1, &(uartMemBuf[1]));
+			
 		}
 	}
 	

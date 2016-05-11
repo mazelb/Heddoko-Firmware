@@ -11,6 +11,7 @@
 #include "dat_dataRouter.h"
 #include "common.h"
 #include "LTC2941-1.h"
+#include "drv_gpio.h"
 xQueueHandle cmd_queue_commandQueue = NULL;
 extern slave_twi_config_t ltc2941Config; 
 extern dat_dataRouterConfig_t dataRouterConfiguration;
@@ -40,7 +41,7 @@ void cmd_task_commandProcesor(void *pvParameters)
 	}
 	while(1)
 	{	
-		if(xQueueReceive( cmd_queue_commandQueue, &(packet), 1000) == TRUE)
+		if(xQueueReceive( cmd_queue_commandQueue, &(packet), 250) == TRUE)
 		{
 			//only a small subset of commands are handled on the power board
 			//send the rest to the data board for processing.
@@ -119,7 +120,7 @@ void cmd_task_commandProcesor(void *pvParameters)
 					sprintf(tempString,"charger status: %x\r\n",ltc2941GetStatus(&ltc2941Config));
 					if(packet.packetSource == CMD_COMMAND_SOURCE_DAUGHTER)
 					{
-						drv_uart_putString(dataRouterConfiguration.dataBoardUart, tempString);
+						drv_uart_putString(dataRouterConfiguration.daughterBoard, tempString);
 					}
 					else if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
 					{
@@ -127,7 +128,37 @@ void cmd_task_commandProcesor(void *pvParameters)
 					}						
 					//don't forward this message on. 						
 					forwardCommand = false; 						
-				}		
+				}	
+				else if (strncmp(packet.packetData,"resetPb",7)==0)
+				{
+					rstc_start_software_reset(RSTC);											
+				}	
+				else if (strncmp(packet.packetData,"fastChrg1",9)==0)
+				{
+					dat_sendDebugMsgToDataBoard("PwrBrdMsg:Fast Charge On\r\n");
+					drv_gpio_setPinState(DRV_GPIO_PIN_CHRG_SEL, DRV_GPIO_PIN_STATE_HIGH);	
+					forwardCommand = false; 
+				}
+				else if (strncmp(packet.packetData,"fastChrg0",9)==0)
+				{
+					dat_sendDebugMsgToDataBoard("PwrBrdMsg:Fast Charge Off\r\n");
+					drv_gpio_setPinState(DRV_GPIO_PIN_CHRG_SEL, DRV_GPIO_PIN_STATE_LOW);
+					forwardCommand = false; 	
+				}
+				else if (strncmp(packet.packetData,"jacksEn1",9)==0)
+				{
+					dat_sendDebugMsgToDataBoard("PwrBrdMsg:Jacks Enabled\r\n");
+					drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
+					drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);
+					forwardCommand = false; 	
+				}
+				else if (strncmp(packet.packetData,"jacksEn0",9)==0)
+				{
+					dat_sendDebugMsgToDataBoard("PwrBrdMsg:Jacks Disabled\r\n");
+					drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_HIGH);
+					drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
+					forwardCommand = false; 	
+				}				
 				else if (strncmp(packet.packetData,"crashSystem",11)==0)
 				{
 					//sprintf(1234213,"crashity crash crash!%s\r\n",NULL);
@@ -138,6 +169,35 @@ void cmd_task_commandProcesor(void *pvParameters)
 					memcpy(0x20000000, packet.packetData, 1000000);
 										
 				}
+				else if (strncmp(packet.packetData,"enterBootloader",11)==0)
+				{
+					//clear GPNVM bit 1 to get the processor to boot from the ROM
+					efc_perform_command(EFC0,EFC_FCMD_CGPB,1);
+					//restart the processor, so we enter the ROM bootloader. 
+					rstc_start_software_reset(RSTC);								
+				}
+				else if(strncmp(packet.packetData,"pbVersion",9)==0)
+				{
+					sprintf(tempString,"VERSION %s\r\n", VERSION);
+					if(packet.packetSource == CMD_COMMAND_SOURCE_DAUGHTER)
+					{
+						drv_uart_putString(dataRouterConfiguration.daughterBoard, tempString);
+					}
+					else if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+					{
+						dat_sendStringToUsb(tempString);
+					}
+					sprintf(tempString,"BUILD DATE: %s %s\r\n", __DATE__,__TIME__);
+					if(packet.packetSource == CMD_COMMAND_SOURCE_DAUGHTER)
+					{
+						drv_uart_putString(dataRouterConfiguration.daughterBoard, tempString);
+					}
+					else if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+					{
+						dat_sendStringToUsb(tempString);
+					}
+					forwardCommand = false; 
+				}				
 				if(forwardCommand == true)
 				{
 					//forward the command to the data board. 

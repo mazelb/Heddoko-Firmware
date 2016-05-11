@@ -19,4 +19,5 @@ typedef struct
 void dat_task_dataRouter(void *pvParameters);
 status_t dat_sendPacketToDataBoard(cmd_commandPacket_t* packet);
 status_t dat_sendStringToUsb(char* str);
+status_t dat_sendDebugMsgToDataBoard(char* debugString);
 #endif /* DAT_DATAROUTER_H_ */

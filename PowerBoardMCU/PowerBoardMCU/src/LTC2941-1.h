@@ -11,8 +11,8 @@
 
 #include "common.h"
 #include "drv_i2c.h"
-
-#define ENABLE_DEBUG_PRINTS
+#define CHARGE_EMPTY_VALUE 0x4B03
+//#define ENABLE_DEBUG_PRINTS
 
 #define LTC_2941_STATUS_REG_ADDR				0x00
 #define LTC_2941_CONTROL_REG_ADDR				0x01

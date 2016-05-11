@@ -30,6 +30,7 @@
       <framework-data>
         <options>
           <option id="common.boards" value="Add" config="" content-id="Atmel.ASF" />
+          <option id="common.services.delay" value="Add" config="" content-id="Atmel.ASF" />
           <option id="common.services.layer.freertos.twi" value="Add" config="" content-id="Atmel.ASF" />
           <option id="common.services.basic.gpio" value="Add" config="" content-id="Atmel.ASF" />
           <option id="common.services.ioport" value="Add" config="" content-id="Atmel.ASF" />
@@ -40,7 +41,7 @@
           <option id="sam.drivers.rtc" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam.drivers.wdt" value="Add" config="" content-id="Atmel.ASF" />
           <option id="thirdparty.os.freertos.version" value="Add" config="7.3.0" content-id="Atmel.ASF" />
-          <option id="common.services.delay" value="Add" config="" content-id="Atmel.ASF" />
+          <option id="sam.services.flash" value="Add" config="" content-id="Atmel.ASF" />
           <option id="common.applications.user_application.xplained_pro" value="Add" config="" content-id="Atmel.ASF" />
           <option id="common.utils" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam.utils.cmsis.sam4s.source.template" value="Add" config="" content-id="Atmel.ASF" />
@@ -282,6 +283,10 @@
           <file path="src/ASF/common/services/delay/sam/cycle_counter.c" framework="" version="3.21.0" source="common\services\delay\sam\cycle_counter.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/common/services/delay/sam/cycle_counter.h" framework="" version="3.21.0" source="common\services\delay\sam\cycle_counter.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/common/services/delay/delay.h" framework="" version="3.21.0" source="common\services\delay\delay.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam/drivers/efc/efc.c" framework="" version="3.21.0" source="sam\drivers\efc\efc.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam/drivers/efc/efc.h" framework="" version="3.21.0" source="sam\drivers\efc\efc.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam/services/flash_efc/flash_efc.c" framework="" version="3.21.0" source="sam\services\flash_efc\flash_efc.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam/services/flash_efc/flash_efc.h" framework="" version="3.21.0" source="sam\services\flash_efc\flash_efc.h" changed="False" content-id="Atmel.ASF" />
         </files>
         <documentation help="http://asf.atmel.com/docs/3.21.0/common.applications.user_application.xplained_pro.sam4s_xplained_pro/html/index.html" />
         <offline-documentation help="" />
@@ -379,6 +384,8 @@
       <Value>../src/ASF/sam/drivers/udp</Value>
       <Value>../src/ASF/thirdparty/freertos/freertos-7.3.0/source/portable/gcc/sam</Value>
       <Value>../src/ASF/common/services/delay</Value>
+      <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>../src/ASF/sam/services/flash_efc</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.OtherFlags>-fdata-sections</armgcc.compiler.optimization.OtherFlags>
@@ -445,6 +452,8 @@
       <Value>../src/ASF/common/services/usb/udc</Value>
       <Value>../src/ASF/sam/drivers/udp</Value>
       <Value>../src/ASF/common/services/delay</Value>
+      <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>../src/ASF/sam/services/flash_efc</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
   <armgcc.preprocessingassembler.debugging.DebugLevel>Default (-Wa,-g)</armgcc.preprocessingassembler.debugging.DebugLevel>
@@ -513,6 +522,8 @@
       <Value>../src/ASF/sam/drivers/udp</Value>
       <Value>../src/ASF/thirdparty/freertos/freertos-7.3.0/source/portable/gcc/sam</Value>
       <Value>../src/ASF/common/services/delay</Value>
+      <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>../src/ASF/sam/services/flash_efc</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.OtherFlags>-fdata-sections</armgcc.compiler.optimization.OtherFlags>
@@ -579,6 +590,8 @@
       <Value>../src/ASF/common/services/usb/udc</Value>
       <Value>../src/ASF/sam/drivers/udp</Value>
       <Value>../src/ASF/common/services/delay</Value>
+      <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>../src/ASF/sam/services/flash_efc</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
   <armgcc.preprocessingassembler.debugging.DebugLevel>Default (-Wa,-g)</armgcc.preprocessingassembler.debugging.DebugLevel>
@@ -648,6 +661,8 @@
       <Value>../src/ASF/thirdparty/freertos/freertos-7.3.0/source/portable/gcc/sam</Value>
       <Value>../src/ASF/common/services/delay</Value>
       <Value>../src/ASF/sam/boards/sam4s_xplained_pro</Value>
+      <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>../src/ASF/sam/services/flash_efc</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.OtherFlags>-fdata-sections</armgcc.compiler.optimization.OtherFlags>
@@ -712,6 +727,8 @@
       <Value>../src/ASF/common/services/usb/udc</Value>
       <Value>../src/ASF/sam/drivers/udp</Value>
       <Value>../src/ASF/common/services/delay</Value>
+      <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>../src/ASF/sam/services/flash_efc</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
   <armgcc.preprocessingassembler.debugging.DebugLevel>Default (-Wa,-g)</armgcc.preprocessingassembler.debugging.DebugLevel>
@@ -754,6 +771,7 @@
     <Folder Include="src\ASF\sam\boards\" />
     <Folder Include="src\ASF\sam\boards\sam4s_xplained_pro\" />
     <Folder Include="src\ASF\sam\drivers\" />
+    <Folder Include="src\ASF\sam\drivers\efc\" />
     <Folder Include="src\ASF\sam\drivers\matrix\" />
     <Folder Include="src\ASF\sam\drivers\pdc\" />
     <Folder Include="src\ASF\sam\drivers\pdc\pdc_uart_example\" />
@@ -767,6 +785,8 @@
     <Folder Include="src\ASF\sam\drivers\udp\" />
     <Folder Include="src\ASF\sam\drivers\usart\" />
     <Folder Include="src\ASF\sam\drivers\wdt\" />
+    <Folder Include="src\ASF\sam\services\" />
+    <Folder Include="src\ASF\sam\services\flash_efc\" />
     <Folder Include="src\ASF\sam\utils\" />
     <Folder Include="src\ASF\sam\utils\cmsis\" />
     <Folder Include="src\ASF\sam\utils\cmsis\sam4s\" />
@@ -829,9 +849,21 @@
     <Compile Include="src\ASF\sam\boards\user_board.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\ASF\sam\drivers\efc\efc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\sam\drivers\efc\efc.h">
+      <SubType>compile</SubType>
+    </None>
     <Compile Include="src\ASF\sam\drivers\udp\udp_device.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\ASF\sam\services\flash_efc\flash_efc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\sam\services\flash_efc\flash_efc.h">
+      <SubType>compile</SubType>
+    </None>
     <Compile Include="src\brd_board.c">
       <SubType>compile</SubType>
     </Compile>

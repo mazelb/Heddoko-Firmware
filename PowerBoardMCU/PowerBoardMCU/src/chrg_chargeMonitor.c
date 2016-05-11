@@ -30,9 +30,11 @@
 
 
 #include "chrg_chargeMonitor.h"
+#include "dat_dataRouter.h"
 #include "drv_led.h"
 #include "mgr_managerTask.h"
 #include "LTC2941-1.h"
+
 volatile chrg_chargerState_t chrg_currentChargerState = CHRG_CHARGER_STATE_INVALID_CODE; 
 
 extern xQueueHandle mgr_eventQueue;
@@ -57,28 +59,74 @@ void chrg_task_chargeMonitor(void *pvParameters)
 	chrg_chargerState_t newChargerState = CHRG_CHARGER_STATE_INVALID_CODE; 
 	mgr_eventMessage_t eventMessage; 
 	uint16_t chargeLevel = 0, newChargeLevel = 0;
-	
+	drv_gpio_pin_state_t usbConnectedState = DRV_GPIO_PIN_STATE_PULLED_HIGH,
+		 newUsbConnectedState = DRV_GPIO_PIN_STATE_LOW; 
+	drv_gpio_pin_state_t pwrButtonState = DRV_GPIO_PIN_STATE_PULLED_HIGH,
+		 newPwrButtonState = DRV_GPIO_PIN_STATE_LOW; 
+	uint32_t powerButtonLowCount = 0;	 	 
 	while(1)
 	{
 		newChargerState = getChargerState(chargeMonitorConfig); 	
-		newChargeLevel = getCalculatedPercentage(&ltc2941Config);			
+		newChargeLevel = getCalculatedPercentage(&ltc2941Config);	
+		drv_gpio_getPinState(DRV_GPIO_PIN_USB_DET, &newUsbConnectedState);
+		if(newUsbConnectedState != usbConnectedState)
+		{
+			if(newUsbConnectedState == DRV_GPIO_PIN_STATE_HIGH)
+			{
+				//send GPIO connected state
+				eventMessage.sysEvent = SYS_EVENT_USB_CONNECTED;
+			}
+			else
+			{
+				eventMessage.sysEvent = SYS_EVENT_USB_DISCONNECTED;
+			}
+			if(mgr_eventQueue != NULL)
+			{
+				if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
+				{
+					//this is an error, we should log it.
+				}
+			}
+			usbConnectedState = newUsbConnectedState; 			
+		}
+		drv_gpio_getPinState(DRV_GPIO_PIN_PWR_BTN, &newPwrButtonState);
+		if(newPwrButtonState != pwrButtonState)
+		{
+			if(newPwrButtonState == DRV_GPIO_PIN_STATE_HIGH)
+			{
+				powerButtonLowCount = 0;
+				dat_sendDebugMsgToDataBoard("PwrBrdMsg:pwr Button high\r\n");
+			}
+			else
+			{				
+				dat_sendDebugMsgToDataBoard("PwrBrdMsg:pwr Button low\r\n");
+			}
+			pwrButtonState = newPwrButtonState;
+		}
+		
+				
 		//check if the state is new
 		if(newChargerState != chrg_currentChargerState)
 		{
 			switch(newChargerState)
 			{
 				case CHRG_CHARGER_STATE_SHUTDOWN_VBAT:
-					//the charger is shutdown, this means that we're running on battery					
+					//the charger is shutdown, this means that we're running on battery							
 					chargeLevel = 0; //set the current charge level to zero so we update the LED color below. 				
 				break;
+				case CHRG_CHARGER_STATE_SHUTDOWN_VIN:
+					drv_led_set(DRV_LED_YELLOW,DRV_LED_SOLID); //TODO: maybe change this... since it's not actually charging. 
+				break;
 				case CHRG_CHARGER_STATE_CHARGING:
-				{
+				{					
 					drv_led_set(DRV_LED_YELLOW,DRV_LED_SOLID);	
 				}				
 				break;
 				case CHRG_CHARGER_STATE_CHARGE_COMPLETE:
 				{
-					ltc2941SetChargeComplete(&ltc2941Config);
+					dat_sendDebugMsgToDataBoard("PwrBrdMsg:Battery Full\r\n");
+					ltc2941SetChargeComplete(&ltc2941Config);		
+								
 					drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
 				}
 				break;
@@ -87,24 +135,30 @@ void chrg_task_chargeMonitor(void *pvParameters)
 					eventMessage.sysEvent = SYS_EVENT_LOW_BATTERY; 
 					if(mgr_eventQueue != NULL)
 					{
+						dat_sendDebugMsgToDataBoard("PwrBrdMsg:Received Low Battery indication\r\n");
+						ltc2941SetCharge(&ltc2941Config, CHARGE_EMPTY_VALUE); //set the gas gauge to zero. 						
 						if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
 						{
 							//this is an error, we should log it.
 						}				
 					}
-					drv_led_set(DRV_LED_PURPLE,DRV_LED_SOLID);
+					drv_led_set(DRV_LED_RED,DRV_LED_SOLID);
 				}
 				break;
 				case CHRG_CHARGER_STATE_NO_BATTERY:
 				{				
-					drv_led_set(DRV_LED_RED,DRV_LED_SOLID);
+					drv_led_set(DRV_LED_PURPLE,DRV_LED_SOLID);
+					dat_sendDebugMsgToDataBoard("PwrBrdMsg:No Battery\r\n");
 				}
 				break;
 				case CHRG_CHARGER_STATE_FAULT:
 				case CHRG_CHARGER_STATE_INVALID_CODE:
 				default:
 				{
-					drv_led_set(DRV_LED_TURQUOISE,DRV_LED_FLASH);	
+					//drv_led_set(DRV_LED_TURQUOISE,DRV_LED_FLASH);	
+					//turn off LED for now, figure out what to do with this state later
+					dat_sendDebugMsgToDataBoard("PwrBrdMsg:Battery Fault\r\n");
+					drv_led_set(DRV_LED_OFF,DRV_LED_SOLID);
 				}				
 				break;				
 			}		
@@ -119,33 +173,37 @@ void chrg_task_chargeMonitor(void *pvParameters)
 				if(chargeLevel <= BATTERY_PERCENT_FAULT)
 				{
 					//the battery is pretty much dead
-					drv_led_set(DRV_LED_PURPLE, DRV_LED_FLASH); 
+					drv_led_set(DRV_LED_RED, DRV_LED_FLASH); 
 					eventMessage.sysEvent = SYS_EVENT_LOW_BATTERY;
 					if(mgr_eventQueue != NULL)
 					{
-						if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
-						{
-							//this is an error, we should log it.
-						}
+						dat_sendDebugMsgToDataBoard("PwrBrdMsg:Battery Level Empty\r\n");
+						//dont send the message 
+						//if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
+						//{
+							////this is an error, we should log it.
+						//}
 					}					
 				}
 				else if(chargeLevel <= BATTERY_PERCENT_CRITICAL)
 				{
-					drv_led_set(DRV_LED_PURPLE, DRV_LED_FLASH); 
+					drv_led_set(DRV_LED_RED, DRV_LED_FLASH); 
 				}				
 				else if(chargeLevel <= BATTERY_PERCENT_LOW)
 				{
 					//battery is low, we need to indicate that to the user
-					drv_led_set(DRV_LED_PURPLE, DRV_LED_SOLID);
+					
+					drv_led_set(DRV_LED_RED, DRV_LED_SOLID);
 				}
 				else if(chargeLevel > BATTERY_PERCENT_LOW)
 				{
 					//battery level is good. no need to indicate anything. 
+					//drv_led_set(DRV_LED_BLUE,DRV_LED_SOLID);					
 					drv_led_set(DRV_LED_OFF,DRV_LED_SOLID);
 				}				
 			}
 		}			
-		vTaskDelay(500); 
+		vTaskDelay(250); 
 	}	
 }
 

@@ -93,7 +93,7 @@ static void configure_console(void)
 	};
 
 	/* Configure console UART. */
-	stdio_serial_init(UART1, &usart_serial_options);
+	stdio_serial_init(UART0, &usart_serial_options);
 	/* Specify that stdout should not be buffered. */
 	#if defined(__GNUC__)
 		setbuf(stdout, NULL);

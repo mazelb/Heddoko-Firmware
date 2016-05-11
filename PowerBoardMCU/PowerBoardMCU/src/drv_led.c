@@ -54,12 +54,6 @@ void vLedTimerCallback( xTimerHandle xTimer )
 			
 		}
 	}
-	else
-	{
-		//usually shouldn't end up here
-		//if it does the timer was not stopped while initializing led to SOLID state
-		xTimerStop(LedTimer, 0);
-	}
 }
 int timerId = 0;
 //store the led configuration

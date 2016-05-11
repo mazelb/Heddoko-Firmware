@@ -12,6 +12,7 @@
 #include "dat_dataRouter.h"
 #include "cmd_commandProc.h"
 #include "udi_cdc.h"
+#include "drv_gpio.h"
 
 
 dat_dataRouterConfig_t* dataRouterConfig; 
@@ -44,6 +45,7 @@ void dat_task_dataRouter(void *pvParameters)
 {
 	dataRouterConfig = (dat_dataRouterConfig_t*)pvParameters; 
 	cmd_commandPacket_t daughterBoardPacket, usbPacket;
+	//mgr_eventMessage_t eventMessage; 
 	//initialize the packets
 	cmd_initPacketStructure(&daughterBoardPacket);
 	daughterBoardPacket.packetSource = CMD_COMMAND_SOURCE_DAUGHTER; 
@@ -69,12 +71,34 @@ void dat_task_dataRouter(void *pvParameters)
 		//try to read byte from databoard mcu
 		if(drv_uart_getChar(dataRouterConfig->dataBoardUart, &receivedByte) == STATUS_PASS)
 		{
-			//if byte exists, pass through to the daughter board and USB (if connected)
-			drv_uart_putChar(dataRouterConfig->daughterBoard, receivedByte); 
-			if(udi_cdc_is_tx_ready() == true)
+			if(receivedByte == POWER_BOARD_CMD_TOGGLE_JACKS)
 			{
-				udi_cdc_putc(receivedByte); 
-			} 
+				drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_HIGH);
+				drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
+				vTaskDelay(500);
+				drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
+				drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);
+			}
+			//else if(receivedByte == 0xBB) //power down complete command
+			//{
+				//eventMessage.sysEvent = SYS_EVENT_POWER_DOWN_COMPLETE;
+				//if(mgr_eventQueue != NULL)
+				//{
+					//if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
+					//{
+						////this is an error, we should log it.
+					//}
+				//}
+			//}
+			else
+			{			
+				//if byte exists, pass through to the daughter board and USB (if connected)
+				drv_uart_putChar(dataRouterConfig->daughterBoard, receivedByte); 
+				if(udi_cdc_is_tx_ready() == true)
+				{
+					udi_cdc_putc(receivedByte); 
+				}
+			}
 			
 		}
 		else
@@ -147,9 +171,16 @@ void dat_task_dataRouter(void *pvParameters)
 		
 	}	
 }
+//note... for now it must be prepended with "PwrBrdMsg:"
+status_t dat_sendDebugMsgToDataBoard(char* debugString)
+{
+	//possibly add some sort of error handling here.	
+	drv_uart_putString(dataRouterConfig->dataBoardUart, debugString);
+	return STATUS_PASS;
+}
 
 status_t dat_sendPacketToDataBoard(cmd_commandPacket_t* packet)
-{
+{ 
 	//possibly add some sort of error handling here.
 	drv_uart_putData(dataRouterConfig->dataBoardUart, packet->packetData, packet->packetSize);	
 	return STATUS_PASS;	

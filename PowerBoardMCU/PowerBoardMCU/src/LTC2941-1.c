@@ -8,7 +8,7 @@
 #include "LTC2941-1.h"
 #include "common.h"
 
-#define CHARGE_EMPTY_VALUE 0x4B03
+
 status_t ltc2941Init(slave_twi_config_t* slaveConfig)
 {
 	status_t status = STATUS_FAIL;

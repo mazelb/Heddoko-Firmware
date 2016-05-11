@@ -21,6 +21,7 @@ static void drv_gpio_int_en2(uint32_t ul_id, uint32_t ul_mask);
 static void drv_gpio_int_lbo(uint32_t ul_id, uint32_t ul_mask);
 static void drv_gpio_int_stat(uint32_t ul_id, uint32_t ul_mask);
 static void drv_gpio_int_cd(uint32_t ul_id, uint32_t ul_mask);
+static void drv_gpio_int_usb(uint32_t ul_id, uint32_t ul_mask);
 
 drv_gpio_config_t gpioConfig[] = 
 {
@@ -36,7 +37,7 @@ drv_gpio_config_t gpioConfig[] =
 	{DRV_GPIO_ID_PIN_CHRG_STAT1	, DRV_GPIO_PIN_MODE_INPUT,   DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_NONE    ,	NULL,			TRUE,	TRUE,			0,	DRV_GPIO_PIN_STATE_LOW},
 	{DRV_GPIO_ID_PIN_GPIO,		  DRV_GPIO_PIN_MODE_OUTPUT,  DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_NONE	 ,	NULL,			TRUE,	TRUE,			0,	DRV_GPIO_PIN_STATE_HIGH},
 	{DRV_GPIO_ID_PIN_PWR_BTN,	  DRV_GPIO_PIN_MODE_INPUT,   DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_LOW_EDGE,	drv_gpio_int_pw,TRUE,	TRUE,			0,	DRV_GPIO_PIN_STATE_HIGH},
-	{DRV_GPIO_ID_PIN_USB_DET,	  DRV_GPIO_PIN_MODE_INPUT,   DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_NONE    ,	NULL,			FALSE,	TRUE,			0,	DRV_GPIO_PIN_STATE_HIGH},
+	{DRV_GPIO_ID_PIN_USB_DET,	  DRV_GPIO_PIN_MODE_INPUT,   DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_HIGH_EDGE    ,	drv_gpio_int_usb,FALSE,	TRUE,			0,	DRV_GPIO_PIN_STATE_HIGH},
 	{DRV_GPIO_ID_PIN_LED_BLUE,	  DRV_GPIO_PIN_MODE_OUTPUT,  DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_NONE    ,	NULL,			FALSE,	FALSE,			0,	DRV_GPIO_PIN_STATE_HIGH},
 	{DRV_GPIO_ID_PIN_LED_GREEN,	  DRV_GPIO_PIN_MODE_OUTPUT,  DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_NONE    ,	NULL,			FALSE,	FALSE,			0,	DRV_GPIO_PIN_STATE_HIGH},
 	{DRV_GPIO_ID_PIN_LED_RED,	  DRV_GPIO_PIN_MODE_OUTPUT,  DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_NONE    ,	NULL,			FALSE,	FALSE,			0,	DRV_GPIO_PIN_STATE_HIGH}
@@ -446,6 +447,25 @@ static void drv_gpio_int_dc2(uint32_t ul_id, uint32_t ul_mask)
 	if (PinMask == ul_mask)
 	{
 		gpioConfig[DRV_GPIO_PIN_JC2_DET].gpioSetFlag = 1;
+	}
+	pio_enable_interrupt(PIOA, PinMask);
+}
+
+
+/***********************************************************************************************
+ * drv_gpio_int_usb(uint32_t ul_id, uint32_t ul_mask)
+ * @brief Interrupt routine for Jack-2 Detect
+ * @param uint32_t ul_id, uint32_t ul_mask
+ * @return 
+ ***********************************************************************************************/
+static void drv_gpio_int_usb(uint32_t ul_id, uint32_t ul_mask)
+{
+	uint32_t PinMask = pio_get_pin_group_mask(gpioConfig[DRV_GPIO_PIN_USB_DET].pinId);
+	pio_disable_interrupt(PIOA, PinMask);
+	uint32_t ReadIsr = PIOA->PIO_ISR;
+	if (PinMask == ul_mask)
+	{
+		gpioConfig[DRV_GPIO_PIN_USB_DET].gpioSetFlag = 1;
 	}
 	pio_enable_interrupt(PIOA, PinMask);
 }
