@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.IO.Ports;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Threading;
+using ProtoBuf;
+using heddoko;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
 
 namespace PacketTester
 {
@@ -24,7 +23,15 @@ namespace PacketTester
         private bool streamDataEnabled = false;
         private long startTime = 0;
         private UInt16 graphIndex = 0;
-        private const UInt16 graphMaxSize = 100; 
+        private const UInt16 graphMaxSize = 100;
+
+        private bool streamDataToChartEnabled = false;
+
+        enum OutputType { legacyFrame, QuaternionFrame};
+        OutputType streamOutputType = OutputType.QuaternionFrame; 
+        string dataStreamFilePath = "";
+        int selectedDataType = 0; 
+
 
         public mainForm()
         {
@@ -45,8 +52,24 @@ namespace PacketTester
                 }
             }
         }
-        
-        public string createAsciiFrame(ImuFrame[] frameArray, bool[] receivedFlags)
+        public void streamDataToChartThread()
+        {
+            startTime = (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond);
+            this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qx"].Points.Clear()));
+            this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qy"].Points.Clear()));
+            this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qz"].Points.Clear()));
+            this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qw"].Points.Clear()));
+
+            graphIndex = 0;
+            while (streamDataToChartEnabled)
+            {
+                sendUpdateCommand();
+                Thread.Sleep(5);
+                sendGetFrameCommand((byte)nud_SelectedImu.Value);
+                Thread.Sleep(5);
+            }
+        }
+        public string createLegacyFrame(ImuFrame[] frameArray, bool[] receivedFlags)
         {
             StringBuilder strBuilder = new StringBuilder();
             //so we need to create a frame compatible with the old system. 
@@ -60,7 +83,6 @@ namespace PacketTester
                     receivedMask += (UInt16)(1 << i);
                 }
             }
-
             strBuilder.Append(timeStamp.ToString("D10") + ",");
             strBuilder.Append(receivedMask.ToString("x4") + ",");
             for (int i = 0; i< frameArray.Length; i++)
@@ -75,13 +97,36 @@ namespace PacketTester
 
             return strBuilder.ToString();
         }
+        public string createQuaternionFrame(ImuFrame[] frameArray, bool[] receivedFlags)
+        {
+            StringBuilder strBuilder = new StringBuilder();
+            //so we need to create a frame compatible with the old system.             
+            long timeStamp = (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond) - startTime;
+            UInt16 receivedMask = 0;
+            for (int i = 0; i < receivedFlags.Length; i++)
+            {
+                if (receivedFlags[i])
+                {
+                    receivedMask += (UInt16)(1 << i);
+                }
+            }
+            strBuilder.Append(timeStamp.ToString("D10") + ",");
+            strBuilder.Append(receivedMask.ToString("x4") + ",");
+            for (int i = 0; i < frameArray.Length; i++)
+            {
+                strBuilder.Append(frameArray[i].getQuaternionString() + ",");
+            }
+            for (int i = 0; i < 9 - frameArray.Length; i++)
+            {
+                strBuilder.Append("0000;0000;0000,");
+            }
+            strBuilder.Append("\r\n");
+
+            return strBuilder.ToString();
+        }
         public void streamDataThread()
         {
             startTime = (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond);
-            this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qx"].Points.Clear()));
-            this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qy"].Points.Clear()));
-            this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qz"].Points.Clear()));
-            this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qw"].Points.Clear()));
             const UInt16 numberOfSensors = 9;
             graphIndex = 0;
             //close the other listenning thread for the queue
@@ -95,7 +140,20 @@ namespace PacketTester
             long minTime = 100;
             long interval = 0;
             bool[] frameReceived = new bool[numberOfSensors];
-            RawPacket framePacket = new RawPacket(); 
+            RawPacket framePacket = new RawPacket();
+            //open file stream
+            FileStream outputFile;
+            try
+            {
+                debugMessageQueue.Enqueue(String.Format("Openning file: {0}\r\n", dataStreamFilePath));
+                outputFile = File.Open(dataStreamFilePath, FileMode.Create);                
+            }
+            catch
+            {
+                debugMessageQueue.Enqueue(String.Format("Failed to create file: {0}\r\n", dataStreamFilePath));
+                return;
+            }
+
             while (streamDataEnabled)
             {
                 DateTime startGetFrame = DateTime.Now;
@@ -110,7 +168,8 @@ namespace PacketTester
                     {
                         if (packetQueue.TryDequeue(out framePacket))
                         {
-                            if(frameArray[i].ParseImuFrame(framePacket, (byte)i))
+
+                            if (frameArray[i].ParseImuFrame(framePacket, (byte)i))
                             {
                                 //we got the packet.
                                 frameReceived[i] = true;
@@ -132,12 +191,36 @@ namespace PacketTester
                     maxTime = interval; 
                 }
                 //create a frame from all the received data
+                string frameString = "";
+                if (streamOutputType == OutputType.legacyFrame)
+                {
+                    frameString = createLegacyFrame(frameArray, frameReceived);
+                }
+                else
+                {
+                    frameString = createQuaternionFrame(frameArray, frameReceived);
+                }
+
                 if (forwardSerialPort.IsOpen)
                 {
-                    forwardSerialPort.Write(createAsciiFrame(frameArray, frameReceived));
+                    forwardSerialPort.Write(frameString);
+                }
+                try
+                {
+                    if (outputFile.CanWrite)
+                    {
+                        outputFile.Write(ASCIIEncoding.ASCII.GetBytes(frameString), 0, frameString.Length);
+                    }
+                }
+                catch
+                {
+                    debugMessageQueue.Enqueue(String.Format("Failed to write file\r\n"));
+                    return;
                 }
                 //Thread.Sleep(1); 
             }
+            debugMessageQueue.Enqueue(String.Format("Stream Closed Wrote {0} Bytes\r\n",outputFile.Length));
+            outputFile.Close(); 
             //start up other listenning thread again
             processPacketQueueEnabled = true;
             Thread packetProcessorThread = new Thread(processPacketThread);
@@ -155,7 +238,7 @@ namespace PacketTester
             strBuilder.Append("0x");
             for(int i = 0; i < 16; i++)
             {
-                strBuilder.Append(string.Format("{0}", packet.Payload[i + 2]));
+                strBuilder.Append(packet.Payload[i + 2].ToString("X2"));
             }
             return strBuilder.ToString();
         }
@@ -179,19 +262,80 @@ namespace PacketTester
         }
         private void updateChart(ImuFrame frame)
         {
-            this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qx"].Points.AddY((double)frame.Quaternion_x)));
-            this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qy"].Points.AddY((double)frame.Quaternion_y)));
-            this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qz"].Points.AddY((double)frame.Quaternion_z)));
-            this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qw"].Points.AddY((double)frame.Quaternion_w)));
+            if(selectedDataType == 0 ) //Quaternions
+            {
+                this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qx"].Points.AddY((double)frame.Quaternion_x)));
+                this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qy"].Points.AddY((double)frame.Quaternion_y)));
+                this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qz"].Points.AddY((double)frame.Quaternion_z)));
+                this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qw"].Points.AddY((double)frame.Quaternion_w)));
+            }
+            else if(selectedDataType == 1) //Magnetic
+            {
+                this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qx"].Points.AddY(System.Convert.ToDouble(frame.Magnetic_x))));
+                this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qy"].Points.AddY(System.Convert.ToDouble(frame.Magnetic_y))));
+                this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qz"].Points.AddY(System.Convert.ToDouble(frame.Magnetic_z))));
+            }
+            else if (selectedDataType == 2) //Acceleration
+            {
+                this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qx"].Points.AddY(System.Convert.ToDouble(frame.Acceleration_x))));
+                this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qy"].Points.AddY(System.Convert.ToDouble(frame.Acceleration_y))));
+                this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qz"].Points.AddY(System.Convert.ToDouble(frame.Acceleration_z))));
+            }
+            else if (selectedDataType == 3) //Rotation
+            {
+                this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qx"].Points.AddY(System.Convert.ToDouble(frame.Rotation_x))));
+                this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qy"].Points.AddY(System.Convert.ToDouble(frame.Rotation_y))));
+                this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qz"].Points.AddY(System.Convert.ToDouble(frame.Rotation_z))));
+            }
+
             if (chrt_dataChart.Series["Qx"].Points.Count > graphMaxSize)
             {
                 this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qx"].Points.RemoveAt(0)));
                 this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qy"].Points.RemoveAt(0)));
                 this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qz"].Points.RemoveAt(0)));
-                this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qw"].Points.RemoveAt(0)));
+                if (selectedDataType == 0)
+                {
+                    this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qw"].Points.RemoveAt(0)));
+                }
 
             }
         }
+        private void processProtoPacket(Packet packet)
+        {
+            switch(packet.type)
+            {
+                case PacketType.BrainPackVersionResponse:
+                    if (packet.brainPackVersionSpecified)
+                    {
+                        debugMessageQueue.Enqueue("Received Version Response:" +
+                            packet.brainPackVersion + "\r\n");
+                    }
+                    else
+                    {
+                        debugMessageQueue.Enqueue("Error Version not found\r\n");
+                    }
+                    break;
+                case PacketType.BatteryChargeResponse:
+                    debugMessageQueue.Enqueue("Received Battery Charge Response:" +
+                        packet.batteryCharge.ToString() + "\r\n");
+                    break;
+                case PacketType.StateResponse:
+                    break;
+                case PacketType.DataFrame:
+                    if(packet.fullDataFrame != null)
+                    {
+                        debugMessageQueue.Enqueue("Received Data Frame From Timestamp:" +
+                        packet.fullDataFrame.timeStamp.ToString() + "\r\n");
+                        for(int i = 0; i < packet.fullDataFrame.imuDataFrame.Count; i++)
+                        {
+                            //do stuff for each frame received. 
+                        }
+                    }
+                    break;
+            }
+
+        }
+
         private void processPacket(RawPacket packet)
         {
             //check that the packet comes from an IMU sensor
@@ -219,6 +363,20 @@ namespace PacketTester
                     default:
                         break;
                 }
+            }
+            else if(packet.Payload[0] == 0x04) //this is a protocol buffer file. 
+            {
+                Stream stream = new MemoryStream(packet.Payload,1,packet.PayloadSize-1);
+                try
+                {
+                    Packet protoPacket = Serializer.Deserialize<Packet>(stream);
+                    processProtoPacket(protoPacket); 
+                }
+                catch
+                {
+                    debugMessageQueue.Enqueue("Failed to deserialize packet\r\n");
+                }
+                
             }
             
         }
@@ -257,6 +415,13 @@ namespace PacketTester
             Thread packetProcessorThread = new Thread(processPacketThread);
             packetProcessorThread.Start();
 
+            string[] frameFormats = { "Legacy Frame", "Quaternion Frame" };
+            cb_OutputFormat.Items.AddRange(frameFormats);
+            cb_OutputFormat.SelectedIndex = 1;
+
+            string[] dataTypes = { "Quaternion", "Magnetic","Acceleration", "Rotation" };
+            cb_dataType.Items.AddRange(dataTypes);
+            cb_dataType.SelectedIndex = 0;
 
         }
 
@@ -307,8 +472,7 @@ namespace PacketTester
         RawPacket packet = new RawPacket();
         private void serialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-            
-            while(serialPort.BytesToRead > 0)
+            while (serialPort.BytesToRead > 0)
             {
                 int receivedByte = serialPort.ReadByte();
                 if (receivedByte != -1)
@@ -355,23 +519,13 @@ namespace PacketTester
             }
         }
 
-        private void btn_SendCmd_Click(object sender, EventArgs e)
-        {
-            if (serialPort.IsOpen)
-            {
-                if (tb_cmd.Text.Length > 0)
-                {
-                    byte[] payload = Encoding.ASCII.GetBytes(tb_cmd.Text);
-                    sendPacket(payload, (UInt16)payload.Length); 
-                }
-            }
-        }
 
         private void mainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             //stop debug thread
             processDebugThreadEnabled = false;
-            processPacketQueueEnabled = false; 
+            processPacketQueueEnabled = false;
+            EnableSocketQueue = false;
             //close the serial port
             if (serialPort.IsOpen)
             {
@@ -443,37 +597,13 @@ namespace PacketTester
         {
             if(cb_enableStream.Checked)
             {
-                Thread streamThread = new Thread(streamDataThread);
-                streamDataEnabled = true;
-                //open the serial port
-                forwardSerialPort.PortName = cb_forwardPorts.Items[cb_forwardPorts.SelectedIndex].ToString();
-                try
-                {
-                    forwardSerialPort.Open();
-                    tb_Console.AppendText("Forward Port: " + forwardSerialPort.PortName + " Open\r\n");
-                }
-                catch (Exception ex)
-                {
-                    tb_Console.AppendText("Failed to forward open Port: " + forwardSerialPort.PortName + " \r\n");
-                    tb_Console.AppendText("Exception " + ex.Message + " \r\n");
-                }
+                Thread streamThread = new Thread(streamDataToChartThread);
+                streamDataToChartEnabled = true;
                 streamThread.Start(); 
             }
             else
             {
-                streamDataEnabled = false;
-                try
-                {
-                    if (forwardSerialPort.IsOpen)
-                    {
-                        forwardSerialPort.Close();
-                        tb_Console.AppendText("Forward Port: " + forwardSerialPort.PortName + " Closed\r\n");
-                    }
-                }
-                catch
-                {
-                    tb_Console.AppendText("Failed to close Port: " + forwardSerialPort.PortName + "\r\n");
-                }
+                streamDataToChartEnabled = false;
             }
         }
 
@@ -521,6 +651,240 @@ namespace PacketTester
         private void btn_clearScreen_Click(object sender, EventArgs e)
         {
             tb_Console.Clear();
+        }
+        private bool EnableSocketQueue = false;
+        private void udpSocketClientProcess()
+        {
+            UdpClient udpClient = new UdpClient(6667);
+            try
+            {
+                IPAddress ipAddress = IPAddress.Parse("192.168.2.1");//ipHostInfo.AddressList[0];
+                IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
+                //udpClient.Connect(ipAddress, 6667);
+                //IPEndPoint object will allow us to read datagrams sent from the IP address we want. 
+                //IPEndPoint RemoteIpEndPoint = new IPEndPoint(ipAddress, 0);
+                debugMessageQueue.Enqueue(String.Format("Socket connected"));
+                
+                while (EnableSocketQueue)
+                {
+                    // Blocks until a message returns on this socket from a remote host.
+                    byte[] receivedBytes = udpClient.Receive(ref remoteEP);
+                    if (receivedBytes.Length > 0)
+                    {
+                        //process the byte
+                        for(int i = 0; i < receivedBytes.Length; i++)
+                        {
+                            byte newByte = receivedBytes[i];
+                            int bytesReceived = packet.BytesReceived + 1;
+                            PacketStatus status = packet.processByte(receivedBytes[i]);
+                            switch (status)
+                            {
+                                case PacketStatus.PacketComplete:
+                                    //debugMessageQueue.Enqueue(String.Format("{0} Packet Received {1} bytes\r\n", (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond), packet.PayloadSize));
+                                    RawPacket packetCopy = new RawPacket(packet);
+                                    packetQueue.Enqueue(packetCopy);
+                                    packet.resetPacket();
+                                    break;
+                                case PacketStatus.PacketError:
+                                    if (cb_logErrors.Checked)
+                                    {
+                                        debugMessageQueue.Enqueue(String.Format("{0} Packet ERROR! {1} bytes received\r\n", (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond), bytesReceived));
+                                    }
+                                    packet.resetPacket();
+                                    break;
+                                case PacketStatus.Processing:
+                                case PacketStatus.newPacketDetected:
+                                    break;
+                            }
+                        }
+                    }
+                }
+                debugMessageQueue.Enqueue("Socket Closed\r\n");
+                debugMessageQueue.Enqueue("This message was sent from " +
+                                            remoteEP.Address.ToString() +
+                                            " on their port number " +
+                                            remoteEP.Port.ToString());
+                udpClient.Close();
+
+            }
+            catch (Exception e)
+            {
+                debugMessageQueue.Enqueue(e.ToString());
+                
+            }
+            udpClient.Close();
+        }
+        private void socketClientProcess()
+        {
+            try
+            {
+                // Establish the remote endpoint for the socket.
+                //IPHostEntry ipHostInfo =  Dns.GetHostEntry("192.168.1.1");
+                IPAddress ipAddress = IPAddress.Parse(mtb_NetAddress.Text);//ipHostInfo.AddressList[0];
+                IPEndPoint remoteEP = new IPEndPoint(ipAddress, 6666);
+
+                // Create a TCP/IP  socket.
+                Socket sender = new Socket(AddressFamily.InterNetwork,
+                    SocketType.Stream, ProtocolType.Tcp);
+                // Connect the socket to the remote endpoint. Catch any errors.
+                try
+                {
+                    sender.Connect(remoteEP);
+                    debugMessageQueue.Enqueue(String.Format("Socket connected to {0}",
+    sender.RemoteEndPoint.ToString()));
+                    byte[] receivedByte = new byte[1]; 
+                    while(sender.Connected && EnableSocketQueue)
+                    {                       
+                        int receviedCount = sender.Receive(receivedByte);
+                        if (receviedCount != 0)
+                        {
+                            //process the byte
+                            byte newByte = receivedByte[0];
+                            int bytesReceived = packet.BytesReceived + 1;
+                            PacketStatus status = packet.processByte(receivedByte[0]);
+                            switch (status)
+                            {
+                                case PacketStatus.PacketComplete:
+                                    //debugMessageQueue.Enqueue(String.Format("{0} Packet Received {1} bytes\r\n", (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond), packet.PayloadSize));
+                                    RawPacket packetCopy = new RawPacket(packet);
+                                    packetQueue.Enqueue(packetCopy);
+                                    packet.resetPacket();
+                                    break;
+                                case PacketStatus.PacketError:
+                                    if (cb_logErrors.Checked)
+                                    {
+                                        debugMessageQueue.Enqueue(String.Format("{0} Packet ERROR! {1} bytes received\r\n", (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond), bytesReceived));
+                                    }
+                                    packet.resetPacket();
+                                    break;
+                                case PacketStatus.Processing:
+                                case PacketStatus.newPacketDetected:
+                                    break;
+                            }
+                        }
+
+                    }
+                    debugMessageQueue.Enqueue("Socket Closed\r\n");
+                    // Release the socket.
+                    sender.Shutdown(SocketShutdown.Both);
+                    sender.Close();
+
+                }
+                catch (ArgumentNullException ane)
+                {
+                    debugMessageQueue.Enqueue(String.Format("ArgumentNullException : {0}", ane.ToString()));
+                }
+                catch (SocketException se)
+                {
+                    debugMessageQueue.Enqueue(String.Format("SocketException : {0}", se.ToString()));
+                }
+                catch (Exception e)
+                {
+                    debugMessageQueue.Enqueue(String.Format("Unexpected exception : {0}", e.ToString()));
+                }
+
+            }
+            catch (Exception e)
+            {
+                debugMessageQueue.Enqueue(e.ToString());
+            }
+        }
+        private void btn_connectSocket_Click(object sender, EventArgs e)
+        {
+            EnableSocketQueue = true;
+            if(cb_udpSelected.Checked)
+            {
+                Thread socketClientThread = new Thread(udpSocketClientProcess);
+                socketClientThread.Start();
+            }
+            else
+            {
+                Thread socketClientThread =new Thread(socketClientProcess);
+                socketClientThread.Start();
+            }
+            
+            
+        }
+
+        private void btn_disconnectSock_Click(object sender, EventArgs e)
+        {
+            EnableSocketQueue = false;
+        }
+
+        private void btn_startStream_Click(object sender, EventArgs e)
+        {
+            if (!streamDataEnabled)
+            {
+                if (sfd_saveFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    dataStreamFilePath = sfd_saveFileDialog.FileName;
+                    Thread streamThread = new Thread(streamDataThread);
+                    streamOutputType = (OutputType)cb_OutputFormat.SelectedIndex;
+
+                    streamDataEnabled = true;
+                    //open the serial port
+                    if (cb_EnableFowardPort.Checked)
+                    {
+                        forwardSerialPort.PortName = cb_forwardPorts.Items[cb_forwardPorts.SelectedIndex].ToString();
+                        try
+                        {
+                            forwardSerialPort.Open();
+                            tb_Console.AppendText("Forward Port: " + forwardSerialPort.PortName + " Open\r\n");
+                        }
+                        catch (Exception ex)
+                        {
+                            tb_Console.AppendText("Failed to forward open Port: " + forwardSerialPort.PortName + " \r\n");
+                            tb_Console.AppendText("Exception " + ex.Message + " \r\n");
+                        }
+                    }
+                    streamThread.Start();
+                }
+            }
+        }
+
+        private void btn_StopStreaming_Click(object sender, EventArgs e)
+        {
+            //set the flag to disable the streaming thread.
+            if (streamDataEnabled)
+            {
+                streamDataEnabled = false; 
+
+            }
+            if(forwardSerialPort.IsOpen)
+            {
+                forwardSerialPort.Close();
+            }
+        }
+
+        private void cb_dataType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            //clear the data
+            this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qx"].Points.Clear()));
+            this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qy"].Points.Clear()));
+            this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qz"].Points.Clear()));
+            this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Qw"].Points.Clear()));
+            //Change the range to make more sense
+
+            if(cb_dataType.SelectedIndex < 0 || cb_dataType.SelectedIndex > 3)
+            {
+                return; 
+            }
+            selectedDataType = cb_dataType.SelectedIndex;
+            if (cb_dataType.SelectedIndex == 0) //quaternions
+            {
+                chrt_dataChart.ChartAreas[0].AxisY.Maximum = 1.1;
+                chrt_dataChart.ChartAreas[0].AxisY.Minimum = -1.1;
+                chrt_dataChart.ChartAreas[0].AxisY.RoundAxisValues();
+            }
+            else
+            {
+                chrt_dataChart.ChartAreas[0].AxisY.Maximum = 100;
+                chrt_dataChart.ChartAreas[0].AxisY.Minimum = -100;
+                chrt_dataChart.ChartAreas[0].AxisY.RoundAxisValues();
+            }
+
+
+
         }
     }
 }

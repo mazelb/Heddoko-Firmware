@@ -13,15 +13,15 @@ namespace PacketTester
         public float Quaternion_y;
         public float Quaternion_z;
         public float Quaternion_w;
-        public Int16 Magnetic_x;
-        public Int16 Magnetic_y;
-        public Int16 Magnetic_z;
-        public Int16 Acceleration_x;
-        public Int16 Acceleration_y;
-        public Int16 Acceleration_z;
-        public Int16 Rotation_x;
-        public Int16 Rotation_y;
-        public Int16 Rotation_z;
+        public UInt16 Magnetic_x;
+        public UInt16 Magnetic_y;
+        public UInt16 Magnetic_z;
+        public UInt16 Acceleration_x;
+        public UInt16 Acceleration_y;
+        public UInt16 Acceleration_z;
+        public UInt16 Rotation_x;
+        public UInt16 Rotation_y;
+        public UInt16 Rotation_z;
 
         public ImuFrame()
         {
@@ -49,26 +49,21 @@ namespace PacketTester
                 Quaternion_y = BitConverter.ToSingle(packet.Payload, 4 + 3);
                 Quaternion_z = BitConverter.ToSingle(packet.Payload, 8 + 3);
                 Quaternion_w = BitConverter.ToSingle(packet.Payload, 12 + 3);
-                Magnetic_x = BitConverter.ToInt16(packet.Payload, 16 + 3);
-                Magnetic_y = BitConverter.ToInt16(packet.Payload, 18 + 3);
-                Magnetic_z = BitConverter.ToInt16(packet.Payload, 20 + 3);
-                Acceleration_x = BitConverter.ToInt16(packet.Payload, 22 + 3);
-                Acceleration_y = BitConverter.ToInt16(packet.Payload, 24 + 3);
-                Acceleration_z = BitConverter.ToInt16(packet.Payload, 26 + 3);
-                Rotation_x = BitConverter.ToInt16(packet.Payload, 28 + 3);
-                Rotation_y = BitConverter.ToInt16(packet.Payload, 30 + 3);
-                Rotation_z = BitConverter.ToInt16(packet.Payload, 32 + 3);
+                Magnetic_x = BitConverter.ToUInt16(packet.Payload, 16 + 3);
+                Magnetic_y = BitConverter.ToUInt16(packet.Payload, 18 + 3);
+                Magnetic_z = BitConverter.ToUInt16(packet.Payload, 20 + 3);
+                Acceleration_x = BitConverter.ToUInt16(packet.Payload, 22 + 3);
+                Acceleration_y = BitConverter.ToUInt16(packet.Payload, 24 + 3);
+                Acceleration_z = BitConverter.ToUInt16(packet.Payload, 26 + 3);
+                Rotation_x = BitConverter.ToUInt16(packet.Payload, 28 + 3);
+                Rotation_y = BitConverter.ToUInt16(packet.Payload, 30 + 3);
+                Rotation_z = BitConverter.ToUInt16(packet.Payload, 32 + 3);
             }
         }
         private string swapHexBytes(string hexString)
         {
             return hexString[2].ToString() + hexString[3].ToString() + hexString[0].ToString() + hexString[1].ToString();
         }
-        public string getQuaternionString()
-        {
-            return Quaternion_x.ToString("F4") + ";" + Quaternion_y.ToString("F4") + ";" + Quaternion_z.ToString("F4") + ";" + Quaternion_w.ToString("F4");
-        }
-
         public string getAsciiString()
         {            
             //Quaternion_x is heading/yaw
@@ -106,15 +101,15 @@ namespace PacketTester
                         Quaternion_y = BitConverter.ToSingle(packet.Payload, 4 + 3);
                         Quaternion_z = BitConverter.ToSingle(packet.Payload, 8 + 3);
                         Quaternion_w = BitConverter.ToSingle(packet.Payload, 12 + 3);
-                        Magnetic_x = BitConverter.ToInt16(packet.Payload, 16 + 3);
-                        Magnetic_y = BitConverter.ToInt16(packet.Payload, 18 + 3);
-                        Magnetic_z = BitConverter.ToInt16(packet.Payload, 20 + 3);
-                        Acceleration_x = BitConverter.ToInt16(packet.Payload, 22 + 3);
-                        Acceleration_y = BitConverter.ToInt16(packet.Payload, 24 + 3);
-                        Acceleration_z = BitConverter.ToInt16(packet.Payload, 26 + 3);
-                        Rotation_x = BitConverter.ToInt16(packet.Payload, 28 + 3);
-                        Rotation_y = BitConverter.ToInt16(packet.Payload, 30 + 3);
-                        Rotation_z = BitConverter.ToInt16(packet.Payload, 32 + 3);
+                        Magnetic_x = BitConverter.ToUInt16(packet.Payload, 16 + 3);
+                        Magnetic_y = BitConverter.ToUInt16(packet.Payload, 18 + 3);
+                        Magnetic_z = BitConverter.ToUInt16(packet.Payload, 20 + 3);
+                        Acceleration_x = BitConverter.ToUInt16(packet.Payload, 22 + 3);
+                        Acceleration_y = BitConverter.ToUInt16(packet.Payload, 24 + 3);
+                        Acceleration_z = BitConverter.ToUInt16(packet.Payload, 26 + 3);
+                        Rotation_x = BitConverter.ToUInt16(packet.Payload, 28 + 3);
+                        Rotation_y = BitConverter.ToUInt16(packet.Payload, 30 + 3);
+                        Rotation_z = BitConverter.ToUInt16(packet.Payload, 32 + 3);
                         retVal = true;
                     }
                 }

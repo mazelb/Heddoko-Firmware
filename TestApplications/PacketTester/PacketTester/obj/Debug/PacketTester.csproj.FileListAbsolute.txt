@@ -7,3 +7,6 @@ C:\Working Directory\Heddoko-src\Testing\PacketTester\PacketTester\bin\Debug\Pac
 C:\Working Directory\Heddoko-src\Testing\PacketTester\PacketTester\bin\Debug\PacketTester.pdb
 C:\Working Directory\Heddoko-src\Testing\PacketTester\PacketTester\obj\Debug\PacketTester.exe
 C:\Working Directory\Heddoko-src\Testing\PacketTester\PacketTester\obj\Debug\PacketTester.pdb
+C:\Working Directory\Heddoko-src\Testing\PacketTester\PacketTester\bin\Debug\protobuf-net.dll
+C:\Working Directory\Heddoko-src\Testing\PacketTester\PacketTester\bin\Debug\protobuf-net.pdb
+C:\Working Directory\Heddoko-src\Testing\PacketTester\PacketTester\bin\Debug\protobuf-net.xml
