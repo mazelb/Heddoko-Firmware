@@ -29,17 +29,16 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
-            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
-            System.Windows.Forms.DataVisualization.Charting.Series series2 = new System.Windows.Forms.DataVisualization.Charting.Series();
-            System.Windows.Forms.DataVisualization.Charting.Series series3 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Legend legend2 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+            System.Windows.Forms.DataVisualization.Charting.Series series4 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.Series series5 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.Series series6 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.serialPort = new System.IO.Ports.SerialPort(this.components);
             this.cb_serialPorts = new System.Windows.Forms.ComboBox();
             this.l_COM_Port = new System.Windows.Forms.Label();
             this.bnt_Connect = new System.Windows.Forms.Button();
             this.btn_SendCmd = new System.Windows.Forms.Button();
-            this.tb_cmd = new System.Windows.Forms.TextBox();
             this.btn_Analyze = new System.Windows.Forms.Button();
             this.ofd_AnalyzeFile = new System.Windows.Forms.OpenFileDialog();
             this.bindingSource1 = new System.Windows.Forms.BindingSource(this.components);
@@ -73,6 +72,8 @@
             this.btn_EnterBootloader = new System.Windows.Forms.Button();
             this.btn_exitBootloader = new System.Windows.Forms.Button();
             this.btn_Convert = new System.Windows.Forms.Button();
+            this.btn_CheckVersion = new System.Windows.Forms.Button();
+            this.cb_commands = new System.Windows.Forms.ComboBox();
             ((System.ComponentModel.ISupportInitialize)(this.bindingSource1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dgv_SensorStats)).BeginInit();
             this.tabControl1.SuspendLayout();
@@ -127,14 +128,6 @@
             this.btn_SendCmd.Text = "Send Command";
             this.btn_SendCmd.UseVisualStyleBackColor = true;
             this.btn_SendCmd.Click += new System.EventHandler(this.btn_SendCmd_Click);
-            // 
-            // tb_cmd
-            // 
-            this.tb_cmd.Location = new System.Drawing.Point(115, 310);
-            this.tb_cmd.Name = "tb_cmd";
-            this.tb_cmd.Size = new System.Drawing.Size(161, 20);
-            this.tb_cmd.TabIndex = 5;
-            this.tb_cmd.Text = "?";
             // 
             // btn_Analyze
             // 
@@ -360,34 +353,34 @@
             // 
             // chrt_dataChart
             // 
-            chartArea1.AxisY.Maximum = 3.15D;
-            chartArea1.AxisY.Minimum = -3.15D;
-            chartArea1.Name = "ChartArea1";
-            this.chrt_dataChart.ChartAreas.Add(chartArea1);
-            legend1.Name = "Legend1";
-            this.chrt_dataChart.Legends.Add(legend1);
+            chartArea2.AxisY.Maximum = 3.15D;
+            chartArea2.AxisY.Minimum = -3.15D;
+            chartArea2.Name = "ChartArea1";
+            this.chrt_dataChart.ChartAreas.Add(chartArea2);
+            legend2.Name = "Legend1";
+            this.chrt_dataChart.Legends.Add(legend2);
             this.chrt_dataChart.Location = new System.Drawing.Point(152, 15);
             this.chrt_dataChart.Name = "chrt_dataChart";
             this.chrt_dataChart.Palette = System.Windows.Forms.DataVisualization.Charting.ChartColorPalette.Bright;
-            series1.BorderWidth = 5;
-            series1.ChartArea = "ChartArea1";
-            series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
-            series1.Legend = "Legend1";
-            series1.Name = "Roll";
-            series1.YValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.Single;
-            series2.BorderWidth = 5;
-            series2.ChartArea = "ChartArea1";
-            series2.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
-            series2.Legend = "Legend1";
-            series2.Name = "Pitch";
-            series3.BorderWidth = 5;
-            series3.ChartArea = "ChartArea1";
-            series3.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
-            series3.Legend = "Legend1";
-            series3.Name = "Yaw";
-            this.chrt_dataChart.Series.Add(series1);
-            this.chrt_dataChart.Series.Add(series2);
-            this.chrt_dataChart.Series.Add(series3);
+            series4.BorderWidth = 5;
+            series4.ChartArea = "ChartArea1";
+            series4.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
+            series4.Legend = "Legend1";
+            series4.Name = "Roll";
+            series4.YValueType = System.Windows.Forms.DataVisualization.Charting.ChartValueType.Single;
+            series5.BorderWidth = 5;
+            series5.ChartArea = "ChartArea1";
+            series5.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
+            series5.Legend = "Legend1";
+            series5.Name = "Pitch";
+            series6.BorderWidth = 5;
+            series6.ChartArea = "ChartArea1";
+            series6.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
+            series6.Legend = "Legend1";
+            series6.Name = "Yaw";
+            this.chrt_dataChart.Series.Add(series4);
+            this.chrt_dataChart.Series.Add(series5);
+            this.chrt_dataChart.Series.Add(series6);
             this.chrt_dataChart.Size = new System.Drawing.Size(713, 377);
             this.chrt_dataChart.TabIndex = 29;
             this.chrt_dataChart.Text = "chart1";
@@ -459,11 +452,36 @@
             this.btn_Convert.UseVisualStyleBackColor = true;
             this.btn_Convert.Click += new System.EventHandler(this.btn_Convert_Click);
             // 
+            // btn_CheckVersion
+            // 
+            this.btn_CheckVersion.Location = new System.Drawing.Point(742, 87);
+            this.btn_CheckVersion.Name = "btn_CheckVersion";
+            this.btn_CheckVersion.Size = new System.Drawing.Size(134, 23);
+            this.btn_CheckVersion.TabIndex = 34;
+            this.btn_CheckVersion.Text = "Check Version";
+            this.btn_CheckVersion.UseVisualStyleBackColor = true;
+            this.btn_CheckVersion.Click += new System.EventHandler(this.btn_CheckVersion_Click);
+            // 
+            // cb_commands
+            // 
+            this.cb_commands.FormattingEnabled = true;
+            this.cb_commands.Items.AddRange(new object[] {
+            "?",
+            "getCharge",
+            "getRawCharge",
+            "Power"});
+            this.cb_commands.Location = new System.Drawing.Point(115, 311);
+            this.cb_commands.Name = "cb_commands";
+            this.cb_commands.Size = new System.Drawing.Size(161, 21);
+            this.cb_commands.TabIndex = 35;
+            // 
             // mainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(970, 783);
+            this.Controls.Add(this.cb_commands);
+            this.Controls.Add(this.btn_CheckVersion);
             this.Controls.Add(this.btn_Convert);
             this.Controls.Add(this.btn_exitBootloader);
             this.Controls.Add(this.btn_EnterBootloader);
@@ -485,7 +503,6 @@
             this.Controls.Add(this.btn_EncryptSettings);
             this.Controls.Add(this.tb_Console);
             this.Controls.Add(this.btn_Analyze);
-            this.Controls.Add(this.tb_cmd);
             this.Controls.Add(this.btn_SendCmd);
             this.Controls.Add(this.bnt_Connect);
             this.Controls.Add(this.l_COM_Port);
@@ -515,7 +532,6 @@
         private System.Windows.Forms.Label l_COM_Port;
         private System.Windows.Forms.Button bnt_Connect;
         private System.Windows.Forms.Button btn_SendCmd;
-        private System.Windows.Forms.TextBox tb_cmd;
         private System.Windows.Forms.Button btn_Analyze;
         private System.Windows.Forms.OpenFileDialog ofd_AnalyzeFile;
         private System.Windows.Forms.BindingSource bindingSource1;
@@ -549,6 +565,8 @@
         private System.Windows.Forms.Button btn_EnterBootloader;
         private System.Windows.Forms.Button btn_exitBootloader;
         private System.Windows.Forms.Button btn_Convert;
+        private System.Windows.Forms.Button btn_CheckVersion;
+        private System.Windows.Forms.ComboBox cb_commands;
     }
 }
 

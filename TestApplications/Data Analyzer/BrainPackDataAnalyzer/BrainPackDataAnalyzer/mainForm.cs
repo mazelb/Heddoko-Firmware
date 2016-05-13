@@ -333,7 +333,8 @@ namespace BrainPackDataAnalyzer
             this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Pitch"].Points.Clear()));
             this.BeginInvoke((MethodInvoker)(() => chrt_dataChart.Series["Yaw"].Points.Clear()));
 
-            serialPort.PortName = cb_serialPorts.Items[cb_serialPorts.SelectedIndex].ToString();
+            serialPort.PortName = cb_serialPorts.Text;
+
             try
             {
                 openSerialPort = true;
@@ -382,9 +383,10 @@ namespace BrainPackDataAnalyzer
         {
             if (serialPort.IsOpen)
             {
-                if (tb_cmd.Text.Length > 0)
+                if (cb_commands.Text.Length > 0)
                 {
-                    sendCommmand(tb_cmd.Text + "\r\n");
+                    sendCommmand(cb_commands.Text + "\r\n");
+                    //sendCommmand(tb_cmd.Text + "\r\n");
                 }
             }
         }
@@ -1017,7 +1019,15 @@ namespace BrainPackDataAnalyzer
             }
         }
 
-
+        private void btn_CheckVersion_Click(object sender, EventArgs e)
+        {
+            if (serialPort.IsOpen)
+            {
+                sendCommmand("?\r\n");
+                Thread.Sleep(400);
+                sendCommmand("pbVersion\r\n");
+            }
+        }
     }
 }
 
