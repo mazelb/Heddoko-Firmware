@@ -41,7 +41,7 @@ extern xQueueHandle mgr_eventQueue;
 extern slave_twi_config_t ltc2941Config; 
 //static function forward declarations
 chrg_chargerState_t getChargerState(chrg_chargeMonitorConfig_t* chargerConfig);  
-
+uint32_t powerButtonLowCount = 0;	
 
 #define BATTERY_PERCENT_LOW 15
 #define BATTERY_PERCENT_CRITICAL 8
@@ -63,7 +63,8 @@ void chrg_task_chargeMonitor(void *pvParameters)
 		 newUsbConnectedState = DRV_GPIO_PIN_STATE_LOW; 
 	drv_gpio_pin_state_t pwrButtonState = DRV_GPIO_PIN_STATE_PULLED_HIGH,
 		 newPwrButtonState = DRV_GPIO_PIN_STATE_LOW; 
-	uint32_t powerButtonLowCount = 0;	 	 
+	
+	char tempString[100] = {0}; 	 
 	while(1)
 	{
 		newChargerState = getChargerState(chargeMonitorConfig); 	
@@ -103,7 +104,23 @@ void chrg_task_chargeMonitor(void *pvParameters)
 			}
 			pwrButtonState = newPwrButtonState;
 		}
-		
+		if(pwrButtonState == DRV_GPIO_PIN_STATE_LOW)
+		{
+			powerButtonLowCount++;
+		}
+		if(powerButtonLowCount == 10) //approximately 3.5 seconds
+		{
+			
+			//should be we reset the power board? or just power off
+			eventMessage.sysEvent = SYS_EVENT_POWER_SWITCH;
+			if(mgr_eventQueue != NULL)
+			{
+				if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
+				{
+					//this is an error, we should log it.
+				}
+			}				
+		}
 				
 		//check if the state is new
 		if(newChargerState != chrg_currentChargerState)
@@ -123,8 +140,9 @@ void chrg_task_chargeMonitor(void *pvParameters)
 				}				
 				break;
 				case CHRG_CHARGER_STATE_CHARGE_COMPLETE:
-				{
-					dat_sendDebugMsgToDataBoard("PwrBrdMsg:Battery Full\r\n");
+				{					
+					sprintf(tempString,"PwrBrdMsg:Receive Battery Full indication at %d level\r\n",ltc2941GetCharge(&ltc2941Config));
+					dat_sendDebugMsgToDataBoard(tempString);
 					ltc2941SetChargeComplete(&ltc2941Config);		
 								
 					drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
@@ -134,8 +152,9 @@ void chrg_task_chargeMonitor(void *pvParameters)
 				{
 					eventMessage.sysEvent = SYS_EVENT_LOW_BATTERY; 
 					if(mgr_eventQueue != NULL)
-					{
-						dat_sendDebugMsgToDataBoard("PwrBrdMsg:Received Low Battery indication\r\n");
+					{						
+						sprintf(tempString,"PwrBrdMsg:Receive Low Battery indication at %d level\r\n",ltc2941GetCharge(&ltc2941Config));
+						dat_sendDebugMsgToDataBoard(tempString);
 						ltc2941SetCharge(&ltc2941Config, CHARGE_EMPTY_VALUE); //set the gas gauge to zero. 						
 						if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
 						{

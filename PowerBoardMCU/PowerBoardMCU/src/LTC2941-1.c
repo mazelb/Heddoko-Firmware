@@ -13,6 +13,9 @@ status_t ltc2941Init(slave_twi_config_t* slaveConfig)
 {
 	status_t status = STATUS_FAIL;
 	
+	//Set configuration for charger 0xFC 
+	
+	
 	status = drv_i2c_write(slaveConfig, LTC_2941_CONTROL_REG_ADDR, 0xf0);
 	if (status != STATUS_PASS)
 	{
@@ -99,36 +102,18 @@ uint16_t ltc2941GetCharge(slave_twi_config_t* slaveConfig)
 }
 //[?3/?25/?2016 2:19 PM] Hriday Mehta: 
 uint32_t getCalculatedPercentage(slave_twi_config_t* slaveConfig)
-{
-	
+{	
 	uint32_t charge = ltc2941GetCharge(slaveConfig);
-	return (((charge - CHARGE_EMPTY_VALUE)*100) / (0xffff - CHARGE_EMPTY_VALUE));
+	return (((charge - CHARGE_EMPTY_VALUE)*100) / (CHARGE_FULL_VALUE - CHARGE_EMPTY_VALUE));
 } 
 uint32_t getRegValueForPercent(uint32_t percent)
 {
-	return (percent*(0xFFFF-CHARGE_EMPTY_VALUE)/100 + CHARGE_EMPTY_VALUE); 
+	return (percent*(CHARGE_FULL_VALUE-CHARGE_EMPTY_VALUE)/100 + CHARGE_EMPTY_VALUE); 
 }
 status_t ltc2941SetChargeComplete(slave_twi_config_t* slaveConfig)
 {
-	status_t status = STATUS_FAIL;
-	
-	//Set the Accumulated charge register to indicate battery full
-	status = drv_i2c_write(slaveConfig, 0x02, 0xff);
-	if (status != STATUS_PASS)
-	{
-		#ifdef ENABLE_DEBUG_PRINTS
-		puts("Write to Control register failed\r\n");
-		#endif
-		return STATUS_FAIL;
-	}
-	status = drv_i2c_write(slaveConfig, 0x03, 0xff);
-	if (status != STATUS_PASS)
-	{
-		#ifdef ENABLE_DEBUG_PRINTS
-		puts("Write to Control register failed\r\n");
-		#endif
-		return STATUS_FAIL;
-	}
+	status_t status = STATUS_FAIL;	
+	ltc2941SetCharge(slaveConfig, CHARGE_FULL_VALUE);
 }
 
 uint8_t ltc2941GetStatus(slave_twi_config_t* slaveConfig)

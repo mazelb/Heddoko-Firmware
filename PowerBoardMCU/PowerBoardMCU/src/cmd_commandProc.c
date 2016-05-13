@@ -178,7 +178,7 @@ void cmd_task_commandProcesor(void *pvParameters)
 				}
 				else if(strncmp(packet.packetData,"pbVersion",9)==0)
 				{
-					sprintf(tempString,"VERSION %s\r\n", VERSION);
+					sprintf(tempString," PB VERSION %s\r\n", VERSION);
 					if(packet.packetSource == CMD_COMMAND_SOURCE_DAUGHTER)
 					{
 						drv_uart_putString(dataRouterConfiguration.daughterBoard, tempString);
