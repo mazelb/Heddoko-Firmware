@@ -1,0 +1,12 @@
+Output: NC Drill Files
+Type  : NC Drill
+From  : Project [PinConnector.PrjPcb]
+   Generated File[PinConnector.TXT]
+   Generated File[PinConnector.LDP]
+   Generated File[PinConnector.DRR]
+
+
+Files Generated   : 3
+Documents Printed : 0
+
+Finished Output Generation At 10:42:54 AM On 3/11/2016

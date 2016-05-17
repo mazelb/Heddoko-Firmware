@@ -1,0 +1,21 @@
+Output: Gerber Files
+Type  : Gerber
+From  : Variant [[No Variations]] of Project [DaughterBoard.PrjPcb]
+   Generated File[DaughterBoard.GTL]
+   Generated File[DaughterBoard.GBL]
+   Generated File[DaughterBoard.GTO]
+   Generated File[DaughterBoard.GTP]
+   Generated File[DaughterBoard.GTS]
+   Generated File[DaughterBoard.GBS]
+   Generated File[DaughterBoard.GBP]
+   Generated File[DaughterBoard.GBO]
+   Generated File[DaughterBoard.GM1]
+   Generated File[DaughterBoard.RUL]
+   Generated File[DaughterBoard.EXTREP]
+   Generated File[DaughterBoard.REP]
+
+
+Files Generated   : 12
+Documents Printed : 0
+
+Finished Output Generation At 3:04:58 PM On 3/11/2016

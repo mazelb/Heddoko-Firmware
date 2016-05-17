@@ -1,0 +1,14 @@
+---------------------------------------------------------------------------
+NCDrill File Report For: PinConnector.PcbDoc   3/11/2016  10:42:54 AM
+---------------------------------------------------------------------------
+
+Layer Pair : Top Layer to Bottom Layer
+ASCII RoundHoles File : PinConnector.TXT
+
+Tool         Hole Size           Hole Type     Hole Count Plated       Tool Travel
+---------------------------------------------------------------------------
+T1        23.62mil (0.59995mm)     Round          4                0.22 Inch (5.72 mm)
+---------------------------------------------------------------------------
+Totals                                            4                0.22 Inch (5.72 mm)
+
+Total Processing Time (hh:mm:ss) : 00:00:00

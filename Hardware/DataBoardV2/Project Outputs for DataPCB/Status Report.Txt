@@ -1,0 +1,14 @@
+Output: Gerber Files
+Type  : Gerber
+From  : Variant [[No Variations]] of Project [DataPCB.PrjPcb]
+   Generated File[DataPCB.GTP]
+   Generated File[DataPCB.GBP]
+   Generated File[DataPCB.RUL]
+   Generated File[DataPCB.EXTREP]
+   Generated File[DataPCB.REP]
+
+
+Files Generated   : 5
+Documents Printed : 0
+
+Finished Output Generation At 10:55:34 AM On 4/25/2016

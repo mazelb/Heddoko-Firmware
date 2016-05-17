@@ -1,0 +1,76 @@
+Designator Footprint               Mid X         Mid Y         Ref X         Ref Y         Pad X         Pad Y TB      Rotation Comment        
+
+D4         0402                   580mil        -60mil        580mil        -60mil    599.684mil        -60mil  B        180.00 ESD Diode      
+D3         0402                   740mil        -70mil        740mil        -70mil    720.314mil        -70mil  B        360.00 ESD Diode      
+D1         0402               779.725mil    -370.45mil    779.725mil    -370.45mil    779.725mil   -350.764mil  B        270.00 ESD Diode      
+U5         QFN20              702.362mil    -394.37mil        625mil       -355mil        625mil       -355mil  T        360.00 MCP73871       
+R2         0402                   635mil   -194.999mil        635mil       -195mil        635mil   -175.314mil  B        270.00                
+R1         0402                   680mil   -194.999mil        680mil       -195mil        680mil   -175.314mil  B        270.00                
+D6         0402                   495mil   -874.999mil        495mil       -875mil        495mil   -894.684mil  T         90.00 ESD Diode      
+D5         0402                   470mil      -1105mil        470mil      -1105mil    450.315mil      -1105mil  T        360.00 ESD Diode      
+P4         MHDR2X4             65.001mil       -690mil         90mil       -765mil     90.001mil       -765mil  T         90.00 MHDR2X4        
+R21        0603_small         355.394mil       -235mil        385mil       -235mil    382.952mil       -235mil  B        180.00                
+R20        0603_small         271.654mil       -130mil    242.047mil       -130mil    244.095mil       -130mil  B        360.00                
+C14        0402                   260mil  -1394.999mil        260mil      -1395mil        260mil  -1414.684mil  B         90.00                
+R19        0402                   650mil  -1484.999mil        650mil      -1485mil        650mil  -1465.314mil  T        270.00                
+R18        0402                   695mil  -1484.999mil        695mil      -1485mil        695mil  -1504.684mil  T         90.00                
+C26        0402                   200mil    -74.999mil        200mil        -75mil        200mil    -94.684mil  T         90.00                
+U6         QFN6               323.898mil    -75.315mil        380mil        -95mil        380mil        -95mil  T        180.00 LTC2941-1      
+R26        0603_small         139.606mil       -265mil        110mil       -265mil    112.046mil       -265mil  B        360.00                
+R25        0603_small         139.606mil       -320mil        110mil       -320mil    112.046mil       -320mil  B        360.00                
+R24        0603_small         139.606mil       -215mil        110mil       -215mil    112.046mil       -215mil  B        360.00                
+R17        0603_small             840mil   -435.393mil        840mil       -465mil        840mil   -462.952mil  T         90.00                
+R16        0603_small             835mil   -319.607mil        835mil       -290mil        835mil   -292.048mil  T        270.00                
+R4         0603_small             340mil   -204.607mil        340mil       -175mil        340mil   -177.048mil  T        270.00                
+D2         LED_RGB                260mil       -245mil        260mil       -245mil    276.733mil   -216.456mil  B        270.00 LED2_RGB       
+C6         0603_small         785.394mil       -985mil        815mil       -985mil    812.952mil       -985mil  T        180.00                
+L1         INDUCTOR_-_SMALL     80.001mil       -405mil         80mil       -405mil     80.001mil   -320.354mil  T        360.00 6.8uH          
+R3         0603_small             340mil   -339.607mil        340mil       -310mil        340mil   -312.048mil  T        270.00                
+U4         SOT23-3                765mil       -890mil        765mil       -890mil     718.74mil   -852.598mil  T        360.00 AP7333         
+C12        SMD0805                340mil      -1815mil        340mil      -1815mil        295mil      -1815mil  B        270.00                
+C7         SMD0805                770mil      -1065mil        770mil      -1065mil        725mil      -1065mil  T         90.00                
+R15        0402                   205mil   -644.999mil        205mil       -645mil        205mil   -664.684mil  T         90.00                
+R14        0402                   205mil   -554.999mil        205mil       -555mil        205mil   -574.684mil  T         90.00                
+R13        0402                   200mil      -1205mil        200mil      -1205mil    219.685mil      -1205mil  T        180.00                
+R12        0402               200.001mil      -1160mil        200mil      -1160mil    180.316mil      -1160mil  T        360.00                
+X2         XTAL_SMD_3.2X2.5    679.749mil  -1674.653mil        680mil      -1675mil    711.496mil  -1718.306mil  T         90.00 Xtal 16        
+X1         Xtal_smd_32khz_-_larger     55.001mil  -1714.999mil         55mil      -1715mil     55.001mil  -1663.818mil  T        270.00 Xtal 32        
+R11        0402                   545mil   -874.999mil        545mil       -875mil        545mil   -855.314mil  T        270.00                
+R10        0402               380.002mil       -985mil        380mil       -985mil    399.687mil       -985mil  T        180.00                
+R9         0603_small         544.606mil       -495mil        515mil       -495mil    517.047mil       -495mil  T        360.00                
+P3         Header_6_1.27mm     95.001mil       -955mil         95mil       -830mil     95.001mil       -830mil  B        180.00 header 6 pin   
+P2         Header_6_1.27mm     95.001mil      -1255mil         95mil      -1380mil     95.001mil      -1380mil  T        180.00 header 6 pin   
+P1         Header_6_1.27mm        820mil      -1720mil        820mil      -1595mil        820mil      -1595mil  T        360.00 header 6 pin   
+C24        0402                   450mil   -894.999mil        450mil       -895mil        450mil   -914.684mil  T         90.00                
+C22        0402                   450mil  -1039.999mil        450mil      -1040mil        450mil  -1020.314mil  T        270.00                
+C19        0402                   655mil      -1555mil        655mil      -1555mil    635.314mil      -1555mil  T        360.00 4pF            
+C18        0402                   645mil      -1792mil        645mil      -1792mil    664.684mil      -1792mil  T        180.00 4pF            
+C17        CAP_0402            50.001mil      -1820mil         50mil      -1820mil     68.111mil      -1820mil  T        180.00                
+C16        CAP_0402            50.001mil      -1615mil         50mil      -1615mil     68.111mil      -1615mil  T        180.00                
+C15        0402                   260mil      -1650mil        260mil      -1650mil    279.685mil      -1650mil  B        180.00                
+C13        0402                   305mil  -1395.001mil        305mil      -1395mil        305mil  -1414.686mil  B         90.00                
+C11        0402                   560mil  -1514.999mil        560mil      -1515mil        560mil  -1495.314mil  T        270.00                
+C10        0402               300.002mil      -1580mil        300mil      -1580mil    280.317mil      -1580mil  B        360.00                
+C9         0402               296.262mil      -1715mil     296.26mil      -1715mil    276.577mil      -1715mil  B        360.00                
+C8         0402                65.001mil      -1535mil         65mil      -1535mil     45.316mil      -1535mil  T        360.00                
+C25        1206                314.56mil       -905mil        315mil       -905mil    370.118mil       -905mil  T        180.00 CAP-POL        
+C23        1206                314.56mil      -1065mil        315mil      -1065mil    370.118mil      -1065mil  T        180.00 CAP-POL        
+U1         QFN_16_PQFN_VQFN_PVQFN_16_RSA        480mil       -355mil        480mil       -355mil    441.615mil   -431.772mil  T         90.00 TPS61090       
+P5         AUDIOJACK_IPX7     555.118mil    -1287.2mil    285.433mil    -1287.2mil    285.433mil  -1417.121mil  T        270.00 IP67_Jack      
+P6         AUDIOJACK_IPX7     555.118mil   -662.003mil    285.433mil   -662.003mil    285.433mil   -791.924mil  T        270.00 IP67_Jack      
+USB1       MICRO_USB_IP67     637.432mil   -137.008mil    637.432mil   -144.882mil    688.612mil   -144.882mil  T        180.00 MINIB-USB      
+B1         LiPo_Battery        85.001mil    -77.598mil         85mil       -115mil     85.001mil   -116.968mil  T         90.00 LiPo Battery   
+C1         0603_small          70.395mil       -180mil        100mil       -180mil     97.954mil       -180mil  T        180.00                
+C2         0603_small             340mil   -445.393mil        340mil       -475mil        340mil   -472.952mil  T         90.00                
+C3         0603_small         765.394mil       -185mil        795mil       -185mil    792.952mil       -185mil  T        180.00                
+C4         0603_small         116.653mil       -235mil     87.047mil       -235mil     89.094mil       -235mil  T        360.00                
+C5         C_6032-28R             245mil   -330.295mil        245mil       -330mil        245mil       -430mil  T        270.00 Cap_Tant       
+C20        0603_small         410.394mil       -480mil        440mil       -480mil    437.952mil       -480mil  T        180.00                
+C21        0402                   600mil      -1090mil        600mil      -1090mil    619.684mil      -1090mil  T        180.00                
+R5         0402                   685mil   -214.999mil        685mil       -215mil        685mil   -234.684mil  T         90.00                
+R6         0402                   630mil   -214.999mil        630mil       -215mil        630mil   -195.314mil  T        270.00                
+R7         0603_small         524.607mil       -205mil        495mil       -205mil    497.048mil       -205mil  T        360.00                
+R8         0603_small         429.606mil       -195mil        400mil       -195mil    402.046mil       -195mil  T        360.00                
+U2         QFP48              321.733mil  -1655.354mil        430mil      -1490mil        430mil      -1490mil  T        270.00 SAM4S4         
+U3         SON8_0.65MM            560mil       -985mil        560mil       -985mil    618.071mil  -1023.386mil  T         90.00 Load SW        
+

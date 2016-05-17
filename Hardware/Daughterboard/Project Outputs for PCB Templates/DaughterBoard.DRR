@@ -1,0 +1,19 @@
+---------------------------------------------------------------------------
+NCDrill File Report For: DaughterBoard.PcbDoc   3/11/2016  3:05:56 PM
+---------------------------------------------------------------------------
+
+Layer Pair : Top to Bottom
+ASCII RoundHoles File : DaughterBoard.TXT
+
+Tool         Hole Size           Hole Type     Hole Count Plated       Tool Travel
+---------------------------------------------------------------------------
+T1        13.78mil (0.35001mm)     Round          9                1.48 Inch (37.54 mm)
+T2        23.62mil (0.59995mm)     Round          8                0.35 Inch (8.89 mm)
+T3        28mil (0.7112mm)         Round          1                0.00 Inch (0.00 mm)
+T4        30mil (0.762mm)          Round          6                0.70 Inch (17.78 mm)
+T5        33.46mil (0.84988mm)     Round          20               1.96 Inch (49.91 mm)
+T6        40mil (1.016mm)          Round          6                0.80 Inch (20.32 mm)
+---------------------------------------------------------------------------
+Totals                                            50               5.29 Inch (134.44 mm)
+
+Total Processing Time (hh:mm:ss) : 00:00:00
