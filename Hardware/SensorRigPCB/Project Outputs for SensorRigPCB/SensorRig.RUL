@@ -1,0 +1,6 @@
+DRC Rules Export File for PCB: C:\Users\Jonathan\Documents\Qsync\Jonathan Olesik\_Downloads\SensorRigPCB V1.0b(3-9-2016 10-07-44 AM)\SensorRigPCB\SensorRig.PcbDoc
+RuleKind=ShortCircuit|RuleName=ShortCircuit|Scope=Board|Allowed=0
+RuleKind=Clearance|RuleName=Clearance|Scope=Board|Minimum=8.00
+RuleKind=Width|RuleName=Width|Scope=Board|Minimum=6.00
+RuleKind=SolderMaskExpansion|RuleName=SolderMaskExpansion|Scope=Board|Minimum=5.00
+RuleKind=Width|RuleName=Width_power|Scope=Board|Minimum=10.00

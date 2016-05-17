@@ -1,0 +1,13 @@
+Output: Gerber Files
+Type  : Gerber
+From  : Variant [[No Variations]] of Project [SensorRigPCB.PrjPcb]
+   Generated File[SensorRig.GM26]
+   Generated File[SensorRig.RUL]
+   Generated File[SensorRig.EXTREP]
+   Generated File[SensorRig.REP]
+
+
+Files Generated   : 4
+Documents Printed : 0
+
+Finished Output Generation At 7:27:12 AM On 4/26/2016

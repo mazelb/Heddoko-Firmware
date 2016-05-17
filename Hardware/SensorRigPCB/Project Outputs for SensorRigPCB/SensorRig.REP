@@ -1,0 +1,14 @@
+*************************************************************
+FileName = SensorRig.GBR
+AutoAperture = True
+*************************************************************
+Generating : Mechanical 26
+      File : SensorRig.GM26
+
+    Adding Layer      : Mechanical 26
+
+
+Used DCodes :
+    D10
+*************************************************************
+
