@@ -698,6 +698,9 @@
     <Compile Include="src\ASF\sam\drivers\hsmci\hsmci.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\common.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\sdc_sdCard.c">
       <SubType>compile</SubType>
     </Compile>
