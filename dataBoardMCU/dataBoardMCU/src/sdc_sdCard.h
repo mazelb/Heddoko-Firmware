@@ -28,7 +28,7 @@ typedef enum
 	SDC_FILE_OPEN_READ_ONLY,
 	SDC_FILE_OPEN_READ_WRITE_NEW,
 	SDC_FILE_OPEN_READ_WRITE_APPEND,
-	SDC_FILE_OPEN_READ_WRITE_DEBUG_LOG,	
+	SDC_FILE_OPEN_READ_WRITE_DEBUG_LOG	
 }sdc_FileOpenMode_t;
 /***********************************************************************************************
  * sdc_sdCardTask(void *pvParameters)

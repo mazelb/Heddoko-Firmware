@@ -19,6 +19,18 @@
 
 typedef enum 
 {
+	MODULE_SYSTEM_MANAGER=0,
+	MODULE_SDCARD,
+	MODULE_SENSOR_HANDLER,
+	MODULE_WIFI,
+	MODULE_COMMAND,
+	MODULE_DEBUG,
+	MODULE_NUMBER_OF_MODULES
+	
+}modules_t;
+
+typedef enum 
+{
 	STATUS_PASS = 0,
 	STATUS_FAIL = 1,
 	STATUS_EOF = 2, //end of file, used in getChar	

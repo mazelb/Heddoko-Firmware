@@ -5,7 +5,8 @@
  * Author: sean
  * Copyright Heddoko(TM) 2015, all rights reserved
  */ 
-
+#include <asf.h>
+#include "sdc_sdCard.h"
 
 //Static function forward declarations
 bool sdCardPresent();
