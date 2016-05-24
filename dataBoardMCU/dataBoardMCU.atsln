@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Atmel Studio Solution File, Format Version 11.00
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "dataBoardMCU", "dataBoardMCU\dataBoardMCU.cproj", "{103BCAAA-9896-4430-9E37-B62CE3E4F04B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM = Debug|ARM
+		Release|ARM = Release|ARM
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{103BCAAA-9896-4430-9E37-B62CE3E4F04B}.Debug|ARM.ActiveCfg = Debug|ARM
+		{103BCAAA-9896-4430-9E37-B62CE3E4F04B}.Debug|ARM.Build.0 = Debug|ARM
+		{103BCAAA-9896-4430-9E37-B62CE3E4F04B}.Release|ARM.ActiveCfg = Release|ARM
+		{103BCAAA-9896-4430-9E37-B62CE3E4F04B}.Release|ARM.Build.0 = Release|ARM
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
