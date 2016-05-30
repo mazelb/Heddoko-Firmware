@@ -122,6 +122,12 @@
 // From module: SAM4S Xplained Pro LED support enabled
 #include <led.h>
 
+// From module: SD/MMC Memory Control Access - Enable
+#include <sd_mmc_mem.h>
+
+// From module: SD/MMC stack on Multimedia Card interface
+#include <sd_mmc.h>
+
 // From module: Standard serial I/O (stdio) - SAM implementation
 #include <stdio_serial.h>
 
@@ -145,8 +151,5 @@
 
 // From module: pio_handler support enabled
 #include <pio_handler.h>
-
-// include common items
-#include "common.h"
 
 #endif // ASF_H

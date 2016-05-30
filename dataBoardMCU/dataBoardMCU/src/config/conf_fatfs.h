@@ -61,7 +61,7 @@
 / Functions and Buffer Configurations
 /----------------------------------------------------------------------------*/
 
-#define    _FS_TINY        0    /* 0:Normal or 1:Tiny */
+#define    _FS_TINY        1    /* 0:Normal or 1:Tiny */
 /* When _FS_TINY is set to 1, FatFs uses the sector buffer in the file system
 /  object instead of the sector buffer in the individual file object for file
 /  data transfer. This reduces memory consumption 512 bytes each file object. */
@@ -170,7 +170,7 @@
 / Physical Drive Configurations
 /----------------------------------------------------------------------------*/
 
-#define _VOLUMES    1
+#define _VOLUMES    8
 /* Number of volumes (logical drives) to be used. */
 
 

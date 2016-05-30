@@ -37,5 +37,9 @@ typedef enum
 	STATUS_EAGAIN = 3 //This is used in the get packet, is called when the packet is not complete
 }status_t;
 
+#define TASK_MAIN_STACK_SIZE			(4072/sizeof(portSTACK_TYPE))
+#define TASK_MAIN_PRIORITY				(tskIDLE_PRIORITY + 3)
+#define TASK_SD_CARD_STACK_SIZE			(3072/sizeof(portSTACK_TYPE))
+#define TASK_SD_CARD_PRIORITY			(tskIDLE_PRIORITY + 3)
 
 #endif /* COMMON_H_ */

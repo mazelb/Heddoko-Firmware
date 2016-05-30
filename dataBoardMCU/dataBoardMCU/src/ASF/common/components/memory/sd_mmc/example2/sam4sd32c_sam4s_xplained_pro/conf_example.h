@@ -1,30 +1,29 @@
-/**
- * \file
+/*! \file
  *
- * \brief SAM4S Xplained Pro board configuration
+ * \brief Example configuration.
  *
- * Copyright (C) 2012-2015 Atmel Corporation. All rights reserved.
+ * Copyright (c) 2015 Atmel Corporation. All rights reserved.
  *
  * \asf_license_start
  *
  * \page License
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * 3. The name of Atmel may not be used to endorse or promote products derived
  *    from this software without specific prior written permission.
- * 
+ *
  * 4. This software may only be redistributed and used in connection with an
  *    Atmel microcontroller product.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY ATMEL "AS IS" AND ANY EXPRESS OR IMPLIED
  * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT ARE
@@ -38,20 +37,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * \asf_license_stop
+ *
  */
 /*
  * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
  */
 
-#ifndef CONF_BOARD_H
-#define CONF_BOARD_H
+#ifndef CONF_EXAMPLE_H_INCLUDED
+#define CONF_EXAMPLE_H_INCLUDED
 
-#define CONF_BOARD_UART_CONSOLE
 
-/** Enable SD MMC interface pins through HSMCI */
-#define CONF_BOARD_SD_MMC_HSMCI
+/** USART Interface  : Console UART */
+#define CONF_TEST_USART      CONSOLE_UART
+/** Baudrate setting : 115200 */
+#define CONF_TEST_BAUDRATE   115200
+/** Char setting     : 8-bit character length (don't care for UART) */
+#define CONF_TEST_CHARLENGTH 0
+/** Parity setting   : No parity check */
+#define CONF_TEST_PARITY     UART_MR_PAR_NO
+/** Stopbit setting  : No extra stopbit, i.e., use 1 (don't care for UART) */
+#define CONF_TEST_STOPBITS   false
 
-#define SD_MMC_ENABLE
-#define ACCESS_MEM_TO_RAM_ENABLED
-
-#endif /* CONF_BOARD_H */
+#endif /* CONF_EXAMPLE_H_INCLUDED */

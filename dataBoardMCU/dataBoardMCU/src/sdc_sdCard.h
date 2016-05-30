@@ -9,18 +9,25 @@
 
 #ifndef SDC_SDCARD_H_
 #define SDC_SDCARD_H_
-#include <asf.h>
 
+#include <asf.h>
+#include "common.h"
+
+#define SD_CD_PIN					PIO_PC12_IDX
+#define DATALOG_MAX_BUFFER_SIZE		1024
+#define DEBUGLOG_MAX_BUFFER_SIZE	100
+#define DEBUG_LOG_MAX_FILE_SIZE		2000000ul
+#define SD_CARD_FILENAME_LENGTH		150
 typedef struct 
 {
-	
-	FIL fileObj,
-	bool fileOpen,
-	uint8_t* bufferPointerA,
-	uint8_t* bufferPointerB,
-	uint32_t bufferIndexA,
-	uint32_t bufferIndexB,
-	uint16_t bufferSize,		
+	FIL fileObj;
+	bool fileOpen;
+	char* bufferPointerA;
+	char* bufferPointerB;
+	uint32_t bufferIndexA;
+	uint32_t bufferIndexB;
+	uint16_t bufferSize;
+	bool activeBuffer;
 }sdc_file_t;
 
 typedef enum
@@ -30,6 +37,7 @@ typedef enum
 	SDC_FILE_OPEN_READ_WRITE_APPEND,
 	SDC_FILE_OPEN_READ_WRITE_DEBUG_LOG	
 }sdc_FileOpenMode_t;
+
 /***********************************************************************************************
  * sdc_sdCardTask(void *pvParameters)
  * @brief The task that handles communication with the SD card. This task initializes the SD card,
@@ -52,8 +60,8 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
  * @param fileObject, data: pointer to data buffer, size: number of bytes to write
  * @return void
  ***********************************************************************************************/
-status_t sdc_writeToFile(sdc_file_t* fileObject, void* data, size_t size);
-status_t sdc_readFromFile(sdc_file_t* fileObject, void* data, size_t fileOffset, size_t length);
+status_t sdc_writeToFile(sdc_file_t* fileObject, char* data, size_t size);
+status_t sdc_readFromFile(sdc_file_t* fileObject, char* data, size_t fileOffset, size_t length);
 /***********************************************************************************************
  * sdc_closeFile(sdc_file_t* fileObject)
  * @brief Asynchronously closes the file, frees the memory used by the buffers.  
