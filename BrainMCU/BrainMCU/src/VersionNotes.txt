@@ -58,3 +58,6 @@
 
  VERSION 0.4h (for Heddoko! INDEED)
  1. Added in a 500ms delay in the EnterReset() function before spawning the Quintic init task to get rid of miss on responses.
+
+ VERSION 0.4i (for integrity!)
+ 1. Added in a bug fix in GPIO driver in enabling peripheral clock

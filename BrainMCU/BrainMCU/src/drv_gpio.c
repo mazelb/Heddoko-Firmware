@@ -185,7 +185,7 @@ status_t drv_gpio_config(drv_gpio_config_t* gpioConfig)
 			pio_set_debounce_filter(p_pio, PinMask, DEBOUNCE_PERIOD);
 		}
 		
-		pmc_enable_periph_clk(gpioConfig->pinId);	
+		pmc_enable_periph_clk(pio_get_pin_group_id(gpioConfig->pinId));	
 		pio_configure_pin(gpioConfig->pinId, PinFlag);
 		 
 		PinFlag = 0;	//Reset the PinFlag to use it to configure interrupt
@@ -245,7 +245,7 @@ status_t drv_gpio_config(drv_gpio_config_t* gpioConfig)
 			PinFlag |= PIO_TYPE_PIO_OUTPUT_0;	//set default pin state
 		}
 		
-		pmc_enable_periph_clk(gpioConfig->pinId);
+		pmc_enable_periph_clk(pio_get_pin_group_id(gpioConfig->pinId));
 		pio_configure_pin(gpioConfig->pinId, PinFlag);
 	}
 	

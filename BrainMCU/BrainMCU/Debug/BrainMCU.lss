@@ -43137,7 +43137,7 @@ void task_quinticHandler(void *pvParameters)
 	while(1)
 	{
 		#ifndef DEBUG_DUMMY_DATA
-		if((getCurrentState() != SYS_STATE_RESET))
+		if(getCurrentState() != SYS_STATE_RESET)
   410114:	4b71      	ldr	r3, [pc, #452]	; (4102dc <task_quinticHandler+0x294>)
   410116:	4798      	blx	r3
   410118:	4603      	mov	r3, r0
@@ -43573,7 +43573,7 @@ void task_quintic_initializeImus(void *pvParameters)
   41046e:	4618      	mov	r0, r3
   410470:	4b98      	ldr	r3, [pc, #608]	; (4106d4 <task_quintic_initializeImus+0x28c>)
   410472:	4798      	blx	r3
-	
+
 	drv_gpio_setPinState(qConfig->resetPin,DRV_GPIO_PIN_STATE_LOW);
   410474:	6a7b      	ldr	r3, [r7, #36]	; 0x24
   410476:	f893 3020 	ldrb.w	r3, [r3, #32]
@@ -43592,6 +43592,7 @@ void task_quintic_initializeImus(void *pvParameters)
   410490:	2101      	movs	r1, #1
   410492:	4b91      	ldr	r3, [pc, #580]	; (4106d8 <task_quintic_initializeImus+0x290>)
   410494:	4798      	blx	r3
+	
 	#ifdef USES_NEW_POWER_BOARD
 	cmd_sendJackToggleToPowerBoard(); 
   410496:	4b92      	ldr	r3, [pc, #584]	; (4106e0 <task_quintic_initializeImus+0x298>)
