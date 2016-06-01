@@ -1213,6 +1213,12 @@
     <None Include="src\config\conf_sd_mmc.h">
       <SubType>compile</SubType>
     </None>
+    <Compile Include="src\msg_messenger.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\msg_messenger.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\sdc_sdCard.c">
       <SubType>compile</SubType>
     </Compile>

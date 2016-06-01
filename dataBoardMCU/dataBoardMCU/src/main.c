@@ -36,12 +36,41 @@
 #include "common.h"
 #include "string.h"
 #include "sdc_sdCard.h"
+#include "msg_messenger.h"
 
 unsigned long sgSysTickCount = 0;
+volatile uint8_t dataLogBufferA[DATALOG_MAX_BUFFER_SIZE] = {0} , dataLogBufferB[DATALOG_MAX_BUFFER_SIZE] = {0};
+volatile uint8_t debugLogBufferA[DEBUGLOG_MAX_BUFFER_SIZE] = {0} , debugLogBufferB[DEBUGLOG_MAX_BUFFER_SIZE] = {0};
+xQueueHandle queue_systemManager = NULL;
 
 /*	Extern Variables	*/
-extern sdc_file_t dataLogFile, debugLogFile;
 extern char debugLogNewFileName[], debugLogOldFileName[];
+
+sdc_file_t dataLogFile =
+{
+	.bufferIndexA = 0,
+	.bufferIndexB = 0,
+	.bufferPointerA = dataLogBufferA,
+	.bufferPointerB = dataLogBufferB,
+	.bufferSize = DATALOG_MAX_BUFFER_SIZE,
+	.fileObj = NULL,
+	.fileName = "datalog",
+	.fileOpen = false,
+	.activeBuffer = 0
+};
+
+sdc_file_t debugLogFile =
+{
+	.bufferIndexA = 0,
+	.bufferIndexB = 0,
+	.bufferPointerA = debugLogBufferA,
+	.bufferPointerB = debugLogBufferB,
+	.bufferSize = DEBUGLOG_MAX_BUFFER_SIZE,
+	.fileObj = NULL,
+	.fileName = "sysHdk",
+	.fileOpen = false,
+	.activeBuffer = 0
+};
 
 /*	Extern functions	*/
 extern bool sdCardPresent();
@@ -63,79 +92,59 @@ void UsageFault_Handler()
 	while (1);
 }
 
-void init_sd_card()
+static void processEvent(msg_message_t message)
 {
-	//static FATFS fs;
-	//static FATFS* fs1;	//pointer to FATFS structure used to check free space
-	//static FRESULT res;
-	//static DWORD freeClusters, freeSectors, totalSectors;
-	//status_t result = STATUS_FAIL;
-	//Ctrl_status status = STATUS_FAIL;
-	//
-	//gpio_configure_pin(SD_CD_PIN, (PIO_INPUT | PIO_PULLUP));
-	///* Configure HSMCI pins */
-	//gpio_configure_pin(PIN_HSMCI_MCCDA_GPIO, PIN_HSMCI_MCCDA_FLAGS);
-	//gpio_configure_pin(PIN_HSMCI_MCCK_GPIO, PIN_HSMCI_MCCK_FLAGS);
-	//gpio_configure_pin(PIN_HSMCI_MCDA0_GPIO, PIN_HSMCI_MCDA0_FLAGS);
-	//gpio_configure_pin(PIN_HSMCI_MCDA1_GPIO, PIN_HSMCI_MCDA1_FLAGS);
-	//gpio_configure_pin(PIN_HSMCI_MCDA2_GPIO, PIN_HSMCI_MCDA2_FLAGS);
-	//gpio_configure_pin(PIN_HSMCI_MCDA3_GPIO, PIN_HSMCI_MCDA3_FLAGS);
-	//
-	//sd_mmc_init();
-	//do
-	//{
-		//status = sd_mmc_test_unit_ready(0);
-		//if (CTRL_FAIL == status)
-		//{
-			//puts("Card install FAIL\n\r");
-			//puts("Please unplug and re-plug the card.\n\r");
-			//while (CTRL_NO_PRESENT != sd_mmc_check(0))
-			//{
-				//;
-			//}
-		//}
-	//} while (CTRL_GOOD != status);
-	//
-	///*	Mount the SD card	*/
-	//if(status == CTRL_GOOD)
-	//{
-		//memset(&fs, 0, sizeof(FATFS));
-		//res = f_mount(LUN_ID_SD_MMC_0_MEM, &fs);
-		//if (res == FR_INVALID_DRIVE)
-		//{
-			//puts("Error: Invalid Drive\r");
-			//return result;
-		//}
-//
-		////Check the free space on card
-		//status = f_getfree("0:", &freeClusters, &fs1);
-		//if (status != FR_OK)
-		//{
-			//result = STATUS_FAIL;
-			//puts("Error: Cannot calculate free space\r");
-			//return result;
-		//}
-		//totalSectors = (fs1->n_fatent -2) * fs1->csize;	//only needed to calculate used space
-		//freeSectors = freeClusters * fs1->csize;	//assuming 512 bytes/sector
-		//if ((freeSectors/2) < 307200)
-		//{
-			//result = STATUS_FAIL;
-			//puts("Error: Low disk space on SD-card\r");
-			//return result;
-		//}
-	//}
+	msg_sd_card_state_t* sd_eventData;
+	sd_eventData = (msg_sd_card_state_t *) message.parameters;
+	
+	switch (message.type)
+	{
+		case MSG_TYPE_SDCARD_STATE:
+			if (message.source == MODULE_SDCARD)
+			{
+				if (sd_eventData->mounted == false)
+				{
+					puts("SD-Card removed\r");
+					
+				}
+				else if (sd_eventData->mounted == true)
+				{
+					puts("SD-card inserted\r");
+					//open new files
+					sdc_openFile(&dataLogFile, dataLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DATA_LOG);
+					sdc_openFile(&debugLogFile, debugLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DEBUG_LOG);
+				}
+			}
+		break;
+		case MSG_TYPE_ENTERING_NEW_STATE:
+		case MSG_TYPE_READY:
+		case MSG_TYPE_ERROR:
+		case MSG_TYPE_SDCARD_SETTINGS:
+		case MSG_TYPE_WIFI_STATE:
+		case MSG_TYPE_WIFI_SETTINGS:
+		case MSG_TYPE_USB_CONNECTED:
+		case MSG_TYPE_CHARGER_EVENT:
+		case MSG_TYPE_COMMAND_PACKET_RECEIVED:
+		default:
+		break;
+	}
+	
+	free(message.parameters);
 }
 
 void TaskMain()
 {
 	bool sd_val, sd_oldVal, enable = false;
-	char data[20] = {0};
+	uint8_t data[20] = {0};
 	uint16_t count = 0;
+	status_t status = STATUS_PASS;
+	msg_message_t eventMessage;
 	
-	vTaskDelay(5000);
-	//open new files
-	sdc_openFile(&dataLogFile, "dataLog", SDC_FILE_OPEN_READ_WRITE_APPEND);
-	sdc_openFile(&debugLogFile, "sysHdk", SDC_FILE_OPEN_READ_WRITE_DEBUG_LOG);
+	queue_systemManager = xQueueCreate(10, sizeof(msg_message_t));
+	if (queue_systemManager != 0)
+	{
+		msg_registerForMessages(MODULE_SYSTEM_MANAGER, 0xff, queue_systemManager);
+	}
 	
 	while (1)
 	{
@@ -159,14 +168,19 @@ void TaskMain()
 			while(!ioport_get_pin_level(SW0_PIN));
 			enable = !enable;
 			ioport_set_pin_level(LED_0_PIN, !enable);
-			sdc_writeToFile(&debugLogFile, "Button Press\r\n", 14);	
+			sdc_writeToFile(&debugLogFile, "Button Press\r\n", 14);
 		}
 		if (enable)
 		{
 			snprintf(data, 21, "Data count: %06d\r\n", count);
 			puts(data);
-			sdc_writeToFile(&dataLogFile, data, sizeof(data));		
+			sdc_writeToFile(&dataLogFile, (void*)data, sizeof(data));
 			count++;
+		}
+		
+		if(xQueueReceive(queue_systemManager, &(eventMessage), 1) == true)
+		{
+			processEvent(eventMessage);
 		}
 		vTaskDelay(10);
 	}
@@ -189,7 +203,9 @@ void configure_console()
 int main (void)
 {
 	status_t status = STATUS_FAIL;
-
+	uint16_t block, page;
+	uint32_t error = 0;
+	
 	irq_initialize_vectors();
 	cpu_irq_enable();
 	board_init();

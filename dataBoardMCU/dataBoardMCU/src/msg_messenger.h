@@ -8,7 +8,10 @@
 
 #ifndef MSG_MESSENGER_H_
 #define MSG_MESSENGER_H_
+
 #include <asf.h>
+#include "common.h"
+
 typedef enum
 {
 	MSG_TYPE_ENTERING_NEW_STATE = 0,
@@ -21,8 +24,8 @@ typedef enum
 	MSG_TYPE_USB_CONNECTED,
 	MSG_TYPE_CHARGER_EVENT,
 	MSG_TYPE_COMMAND_PACKET_RECEIVED	
-	
 }msg_messageType_t;
+
 typedef struct 
 {
 	msg_messageType_t type;
@@ -36,6 +39,13 @@ typedef struct
 	xQueueHandle queue;
 	uint32_t messageMask;
 }msg_messageBox_t;
+
+typedef struct  
+{
+	bool mounted;
+	uint8_t errorCode;
+}msg_sd_card_state_t;
+
 /***********************************************************************************************
  * msg_registerForMessages(modules_t module, uint32_t messageMask,xQueueHandle messageQueue)
  * @brief This function is called by each of the modules on the start of their tasks. It 
@@ -58,6 +68,6 @@ status_t msg_sendBroadcastMessage(msg_message_t* message);
  * @param module: message: a pointer to the message that's being sent 
  * @return STATUS_PASS or STATUS_FAIL
  ***********************************************************************************************/
-status_t msg_sendMessage(modules_t module, msg_message_t* message);
+status_t msg_sendMessage(modules_t destModule, modules_t sourceModule, msg_messageType_t type, void* data);
 
 #endif /* MSG_MESSENGER_H_ */

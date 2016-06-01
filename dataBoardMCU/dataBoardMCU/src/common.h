@@ -26,7 +26,6 @@ typedef enum
 	MODULE_COMMAND,
 	MODULE_DEBUG,
 	MODULE_NUMBER_OF_MODULES
-	
 }modules_t;
 
 typedef enum 

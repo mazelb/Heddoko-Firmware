@@ -6,6 +6,7 @@
  */ 
 
 #include "msg_messenger.h"
+#include "string.h"
 
 //the message boxes, one for each module, each queue must be initialized to NULL.
 msg_messageBox_t messageBoxes[] =
@@ -18,8 +19,7 @@ msg_messageBox_t messageBoxes[] =
 	{MODULE_DEBUG,NULL,NULL}
 };
 
-
-status_t msg_registerForMessages(modules_t module, uint32_t messageMask,xQueueHandle messageQueue)
+status_t msg_registerForMessages(modules_t module, uint32_t messageMask, xQueueHandle messageQueue)
 {
 	status_t status = STATUS_PASS;
 	messageBoxes[module].queue = messageQueue;
@@ -37,7 +37,7 @@ status_t msg_sendBroadcastMessage(msg_message_t* message)
 		{
 			if(messageBoxes[i].queue != NULL)
 			{
-				if(xQueueSendToBack( messageBoxes[i].queue,( void * ) &message,10 ) != TRUE)
+				if(xQueueSendToBack( messageBoxes[i].queue,( void * ) message,10 ) != true)
 				{
 					vTaskDelay(1);
 				}				
@@ -46,12 +46,17 @@ status_t msg_sendBroadcastMessage(msg_message_t* message)
 	}
 	return status;
 }
-status_t msg_sendMessage(modules_t module, msg_message_t* message)
+status_t msg_sendMessage(modules_t destModule, modules_t sourceModule, msg_messageType_t type, void* data)
 {
 	status_t status = STATUS_PASS;
-	if(messageBoxes[module].queue != NULL)
+	msg_message_t* message;
+	
+	message->parameters = data;
+	message->source = sourceModule;
+	message->type = type;
+	if(messageBoxes[destModule].queue != NULL)
 	{
-		if(xQueueSendToBack( messageBoxes[module].queue,( void * ) &message,10 ) != TRUE)
+		if(xQueueSendToBack( messageBoxes[destModule].queue,( void * ) message,10 ) != true)
 		{
 			vTaskDelay(1);
 		}

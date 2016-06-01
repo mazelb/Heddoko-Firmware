@@ -9,6 +9,7 @@
 #include "sdc_sdCard.h"
 #include "string.h"
 #include "sd_mmc_mem.h"
+#include "msg_messenger.h"
 
 //Static function forward declarations
 bool sdCardPresent();
@@ -16,198 +17,192 @@ bool sdCardPresent();
 status_t initializeSdCard();
 //uninitializes the SD card, and puts the drive in an uninitialized state. 
 status_t unInitializeSdCard();
+//write calls from the main thread
+status_t write_to_sd_card(sdc_file_t *fileObject);
+//change the active buffer safely
+void changeActiveBuffer(sdc_file_t *fileObject);
+//register newly open file in the array
+void registerOpenFile(sdc_file_t* fileObject);
+//unregister closed file in the array
+void unregisterOpenFile(sdc_file_t* fileObject);
+//close all open files
+void closeAllFiles();
+//re-initialize the SD-card module
+void cardInsertedCall();
 
 static bool sd_mmc_ejected[2] = {false, false};
-volatile char dataLogBufferA[DATALOG_MAX_BUFFER_SIZE] = {0} , dataLogBufferB[DATALOG_MAX_BUFFER_SIZE] = {0};
-volatile char debugLogBufferA[DEBUGLOG_MAX_BUFFER_SIZE] = {0} , debugLogBufferB[DEBUGLOG_MAX_BUFFER_SIZE] = {0};
 FIL dataLogFile_obj, debugLogFile_Obj;
-xSemaphoreHandle semaphore_fatFsAccess = NULL;
+xSemaphoreHandle semaphore_fatFsAccess = NULL, semaphore_bufferAccess = NULL;
+xQueueHandle queue_sdCard = NULL;
 char debugLogNewFileName[] = "sysHdk", debugLogOldFileName[] = "sysHdk_old";
 char dataLogFileName[SD_CARD_FILENAME_LENGTH] = {0};
+open_files_t openFilesList;
+	
+//extern variables
+extern sdc_file_t dataLogFile, debugLogFile;
 
-sdc_file_t dataLogFile = 
+static void processEvent(msg_message_t message)
 {
-	.bufferIndexA = 0, 
-	.bufferIndexB = 0,
-	.bufferPointerA = dataLogBufferA,
-	.bufferPointerB = dataLogBufferB,
-	.bufferSize = DATALOG_MAX_BUFFER_SIZE,
-	.fileObj = NULL,
-	.fileOpen = false,
-	.activeBuffer = 0
-};
-
-sdc_file_t debugLogFile = 
-{
-	.bufferIndexA = 0,
-	.bufferIndexB = 0,
-	.bufferPointerA = debugLogBufferA,
-	.bufferPointerB = debugLogBufferB,
-	.bufferSize = DEBUGLOG_MAX_BUFFER_SIZE,
-	.fileObj = NULL,
-	.fileOpen = false,
-	.activeBuffer = 0
-};
+	
+}
 
 void sdc_sdCardTask(void *pvParameters)
 {
 	FRESULT res;
 	UINT numBytesWritten = 0;
 	uint32_t totalBytesWritten = 0, totalBytesToWrite = 0;
-	status_t status;
+	status_t status = STATUS_PASS;
+	bool sd_val, sd_oldVal;
+	uint8_t eventData[2] = {0}, data1 = 0;
+	msg_sd_card_state_t* messageData;
+	msg_message_t eventMessage;
 	
-	// initialize the file structures
-	initializeSdCard();
+	queue_sdCard = xQueueCreate(10, sizeof(msg_message_t));
+	if (queue_sdCard != 0)
+	{
+		msg_registerForMessages(MODULE_SDCARD, 0xff, queue_sdCard);
+	}
+	
 	semaphore_fatFsAccess = xSemaphoreCreateMutex();
+	semaphore_bufferAccess = xSemaphoreCreateMutex();
 	
 	while (1)
 	{
+		sd_val = ioport_get_pin_level(SD_CD_PIN);
+		if (sd_val != sd_oldVal)
+		{
+			if (sd_val == true)
+			{
+				puts("Card removed\r");
+				closeAllFiles();
+				f_mount(LUN_ID_SD_MMC_0_MEM, NULL);
+				messageData = malloc(sizeof(msg_sd_card_state_t));
+				messageData->errorCode = 0;
+				messageData->mounted = false;
+				msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SDCARD, MSG_TYPE_SDCARD_STATE, (void*)messageData);
+			}
+			else
+			{
+				puts("Card inserted\r");
+				cardInsertedCall();
+			}
+		}
+		sd_oldVal = sd_val;
+		
 		if (xSemaphoreTake(semaphore_fatFsAccess, 1) == true)
 		{
-			if (dataLogFile.fileOpen)
+			for (int i = 0; i < MAX_OPEN_FILES; i++)
 			{
-				//Data Log
-				dataLogFile.activeBuffer = ! dataLogFile.activeBuffer;
-				if (dataLogFile.activeBuffer == 0)
-				{
-					//use buffer B as we just toggled the buffer
-					if (dataLogFile.bufferIndexB > 0)
-					{
-						totalBytesToWrite = dataLogFile.bufferIndexB;
-						numBytesWritten = 0;
-						totalBytesWritten = 0;
-						while (totalBytesToWrite > 0)
-						{
-							res = f_write(&dataLogFile.fileObj, (void*)dataLogFile.bufferPointerB + totalBytesWritten, 
-																totalBytesToWrite,	&numBytesWritten);
-							if (res != FR_OK)
-							{
-								puts("Write to Datalog failed\r");
-								status = STATUS_FAIL;
-								break;
-							}
-							res = f_sync(&dataLogFile.fileObj);
-							totalBytesToWrite -= numBytesWritten;
-							totalBytesWritten += numBytesWritten;
-							vTaskDelay(1);
-						}
-						if (totalBytesToWrite == 0)
-						{
-							dataLogFile.bufferIndexB = 0;
-						}
-					}
-				}
-				else
-				{
-					//use buffer A as we just toggled the buffer
-					if (dataLogFile.bufferIndexA > 0)
-					{
-						totalBytesToWrite = dataLogFile.bufferIndexA;
-						numBytesWritten = 0;
-						totalBytesWritten = 0;
-						while (totalBytesToWrite > 0)
-						{
-							res = f_write(&dataLogFile.fileObj, (void*)dataLogFile.bufferPointerA + totalBytesWritten, 
-																totalBytesToWrite, &numBytesWritten);
-							if (res != FR_OK)
-							{
-								puts("Write to Datalog from buffer A failed\r");
-								status = STATUS_FAIL;
-								break;
-							}
-							res = f_sync(&dataLogFile.fileObj);
-							totalBytesToWrite -= numBytesWritten;
-							totalBytesWritten += numBytesWritten;
-							vTaskDelay(1);
-						}
-						if (totalBytesToWrite == 0)
-						{
-							dataLogFile.bufferIndexA = 0;
-						}
-					}
-				}
+				write_to_sd_card(openFilesList.openFilesArray[i]);
 			}
-			
-			/*	DebugLog section	*/
-			if (debugLogFile.fileOpen)
-			{
-				//Debug Log
-				debugLogFile.activeBuffer = ! debugLogFile.activeBuffer;
-				if (debugLogFile.activeBuffer == 0)
-				{
-					//use buffer B as we just toggled the buffer
-					if (debugLogFile.bufferIndexB > 0)
-					{
-						totalBytesToWrite = debugLogFile.bufferIndexB;
-						totalBytesWritten = 0;
-						numBytesWritten = 0;
-						while (totalBytesToWrite > 0)
-						{
-							res = f_write(&debugLogFile.fileObj, (void*)debugLogFile.bufferPointerB + totalBytesWritten,
-																	totalBytesToWrite,	&numBytesWritten);
-							if (res != FR_OK)
-							{
-								puts("Write to Debuglog failed\r");
-								status = STATUS_FAIL;
-							}
-							res = f_sync(&debugLogFile.fileObj);
-							totalBytesToWrite -= numBytesWritten;
-							totalBytesWritten += numBytesWritten;
-							vTaskDelay(1);
-						}
-						if (totalBytesToWrite == 0)
-						{
-							debugLogFile.bufferIndexB = 0;
-						}
-					}
-				}
-				else
-				{
-					//use buffer A as we just toggled the buffer
-					if (debugLogFile.bufferIndexA > 0)
-					{
-						totalBytesToWrite = debugLogFile.bufferIndexA;
-						totalBytesWritten = 0;
-						numBytesWritten = 0;
-						while (totalBytesToWrite > 0)
-						{
-							res = f_write(&debugLogFile.fileObj, (void*)debugLogFile.bufferPointerA + totalBytesWritten, 
-																	totalBytesToWrite, &numBytesWritten);
-							if (res != FR_OK)
-							{
-								puts("Write to Debuglog from buffer A failed\r");
-								status = STATUS_FAIL;
-							}
-							res = f_sync(&debugLogFile.fileObj);
-							totalBytesToWrite -= numBytesWritten;
-							totalBytesWritten += numBytesWritten;
-							vTaskDelay(1);
-						}
-						if (totalBytesToWrite == 0)
-						{
-							debugLogFile.bufferIndexA = 0;
-						}
-					}
-				}
-			}
-			
 			xSemaphoreGive(semaphore_fatFsAccess);
 		}
 		else
 		{
-			puts("Failed to get semaphore\r");
+			puts("Failed to get semaphore - SD-card main thread\r");
+		}
+		
+		if (xQueueReceive(queue_sdCard, &eventMessage, 1) == true)
+		{
+			processEvent(eventMessage);
 		}
 		vTaskDelay(100);
 	}
 }
 
-status_t sdc_writeToFile(sdc_file_t* fileObject, char* data, size_t size)
+status_t write_to_sd_card(sdc_file_t *fileObject)
+{
+	FRESULT res;
+	UINT numBytesWritten = 0;
+	uint32_t totalBytesWritten = 0, totalBytesToWrite = 0;
+	status_t status;
+	
+	if (fileObject->fileOpen)
+	{
+		if (xSemaphoreTake(semaphore_bufferAccess, 10) == true)
+		{
+			changeActiveBuffer(fileObject);
+			xSemaphoreGive(semaphore_bufferAccess);
+		}
+		else
+		{
+			puts("Failed to get semaphore - Buffer read\r");
+		}
+		
+		if (fileObject->activeBuffer == fileObject->bufferPointerA)
+		{
+			//use buffer B as we just toggled the buffer
+			if (fileObject->bufferIndexB > 0)
+			{
+				totalBytesToWrite = fileObject->bufferIndexB;
+				numBytesWritten = 0;
+				totalBytesWritten = 0;
+				while (totalBytesToWrite > 0)
+				{
+					res = f_write(&fileObject->fileObj, (void*)fileObject->bufferPointerB + totalBytesWritten,
+					totalBytesToWrite,	&numBytesWritten);
+					if (res != FR_OK)
+					{
+						puts("Write to SD-card failed\r");
+						status = STATUS_FAIL;
+						break;
+					}
+					res = f_sync(&fileObject->fileObj);
+					totalBytesToWrite -= numBytesWritten;
+					totalBytesWritten += numBytesWritten;
+					vTaskDelay(1);
+				}
+				if (totalBytesToWrite == 0)
+				{
+					fileObject->bufferIndexB = 0;
+				}
+			}
+		}
+		else
+		{
+			//use buffer A as we just toggled the buffer
+			if (fileObject->bufferIndexA > 0)
+			{
+				totalBytesToWrite = fileObject->bufferIndexA;
+				numBytesWritten = 0;
+				totalBytesWritten = 0;
+				while (totalBytesToWrite > 0)
+				{
+					res = f_write(&fileObject->fileObj, (void*)fileObject->bufferPointerA + totalBytesWritten,
+					totalBytesToWrite, &numBytesWritten);
+					if (res != FR_OK)
+					{
+						puts("Write to SD-card failed\r");
+						status = STATUS_FAIL;
+						break;
+					}
+					res = f_sync(&fileObject->fileObj);
+					totalBytesToWrite -= numBytesWritten;
+					totalBytesWritten += numBytesWritten;
+					vTaskDelay(1);
+				}
+				if (totalBytesToWrite == 0)
+				{
+					fileObject->bufferIndexA = 0;
+				}
+			}
+		}
+	}
+}
+
+status_t sdc_writeToFile(sdc_file_t* fileObject, void* data, size_t size)
 {
 	status_t status = STATUS_PASS;
 	
-	//if (xSemaphoreTake(semaphore_fatFsAccess) ==  true)
-	//{
-		if (fileObject->activeBuffer == 0)
+	if (fileObject->fileOpen == false)	//only write to buffers if the file is open.
+	{
+		status = STATUS_FAIL;
+		return status;
+	}
+	
+	if (xSemaphoreTake(semaphore_bufferAccess, 1) ==  true)
+	{
+		if (fileObject->activeBuffer == fileObject->bufferPointerA)
 		{
 			if (fileObject->bufferIndexA + size < fileObject->bufferSize)
 			{
@@ -231,12 +226,39 @@ status_t sdc_writeToFile(sdc_file_t* fileObject, char* data, size_t size)
 				status = STATUS_FAIL;
 			}
 		}
-		//xSemaphoreGive(semaphore_fatFsAccess);
-	//}
-	//else
-	//{
-		//status = STATUS_FAIL;
-	//}
+		xSemaphoreGive(semaphore_bufferAccess);
+	}
+	else
+	{
+		status = STATUS_FAIL;
+	}
+	return status;
+}
+
+status_t sdc_readFromFile(sdc_file_t* fileObject, void* data, size_t fileOffset, size_t length)
+{
+	status_t status = STATUS_PASS;
+	FRESULT res;
+	UINT numBytesRead = 0;
+	
+	if (fileObject->fileOpen == true)
+	{
+		if (xSemaphoreTake(semaphore_fatFsAccess, 1) == true)
+		{
+			//assuming the file was already opened by calling sdc_openFile
+			res = f_lseek(&fileObject->fileObj, (DWORD)fileOffset);
+			res = f_read(&fileObject->fileObj, data, length, &numBytesRead);
+			if (res != FR_OK)
+			{
+				status = STATUS_FAIL;
+			}
+			xSemaphoreGive(semaphore_fatFsAccess);
+		}
+		else
+		{
+			status = STATUS_FAIL;
+		}
+	}
 	return status;
 }
 
@@ -249,7 +271,7 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 	char logFileName[SD_CARD_FILENAME_LENGTH] = {0};
 	char dirName[SD_CARD_FILENAME_LENGTH] = "0:MovementLog";
 	char dirPath[] = "0:MovementLog/";
-	uint8_t data_buffer[100] = {0};
+	uint8_t data_buffer[100] = {0}, openMode = 0;
 	uint16_t fileIndexNumber = 0, byte_read = 0, bytes_written = 0;
 	DIR dir;
 	FIL indexFile_obj;
@@ -269,7 +291,7 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 			//this is a debug log file
 			//TODO: add the file swap feature after confirmation
 			snprintf(logFileName, SD_CARD_FILENAME_LENGTH, "0:%s.bin", filename);
-			res = f_open(&fileObject->fileObj, (char const*)logFileName, FA_OPEN_ALWAYS | FA_WRITE);
+			res = f_open(&fileObject->fileObj, (char const*)logFileName, FA_OPEN_ALWAYS | FA_WRITE | FA_READ);
 			if (res == FR_OK)
 			{
 				puts("DebugLog open\r");
@@ -283,7 +305,7 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 				status = STATUS_FAIL;
 			}
 		}
-		else
+		else if (mode == SDC_FILE_OPEN_READ_WRITE_DATA_LOG)
 		{
 			//this is a dataLog file
 			snprintf(dirName, SD_CARD_FILENAME_LENGTH, "0:%s", filename);
@@ -367,7 +389,38 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 				}
 			}
 		}
-		
+		else
+		{
+			if (mode == SDC_FILE_OPEN_READ_WRITE_NEW)
+			{
+				openMode = FA_CREATE_NEW | FA_WRITE | FA_READ;
+			}
+			else if (mode == SDC_FILE_OPEN_READ_WRITE_APPEND)
+			{
+				openMode = FA_OPEN_ALWAYS | FA_WRITE | FA_READ;
+			}
+			else
+			{
+				openMode = FA_OPEN_EXISTING | FA_READ; 
+			}
+			snprintf(logFileName, SD_CARD_FILENAME_LENGTH, "0:%s.bin", filename);
+			res = f_open(&fileObject->fileObj, (char const*)logFileName, openMode);
+			if (res == FR_OK)
+			{
+				res = f_lseek(&fileObject->fileObj, fileObject->fileObj.fsize);
+				fileObject->fileOpen = true;
+				status = STATUS_PASS;
+			}
+			else
+			{
+				puts("Failed to open DebugLog\r");
+				status = STATUS_FAIL;
+			}
+		}
+		if (status == STATUS_PASS)
+		{
+			registerOpenFile(fileObject);
+		}
 		xSemaphoreGive(semaphore_fatFsAccess);
 	}
 	else
@@ -379,33 +432,37 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 	return status;
 }
 
-//Ctrl_status sd_mmc_test_unit_ready(uint8_t slot)	//TODO: this function has to be defined here as it is no longer a part of library.
-//{
-	//switch (sd_mmc_check(slot))
-	//{
-		//case SD_MMC_OK:
-		//if (sd_mmc_ejected[slot])
-		//{
-			//return CTRL_NO_PRESENT;
-		//}
-		//if (sd_mmc_get_type(slot) & (CARD_TYPE_SD | CARD_TYPE_MMC))
-		//{
-			//return CTRL_GOOD;
-		//}
-		//// It is not a memory card
-		//return CTRL_NO_PRESENT;
-//
-		//case SD_MMC_INIT_ONGOING:
-		//return CTRL_BUSY;
-//
-		//case SD_MMC_ERR_NO_CARD:
-		//sd_mmc_ejected[slot] = false;
-		//return CTRL_NO_PRESENT;
-//
-		//default:
-		//return CTRL_FAIL;
-	//}
-//}
+status_t sdc_closeFile(sdc_file_t* fileObject)
+{
+	status_t status = STATUS_PASS;
+	FRESULT res;
+	//return if the file is already closed
+	if (fileObject->fileOpen == false)
+	{
+		status = STATUS_FAIL; 
+		return status;
+	}
+	
+	if (xSemaphoreTake(semaphore_fatFsAccess, 100) == true)
+	{
+		res = f_sync(&fileObject->fileObj);
+		res = f_close(&fileObject->fileObj);
+		if (res != FR_OK)
+		{
+			status = STATUS_FAIL;
+		}
+		fileObject->fileOpen = false;
+		unregisterOpenFile(fileObject);
+		xSemaphoreGive(semaphore_fatFsAccess);
+	}
+	else
+	{
+		puts("Failed to get semaphore - SD-card close file\r");
+		status = STATUS_FAIL;
+	}
+	
+	return status;
+}
 
 status_t initializeSdCard()
 {
@@ -413,7 +470,7 @@ status_t initializeSdCard()
 	static FATFS* fs1;	//pointer to FATFS structure used to check free space
 	static FRESULT res;
 	static DWORD freeClusters, freeSectors, totalSectors;
-	status_t result = STATUS_FAIL;
+	status_t result = STATUS_PASS;
 	Ctrl_status status = STATUS_FAIL;
 	char test_file_name[] = "0:sd_mmc_test.txt";
 	FIL file_object;
@@ -449,6 +506,7 @@ status_t initializeSdCard()
 		res = f_mount(LUN_ID_SD_MMC_0_MEM, &fs);
 		if (res == FR_INVALID_DRIVE)
 		{
+			result = STATUS_FAIL;
 			puts("Error: Invalid Drive\r");
 			return result;
 		}
@@ -470,9 +528,85 @@ status_t initializeSdCard()
 			return result;
 		}
 	}
+	return result;
 }
 
 bool sdCardPresent()
 {
 	return !(ioport_get_pin_level(SD_CD_PIN));	//The gpio is pulled low when card is inserted.
+}
+
+void changeActiveBuffer(sdc_file_t *fileObject)
+{
+	//fileObject->activeBuffer = !fileObject->activeBuffer;
+	if (fileObject->activeBuffer == fileObject->bufferPointerA)
+	{
+		fileObject->activeBuffer = fileObject->bufferPointerB;
+	}
+	else
+	{
+		fileObject->activeBuffer = fileObject->bufferPointerA;
+	}
+}
+
+uint8_t checkEmptyLocation(open_files_t fileStruct)
+{
+	for (int i = 0; i < MAX_OPEN_FILES; i++)
+	{
+		if (fileStruct.openFilesArray[i] == NULL)
+		{
+			return i;
+		}
+	}
+	return (MAX_OPEN_FILES + 1);	//to indicate error
+}
+
+void registerOpenFile(sdc_file_t* fileObject)
+{
+	uint8_t arrayIndex = 0;
+	arrayIndex = checkEmptyLocation(openFilesList);	//check where the new pointer can be stored
+	if (arrayIndex < MAX_OPEN_FILES)
+	{
+		openFilesList.openFilesArray[arrayIndex] = fileObject;
+	}
+	else
+	{
+		//TODO: add error if necessary
+	}
+}
+
+void unregisterOpenFile(sdc_file_t* fileObject)
+{
+	for (int i = 0; i < MAX_OPEN_FILES; i++)	//find where the pointer was stored and clear it
+	{
+		if (openFilesList.openFilesArray[i] == fileObject)
+		{
+			openFilesList.openFilesArray[i] = NULL;
+			return;
+		}
+	}
+}
+
+void closeAllFiles()
+{
+	for (int i = 0; i < MAX_OPEN_FILES; i++)
+	{
+		sdc_closeFile(openFilesList.openFilesArray[i]);
+	}
+}
+
+void cardInsertedCall()
+{
+	status_t status = STATUS_PASS;
+	uint8_t eventData[2] = {0};
+	msg_sd_card_state_t* messageData;
+	
+	status = initializeSdCard();
+	if (status == STATUS_PASS)
+	{
+		messageData = malloc (sizeof(msg_sd_card_state_t));
+		messageData->mounted = true;
+		messageData->errorCode = 0;
+		msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SDCARD, MSG_TYPE_SDCARD_STATE, (void*)messageData);
+	}
 }
