@@ -139,6 +139,8 @@ namespace ProtobufDecoder
                         processPacket(packet);
                     }
                 }
+                //Play nicely with other threads
+                Thread.Sleep(1);
             }
         }
 
