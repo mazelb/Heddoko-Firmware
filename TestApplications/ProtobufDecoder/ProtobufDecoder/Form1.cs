@@ -10,10 +10,11 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using PacketTester;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO.Ports;
 using System.Threading;
 using heddoko;
-using ProtoBuf;
+ using ProtoBuf;
 
 namespace ProtobufDecoder
 {
@@ -23,10 +24,12 @@ namespace ProtobufDecoder
         public ConcurrentQueue<string> debugMessageQueue;
         private bool processPacketQueueEnabled = false;
         public ConcurrentQueue<RawPacket> packetQueue;
-        enum CommandIds { update = 0x11, getFrame, getFrameResp, setupMode, buttonPress, setImuId, setImuIdResp, getStatus, getStatusResp };
+        private Stopwatch mStopwatch =  new Stopwatch();
+         enum CommandIds { update = 0x11, getFrame, getFrameResp, setupMode, buttonPress, setImuId, setImuIdResp, getStatus, getStatusResp };
         public form_decoder()
         {
             InitializeComponent();
+             
         }
 
         private void form_decoder_Load(object sender, EventArgs e)
@@ -167,9 +170,9 @@ namespace ProtobufDecoder
                 for (int i = 0; i < heddokoPacket.fullDataFrame.imuDataFrame.Count; i++)
                 {                    
                     //do stuff for each frame received.
-                    retString.Append(ConvertFloatToHex(heddokoPacket.fullDataFrame.imuDataFrame[i].quat_z_roll)+";");
-                    retString.Append(ConvertFloatToHex(heddokoPacket.fullDataFrame.imuDataFrame[i].quat_y_pitch) + ";");
-                    retString.Append(ConvertFloatToHex(heddokoPacket.fullDataFrame.imuDataFrame[i].quat_x_yaw) + ",");
+                    retString.Append(ConvertFloatToHex(heddokoPacket.fullDataFrame.imuDataFrame.ElementAt(i).quat_z_roll)+";");
+                    retString.Append(ConvertFloatToHex(heddokoPacket.fullDataFrame.imuDataFrame.ElementAt(i).quat_y_pitch) + ";");
+                    retString.Append(ConvertFloatToHex(heddokoPacket.fullDataFrame.imuDataFrame.ElementAt(i).quat_x_yaw) + ",");
                 }
                 for (int i = 0; i < 9 - heddokoPacket.fullDataFrame.imuDataFrame.Count; i++)
                 {
@@ -184,7 +187,7 @@ namespace ProtobufDecoder
         private string convertProtoPacketToAppFormat(Packet heddokoPacket)
         {
             StringBuilder retString = new StringBuilder();
-            if (heddokoPacket.type == PacketType.DataFrame)
+             if (heddokoPacket.type == PacketType.DataFrame)
             {
                 //hard coding mask for now
                 if(startTime == 0)
@@ -196,10 +199,10 @@ namespace ProtobufDecoder
                 for (int i = 0; i < heddokoPacket.fullDataFrame.imuDataFrame.Count; i++)
                 {
                     //do stuff for each frame received.
-                    retString.Append(heddokoPacket.fullDataFrame.imuDataFrame[i].imuId.ToString() + ",");
-                    retString.Append(heddokoPacket.fullDataFrame.imuDataFrame[i].quat_z_roll.ToString("F3") + ";");
-                    retString.Append(heddokoPacket.fullDataFrame.imuDataFrame[i].quat_y_pitch.ToString("F3") + ";");
-                    retString.Append(heddokoPacket.fullDataFrame.imuDataFrame[i].quat_x_yaw.ToString("F3") + ",");
+                    retString.Append(heddokoPacket.fullDataFrame.imuDataFrame.ElementAt(i).imuId + ",");
+                    retString.Append(heddokoPacket.fullDataFrame.imuDataFrame.ElementAt(i).quat_z_roll.ToString("F3") + ";");
+                    retString.Append(heddokoPacket.fullDataFrame.imuDataFrame.ElementAt(i).quat_y_pitch.ToString("F3") + ";");
+                    retString.Append(heddokoPacket.fullDataFrame.imuDataFrame.ElementAt(i).quat_x_yaw.ToString("F3") + ",");
                 }
                 for (int i = 0; i < 10 - heddokoPacket.fullDataFrame.imuDataFrame.Count; i++)
                 {
@@ -255,7 +258,7 @@ namespace ProtobufDecoder
             UInt32 packetCount = 0, packetErrors = 0; ;
             try
             {
-                FileStream dataFile = File.Open(ofd_OpenFile.FileName, FileMode.Open);
+        //        FileStream dataFile = File.Open(ofd_OpenFile.FileName, FileMode.Open);
                 FileStream outputFile = File.Open(sfd_SaveFile.FileName, FileMode.Create);
                 debugMessageQueue.Enqueue(String.Format("Processing File: {0}\r\n", ofd_OpenFile.FileName));
                 int percent = 0;
@@ -270,22 +273,18 @@ namespace ProtobufDecoder
                     outputFile.Write(ASCIIEncoding.ASCII.GetBytes(line1), 0, line1.Length);
                     outputFile.Write(ASCIIEncoding.ASCII.GetBytes(line2), 0, line2.Length);
                     outputFile.Write(ASCIIEncoding.ASCII.GetBytes(line3), 0, line3.Length);
-                }                
-                for (int i = 0; i < dataFile.Length; i++)
+                }
+                byte[] vByteArray = File.ReadAllBytes(ofd_OpenFile.FileName);
+                for (int i = 0; i < vByteArray.Length; i++)
                 {
-                    int newPercent = (i * 100) / (int)dataFile.Length;
-                    if(newPercent != percent)
+                    int newPercent = (i * 100) / vByteArray.Length;
+                    if (newPercent != percent)
                     {
                         pb_progressBar.Value = newPercent;
-                        percent = newPercent; 
+                        percent = newPercent;
                     }
-                    int dataByte = dataFile.ReadByte();
-                    if (dataByte == -1)
-                    {
-                        //we've reached the end of the stream
-                        break;
-                    }
-                    byte newByte = (byte)dataByte;
+                    
+                    byte newByte = vByteArray[i];
                     int bytesReceived = packet.BytesReceived + 1;
                     PacketStatus status = packet.processByte(newByte);
                     switch (status)
@@ -293,7 +292,7 @@ namespace ProtobufDecoder
                         case PacketStatus.PacketComplete:
                             //debugMessageQueue.Enqueue(String.Format("{0} Packet Received {1} bytes\r\n", (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond), packet.PayloadSize));
                             RawPacket packetCopy = new RawPacket(packet);
-                            string frameString = processRawPacket(packetCopy);                            
+                            string frameString = processRawPacket(packetCopy);
                             if (frameString.Length > 0)
                             {
                                 outputFile.Write(ASCIIEncoding.ASCII.GetBytes(frameString), 0, frameString.Length);
@@ -310,14 +309,16 @@ namespace ProtobufDecoder
                         case PacketStatus.newPacketDetected:
                             break;
                     }
-                }
-                debugMessageQueue.Enqueue(String.Format("Processed File Size:{0} Bytes, {1} frames extracted ,{2} Errors \r\n", dataFile.Length, packetCount, packetErrors));
-                dataFile.Close();
-                outputFile.Close(); 
+                }          
+              
+              debugMessageQueue.Enqueue(String.Format("Processed File Size:{0} Bytes, {1} frames extracted ,{2} Errors \r\n", vByteArray.Length, packetCount, packetErrors));
+                 outputFile.Close(); 
             }
-            catch
+            catch(Exception vE)
             {
                 debugMessageQueue.Enqueue(String.Format("Error Processing file, {0} errors found\r\n", packetErrors));
+                debugMessageQueue.Enqueue("Exception found "+ vE);
+
             }
             pb_progressBar.Value = 0;
 
@@ -334,6 +335,7 @@ namespace ProtobufDecoder
                         this.BeginInvoke((MethodInvoker)(() => tb_Console.AppendText(line)));
                     }
                 }
+                Thread.Sleep(1);
             }
         }
         private void form_decoder_FormClosing(object sender, FormClosingEventArgs e)
@@ -454,5 +456,7 @@ namespace ProtobufDecoder
                 cb_serialPorts.Items.AddRange(SerialPort.GetPortNames());
             }
         }
+
+      
     }
 }

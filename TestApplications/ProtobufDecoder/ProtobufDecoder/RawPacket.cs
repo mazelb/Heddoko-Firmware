@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-
+﻿using System; 
 namespace PacketTester
 {
     public enum PacketStatus { PacketComplete, PacketError, Processing, newPacketDetected};
@@ -31,6 +25,7 @@ namespace PacketTester
                 return payload;
             }
         }
+
         public ushort PayloadSize
         {
             get
@@ -38,6 +33,7 @@ namespace PacketTester
                 return payloadSize;
             }
         }
+
         public ushort BytesReceived
         {
             get
@@ -45,6 +41,7 @@ namespace PacketTester
                 return bytesReceived;
             }
         }
+
         public RawPacket()
         {
             payload = new byte[maxPacketSize];
@@ -54,6 +51,7 @@ namespace PacketTester
             bytesReceived = 0;
             rawPacketBytes = new byte[maxPacketSize]; 
         }
+
         public RawPacket(byte[] payloadBytes, UInt16 payloadBytesSize)
         {
             payload = payloadBytes;
@@ -63,6 +61,7 @@ namespace PacketTester
             rawPacketBytes = new byte[maxPacketSize];
             rawPacketBytesIndex = 0;
         }
+
         public RawPacket(RawPacket packet)
         {
             payload = new byte[maxPacketSize];
@@ -73,6 +72,7 @@ namespace PacketTester
             rawPacketBytes = new byte[maxPacketSize];
             rawPacketBytesIndex = 0;
         }
+
         public void resetPacket()
         {
             payloadSize = 0;
@@ -80,6 +80,8 @@ namespace PacketTester
             escapeFlag = false;
             bytesReceived = 0;
         }
+
+
         public RawPacket DeepCopy()
         {
             RawPacket other = (RawPacket)this.MemberwiseClone();
@@ -88,6 +90,7 @@ namespace PacketTester
             other.payloadSize = this.payloadSize;
             return other;
         }
+
         public PacketStatus processByte(byte incoming)
         {
             PacketStatus status = PacketStatus.Processing; 
@@ -121,7 +124,7 @@ namespace PacketTester
             if (escapeFlag == true)
             {
                 //un-escape the byte and process it as any other byte.
-                incoming = (byte)((int)incoming - (int)escapedByteOffset);
+                incoming = (byte)(incoming - escapedByteOffset);
                 //unset the flag
                 escapeFlag = false;
             }
@@ -131,7 +134,7 @@ namespace PacketTester
             {
                 //this is the first byte of the payload size		
                 //copy byte to LSB of the payload size
-                payloadSize |= (UInt16)incoming;
+                payloadSize |= incoming;
                 //increment received count
                 bytesReceived++;
             }
@@ -139,7 +142,7 @@ namespace PacketTester
             {
                 //this is the second byte of the payload size
                 //copy byte to MSB of the payload size
-                payloadSize |= (UInt16)(incoming << 8);
+                payloadSize |= (ushort)(incoming << 8);
                 //increment received count
                 bytesReceived++;
             }
@@ -168,7 +171,7 @@ namespace PacketTester
             if(rawByte == escapeByte || rawByte == startByte)
             {
                 rawPacketBytes[rawPacketBytesIndex++] = escapeByte;
-                rawPacketBytes[rawPacketBytesIndex++] = (byte)((int)rawByte + (int)escapedByteOffset);
+                rawPacketBytes[rawPacketBytesIndex++] = (byte)(rawByte + escapedByteOffset);
             }
             else
             {
