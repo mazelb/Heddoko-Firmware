@@ -1,0 +1,5 @@
+C:\Users\Hriday Mehta\Qsync\Hriday Mehta\_Documents\Cypress\HeddokoBLE\HeddokoBLE.cydsn\HeddokoBLE.cyprj|bbf7c39b-5071-4c19-9cdf-21c64c812923
+C:\Program Files (x86)\Cypress\PSoC Creator\3.1\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|eee52a2c-98ee-4b0d-9cdf-47f635ff91cf
+C:\Program Files (x86)\Cypress\PSoC Creator\3.1\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|7ebade22-e421-43f3-b87e-fff755575c74
+C:\Program Files (x86)\Cypress\PSoC Creator\3.1\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|59b034e1-219a-47b9-ba68-c9dc170f6db2
+C:\Program Files (x86)\Cypress\PSoC Creator\3.1\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|af74575e-380b-46f4-9e04-d1d30749d7da
