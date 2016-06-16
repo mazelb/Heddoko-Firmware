@@ -58,8 +58,13 @@ status_t msg_sendMessage(modules_t destModule, modules_t sourceModule, msg_messa
 	{
 		if(xQueueSendToBack( messageBoxes[destModule].queue,( void * ) message,10 ) != true)
 		{
+			status = STATUS_FAIL;
 			vTaskDelay(1);
 		}
+	}
+	else
+	{
+		status = STATUS_FAIL;
 	}
 	return status;
 }

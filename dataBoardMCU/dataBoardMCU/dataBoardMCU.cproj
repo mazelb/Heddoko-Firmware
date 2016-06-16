@@ -745,6 +745,27 @@
     <Folder Include="src\config\" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="src\ble_cypressModule.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\ble_cypressModule.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\config\conf_clock.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\protobuf-c.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\protobuf-c.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\task_SensorHandler.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\task_SensorHandler.h">
+      <SubType>compile</SubType>
+    </Compile>
     <None Include="src\ASF\common\boards\board.h">
       <SubType>compile</SubType>
     </None>
@@ -1198,6 +1219,12 @@
     <Compile Include="src\ASF\sam\utils\syscalls\gcc\syscalls.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\cmd_commandProcessor.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\cmd_commandProcessor.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\common.h">
       <SubType>compile</SubType>
     </Compile>
@@ -1213,10 +1240,37 @@
     <None Include="src\config\conf_sd_mmc.h">
       <SubType>compile</SubType>
     </None>
+    <Compile Include="src\drv_gpio.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\drv_gpio.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\drv_uart.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\drv_uart.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\heddokoPacket.pb-c.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\heddokoPacket.pb-c.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\imu.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\msg_messenger.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\msg_messenger.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\pkt_packetParser.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\pkt_packetParser.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\sdc_sdCard.c">

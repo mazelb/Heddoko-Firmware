@@ -11,6 +11,7 @@
 
 #include <asf.h>
 #include "common.h"
+#include "sdc_sdCard.h"
 
 typedef enum
 {
@@ -40,11 +41,26 @@ typedef struct
 	uint32_t messageMask;
 }msg_messageBox_t;
 
+/*	Message types	*/
 typedef struct  
 {
 	bool mounted;
+	sd_message_type_t message;
 	uint8_t errorCode;
 }msg_sd_card_state_t;
+
+typedef struct
+{
+	bool unmountSD;
+	bool mountSD;
+	bool enableSensorStream;
+}msg_sys_manager_t;
+
+typedef struct
+{
+	bool sensorInitialized;
+	uint8_t errorCode;
+}msg_sensor_state_t;
 
 /***********************************************************************************************
  * msg_registerForMessages(modules_t module, uint32_t messageMask,xQueueHandle messageQueue)

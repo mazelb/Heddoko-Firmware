@@ -17,6 +17,21 @@
 * @brief: see VersionNotes.txt for details
 */
 
+#define ALL_INTERRUPT_MASK  0xffffffff
+#define TRUE 1
+#define FALSE 0
+
+/** Baudrate setting for all : 115200 */
+#define CONF_BAUDRATE   115200
+/** Char setting     : 8-bit character length (don't care for UART) */
+#define CONF_CHARLENGTH US_MR_CHRL_8_BIT
+/** Parity setting   : No parity check */
+#define CONF_PARITY     UART_MR_PAR_NO
+/** Stopbit setting  : No extra stopbit, i.e., use 1 (don't care for UART) */
+#define CONF_STOPBITS   US_MR_NBSTOP_1_BIT
+
+#define MAX_DEBUG_STRING_LENGTH	200
+
 typedef enum 
 {
 	MODULE_SYSTEM_MANAGER=0,
@@ -36,9 +51,13 @@ typedef enum
 	STATUS_EAGAIN = 3 //This is used in the get packet, is called when the packet is not complete
 }status_t;
 
-#define TASK_MAIN_STACK_SIZE			(4072/sizeof(portSTACK_TYPE))
-#define TASK_MAIN_PRIORITY				(tskIDLE_PRIORITY + 3)
-#define TASK_SD_CARD_STACK_SIZE			(3072/sizeof(portSTACK_TYPE))
-#define TASK_SD_CARD_PRIORITY			(tskIDLE_PRIORITY + 3)
+#define TASK_SYSTEM_MANAGER_STACK_SIZE			(4072/sizeof(portSTACK_TYPE))
+#define TASK_SYSTEM_MANAGER_PRIORITY			(tskIDLE_PRIORITY + 3)
+#define TASK_SD_CARD_STACK_SIZE					(3072/sizeof(portSTACK_TYPE))
+#define TASK_SD_CARD_PRIORITY					(tskIDLE_PRIORITY + 3)
+#define TASK_SENSOR_HANDLER_STACK_SIZE			(3072/sizeof(portSTACK_TYPE))
+#define TASK_SENSOR_HANDLER_PRIORITY			(tskIDLE_PRIORITY + 3)
+
+//static void _EXFUN (putStr, (char * str)) __attribute__((weakref ("puts")));
 
 #endif /* COMMON_H_ */

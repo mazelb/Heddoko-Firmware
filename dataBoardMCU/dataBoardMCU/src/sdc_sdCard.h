@@ -14,15 +14,18 @@
 #include "common.h"
 
 #define SD_CD_PIN					PIO_PC12_IDX
-#define DATALOG_MAX_BUFFER_SIZE		1024
+#define DATALOG_MAX_BUFFER_SIZE		8000
 #define DEBUGLOG_MAX_BUFFER_SIZE	100
 #define DEBUG_LOG_MAX_FILE_SIZE		2000000ul
 #define SD_CARD_FILENAME_LENGTH		150
 #define MAX_OPEN_FILES				10
 
-//#define SD_CARD_REMOVED				0x01
-//#define SD_CARD_INSERTED			0x02
-//#define SD_CARD_INITIALIZED			0x03
+typedef enum
+{
+	SD_FILE_PASS = 0,
+	SD_FILE_FAIL,
+	SD_FILE_ALREADY_OPEN,
+}sd_file_state_t;
 
 typedef enum
 {

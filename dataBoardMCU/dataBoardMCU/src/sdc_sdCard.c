@@ -10,6 +10,7 @@
 #include "string.h"
 #include "sd_mmc_mem.h"
 #include "msg_messenger.h"
+#include "sys_systemManager.h"
 
 //Static function forward declarations
 bool sdCardPresent();
@@ -27,10 +28,11 @@ void registerOpenFile(sdc_file_t* fileObject);
 void unregisterOpenFile(sdc_file_t* fileObject);
 //close all open files
 void closeAllFiles();
-//re-initialize the SD-card module
+//re-initialize the SD-card module and pass message
 void cardInsertedCall();
+//unmount the SD-card module and pass message
+void cardRemovedCall();
 
-static bool sd_mmc_ejected[2] = {false, false};
 FIL dataLogFile_obj, debugLogFile_Obj;
 xSemaphoreHandle semaphore_fatFsAccess = NULL, semaphore_bufferAccess = NULL;
 xQueueHandle queue_sdCard = NULL;
@@ -40,10 +42,44 @@ open_files_t openFilesList;
 	
 //extern variables
 extern sdc_file_t dataLogFile, debugLogFile;
+extern system_status_t systemStatus;
 
 static void processEvent(msg_message_t message)
 {
+	msg_sys_manager_t* sys_eventData;
+	sys_eventData = (msg_sys_manager_t *) message.parameters;
 	
+	switch (message.type)
+	{
+		case MSG_TYPE_ENTERING_NEW_STATE:
+			if (message.source == MODULE_SYSTEM_MANAGER)
+			{
+				if ((sys_eventData->mountSD == false) && (sys_eventData->unmountSD == true))
+				{
+					if (systemStatus.sdCardState != SD_CARD_REMOVED)
+						cardRemovedCall();
+				}
+				else if ((sys_eventData->mountSD == true) && (sys_eventData->unmountSD == false))
+				{
+					if ((sdCardPresent()) && (systemStatus.sdCardState != SD_CARD_INITIALIZED))	//TODO: make sure these conditions don't pose a problem
+						cardInsertedCall();
+				}
+			}
+		break;
+		case MSG_TYPE_SDCARD_STATE:
+		case MSG_TYPE_READY:
+		case MSG_TYPE_ERROR:
+		case MSG_TYPE_SDCARD_SETTINGS:
+		case MSG_TYPE_WIFI_STATE:
+		case MSG_TYPE_WIFI_SETTINGS:
+		case MSG_TYPE_USB_CONNECTED:
+		case MSG_TYPE_CHARGER_EVENT:
+		case MSG_TYPE_COMMAND_PACKET_RECEIVED:
+		default:
+		break;
+	}
+	
+	free(message.parameters);
 }
 
 void sdc_sdCardTask(void *pvParameters)
@@ -52,9 +88,7 @@ void sdc_sdCardTask(void *pvParameters)
 	UINT numBytesWritten = 0;
 	uint32_t totalBytesWritten = 0, totalBytesToWrite = 0;
 	status_t status = STATUS_PASS;
-	bool sd_val, sd_oldVal;
-	uint8_t eventData[2] = {0}, data1 = 0;
-	msg_sd_card_state_t* messageData;
+	bool sd_val = TRUE, sd_oldVal = FALSE;
 	msg_message_t eventMessage;
 	
 	queue_sdCard = xQueueCreate(10, sizeof(msg_message_t));
@@ -66,6 +100,8 @@ void sdc_sdCardTask(void *pvParameters)
 	semaphore_fatFsAccess = xSemaphoreCreateMutex();
 	semaphore_bufferAccess = xSemaphoreCreateMutex();
 	
+	sd_oldVal = ioport_get_pin_level(SD_CD_PIN);
+	
 	while (1)
 	{
 		sd_val = ioport_get_pin_level(SD_CD_PIN);
@@ -73,17 +109,10 @@ void sdc_sdCardTask(void *pvParameters)
 		{
 			if (sd_val == true)
 			{
-				puts("Card removed\r");
-				closeAllFiles();
-				f_mount(LUN_ID_SD_MMC_0_MEM, NULL);
-				messageData = malloc(sizeof(msg_sd_card_state_t));
-				messageData->errorCode = 0;
-				messageData->mounted = false;
-				msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SDCARD, MSG_TYPE_SDCARD_STATE, (void*)messageData);
+				cardRemovedCall();
 			}
 			else
 			{
-				puts("Card inserted\r");
 				cardInsertedCall();
 			}
 		}
@@ -279,7 +308,7 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 	//return if the file is already open
 	if (fileObject->fileOpen == true)
 	{
-		status = STATUS_FAIL; 
+		status = STATUS_PASS;	//TODO: should we pass "already open" 
 		return status;
 	}
 	
@@ -376,15 +405,18 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 					//snprintf(dataLogFileName, SD_CARD_FILENAME_LENGTH, "%s/%s_%s%05d.csv",dirName, brainSettings.suitNumber, brainSettings.fileName, fileIndexNumber);
 				//}
 				
-				if (f_open(&fileObject->fileObj, (char const *)dataLogFileName, FA_OPEN_ALWAYS | FA_WRITE) == FR_OK)
+				res = f_open(&fileObject->fileObj, (char const *)dataLogFileName, FA_OPEN_ALWAYS | FA_WRITE);
+				if (res == FR_OK)
 				{
 					puts(dataLogFileName);
-					res = f_lseek(&fileObject->fileObj, fileObject->fileObj.fsize);
+					//res = f_lseek(&fileObject->fileObj, fileObject->fileObj.fsize);
 					fileObject->fileOpen = true;
 				}
 				else
 				{
-					puts("log failed to open\r\n");
+					itoa(res, data_buffer, 10);
+					puts(data_buffer);
+					puts("Data log failed to open\r");
 					status = STATUS_FAIL;
 				}
 			}
@@ -413,7 +445,7 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 			}
 			else
 			{
-				puts("Failed to open DebugLog\r");
+				puts("Failed to open file\r");
 				status = STATUS_FAIL;
 			}
 		}
@@ -601,12 +633,43 @@ void cardInsertedCall()
 	uint8_t eventData[2] = {0};
 	msg_sd_card_state_t* messageData;
 	
+	messageData = malloc (sizeof(msg_sd_card_state_t));
+	messageData->mounted = true;
+	messageData->message = SD_CARD_INSERTED;
+	messageData->errorCode = 0;
+	msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SDCARD, MSG_TYPE_SDCARD_STATE, (void*)messageData);
+	
 	status = initializeSdCard();
 	if (status == STATUS_PASS)
 	{
 		messageData = malloc (sizeof(msg_sd_card_state_t));
 		messageData->mounted = true;
+		messageData->message = SD_CARD_INITIALIZED;
 		messageData->errorCode = 0;
-		msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SDCARD, MSG_TYPE_SDCARD_STATE, (void*)messageData);
+		msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SDCARD, MSG_TYPE_READY, (void*)messageData);
+	}
+}
+
+status_t unInitializeSdCard()
+{
+	closeAllFiles();
+	f_mount(LUN_ID_SD_MMC_0_MEM, NULL);
+	return STATUS_PASS;
+}
+
+void cardRemovedCall()
+{
+	status_t status = STATUS_PASS;
+	uint8_t eventData[2] = {0};
+	msg_sd_card_state_t* messageData;
+	
+	status = unInitializeSdCard();
+	if (status == STATUS_PASS)
+	{
+		messageData = malloc(sizeof(msg_sd_card_state_t));
+		messageData->message = SD_CARD_REMOVED;
+		messageData->mounted = false;
+		messageData->errorCode = 0;
+		msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SDCARD, MSG_TYPE_ERROR, (void*)messageData);
 	}
 }

@@ -32,48 +32,17 @@
  * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
  */
 
+//should contain a call to system manager
+
 #include <asf.h>
 #include "common.h"
 #include "string.h"
 #include "sdc_sdCard.h"
 #include "msg_messenger.h"
-
-unsigned long sgSysTickCount = 0;
-volatile uint8_t dataLogBufferA[DATALOG_MAX_BUFFER_SIZE] = {0} , dataLogBufferB[DATALOG_MAX_BUFFER_SIZE] = {0};
-volatile uint8_t debugLogBufferA[DEBUGLOG_MAX_BUFFER_SIZE] = {0} , debugLogBufferB[DEBUGLOG_MAX_BUFFER_SIZE] = {0};
-xQueueHandle queue_systemManager = NULL;
-
-/*	Extern Variables	*/
-extern char debugLogNewFileName[], debugLogOldFileName[];
-
-sdc_file_t dataLogFile =
-{
-	.bufferIndexA = 0,
-	.bufferIndexB = 0,
-	.bufferPointerA = dataLogBufferA,
-	.bufferPointerB = dataLogBufferB,
-	.bufferSize = DATALOG_MAX_BUFFER_SIZE,
-	.fileObj = NULL,
-	.fileName = "datalog",
-	.fileOpen = false,
-	.activeBuffer = 0
-};
-
-sdc_file_t debugLogFile =
-{
-	.bufferIndexA = 0,
-	.bufferIndexB = 0,
-	.bufferPointerA = debugLogBufferA,
-	.bufferPointerB = debugLogBufferB,
-	.bufferSize = DEBUGLOG_MAX_BUFFER_SIZE,
-	.fileObj = NULL,
-	.fileName = "sysHdk",
-	.fileOpen = false,
-	.activeBuffer = 0
-};
-
-/*	Extern functions	*/
-extern bool sdCardPresent();
+#include "drv_gpio.h"
+#include "drv_uart.h"
+#include "task_SensorHandler.h"
+#include "sys_systemManager.h"
 
 void HardFault_Handler()
 {
@@ -92,130 +61,15 @@ void UsageFault_Handler()
 	while (1);
 }
 
-static void processEvent(msg_message_t message)
-{
-	msg_sd_card_state_t* sd_eventData;
-	sd_eventData = (msg_sd_card_state_t *) message.parameters;
-	
-	switch (message.type)
-	{
-		case MSG_TYPE_SDCARD_STATE:
-			if (message.source == MODULE_SDCARD)
-			{
-				if (sd_eventData->mounted == false)
-				{
-					puts("SD-Card removed\r");
-					
-				}
-				else if (sd_eventData->mounted == true)
-				{
-					puts("SD-card inserted\r");
-					//open new files
-					sdc_openFile(&dataLogFile, dataLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DATA_LOG);
-					sdc_openFile(&debugLogFile, debugLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DEBUG_LOG);
-				}
-			}
-		break;
-		case MSG_TYPE_ENTERING_NEW_STATE:
-		case MSG_TYPE_READY:
-		case MSG_TYPE_ERROR:
-		case MSG_TYPE_SDCARD_SETTINGS:
-		case MSG_TYPE_WIFI_STATE:
-		case MSG_TYPE_WIFI_SETTINGS:
-		case MSG_TYPE_USB_CONNECTED:
-		case MSG_TYPE_CHARGER_EVENT:
-		case MSG_TYPE_COMMAND_PACKET_RECEIVED:
-		default:
-		break;
-	}
-	
-	free(message.parameters);
-}
-
-void TaskMain()
-{
-	bool sd_val, sd_oldVal, enable = false;
-	uint8_t data[20] = {0};
-	uint16_t count = 0;
-	status_t status = STATUS_PASS;
-	msg_message_t eventMessage;
-	
-	queue_systemManager = xQueueCreate(10, sizeof(msg_message_t));
-	if (queue_systemManager != 0)
-	{
-		msg_registerForMessages(MODULE_SYSTEM_MANAGER, 0xff, queue_systemManager);
-	}
-	
-	while (1)
-	{
-		sd_val = ioport_get_pin_level(SD_CD_PIN);
-		if (sd_val != sd_oldVal)
-		{
-			if (sd_val == true)
-			{
-				puts("Card removed\r");
-				enable = false;
-			}
-			else
-			{
-				puts("Card inserted\r");
-			}
-		}
-		sd_oldVal = sd_val;
-		
-		if (!ioport_get_pin_level(SW0_PIN))
-		{
-			while(!ioport_get_pin_level(SW0_PIN));
-			enable = !enable;
-			ioport_set_pin_level(LED_0_PIN, !enable);
-			sdc_writeToFile(&debugLogFile, "Button Press\r\n", 14);
-		}
-		if (enable)
-		{
-			snprintf(data, 21, "Data count: %06d\r\n", count);
-			puts(data);
-			sdc_writeToFile(&dataLogFile, (void*)data, sizeof(data));
-			count++;
-		}
-		
-		if(xQueueReceive(queue_systemManager, &(eventMessage), 1) == true)
-		{
-			processEvent(eventMessage);
-		}
-		vTaskDelay(10);
-	}
-}
-
-void configure_console()
-{
-	const usart_serial_options_t conf_uart = 
-	{
-		.baudrate = CONF_UART_BAUDRATE,
-		.charlength = 0,
-		.paritytype = CONF_UART_PARITY,
-		.stopbits = 1
-	};
-
-	stdio_serial_init(UART1, &conf_uart);
-	setbuf(stdout, NULL);
-}
-
 int main (void)
-{
-	status_t status = STATUS_FAIL;
-	uint16_t block, page;
-	uint32_t error = 0;
-	
+{	
+	/*	Board initialization	*/
 	irq_initialize_vectors();
 	cpu_irq_enable();
-	board_init();
-	sysclk_init(); 
-	NVIC_EnableIRQ(SysTick_IRQn);
-	configure_console();
-	puts("System Initialized.\r");
+	sysclk_init();
 	
 	/* Insert application code here, after the board has been initialized. */
-	if (xTaskCreate(TaskMain, "Main", TASK_MAIN_STACK_SIZE, NULL, TASK_MAIN_PRIORITY, NULL) != pdPASS)
+	if (xTaskCreate(systemManager, "SM", TASK_SYSTEM_MANAGER_STACK_SIZE, NULL, TASK_SYSTEM_MANAGER_PRIORITY, NULL) != pdPASS)
 	{
 		puts("Failed to create main task\r");
 	}
@@ -223,7 +77,11 @@ int main (void)
 	{
 		puts("Failed to create SD-card task\r");
 	}
-
+	if (xTaskCreate(task_SensorHandler, "SH", TASK_SENSOR_HANDLER_STACK_SIZE, NULL, TASK_SENSOR_HANDLER_PRIORITY, NULL) != pdPASS)
+	{
+		puts("Failed to create sensor handler task\r");
+	}
+	
 	vTaskStartScheduler();
 	
 	/* This skeleton code simply sets the LED to the state of the button. */
