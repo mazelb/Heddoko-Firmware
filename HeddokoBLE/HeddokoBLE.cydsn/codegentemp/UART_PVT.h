@@ -1,8 +1,8 @@
-/*******************************************************************************
-* File Name: .h
-* Version 2.0
+/***************************************************************************//**
+* \file .h
+* \version 3.20
 *
-* Description:
+* \brief
 *  This private file provides constants and parameter values for the
 *  SCB Component.
 *  Please do not use this file or its content in your project.
@@ -10,7 +10,8 @@
 * Note:
 *
 ********************************************************************************
-* Copyright 2013-2014, Cypress Semiconductor Corporation. All rights reserved.
+* \copyright
+* Copyright 2013-2016, Cypress Semiconductor Corporation. All rights reserved.
 * You may use this file only in accordance with the license, terms, conditions,
 * disclaimers, and limitations in the end user license agreement accompanying
 * the software package with which this file was provided.
@@ -53,9 +54,11 @@
 *     Vars with External Linkage
 ***************************************/
 
+#if (UART_SCB_IRQ_INTERNAL)
 #if !defined (CY_REMOVE_UART_CUSTOM_INTR_HANDLER)
     extern cyisraddress UART_customIntrHandler;
 #endif /* !defined (CY_REMOVE_UART_CUSTOM_INTR_HANDLER) */
+#endif /* (UART_SCB_IRQ_INTERNAL) */
 
 extern UART_BACKUP_STRUCT UART_backup;
 
@@ -82,6 +85,12 @@ extern UART_BACKUP_STRUCT UART_backup;
     extern uint8 UART_numberOfAddr;
     extern uint8 UART_subAddrSize;
 #endif /* (UART_SCB_MODE_UNCONFIG_CONST_CFG) */
+
+#if (! (UART_SCB_MODE_I2C_CONST_CFG || \
+        UART_SCB_MODE_EZI2C_CONST_CFG))
+    extern uint16 UART_IntrTxMask;
+#endif /* (! (UART_SCB_MODE_I2C_CONST_CFG || \
+              UART_SCB_MODE_EZI2C_CONST_CFG)) */
 
 
 /***************************************

@@ -1,15 +1,16 @@
-/*******************************************************************************
-File Name: CYBLE_gatt.h
-Version 1.20
-
-Description:
- Contains the prototypes and constants used in the BLE GATT profile.
-
+/***************************************************************************//**
+* \file CYBLE_gatt.h
+* \version 3.10
+* 
+* \brief
+*  Contains the prototypes and constants used in the BLE GATT profile.
+* 
 ********************************************************************************
-Copyright 2014-2015, Cypress Semiconductor Corporation.  All rights reserved.
-You may use this file only in accordance with the license, terms, conditions,
-disclaimers, and limitations in the end user license agreement accompanying
-the software package with which this file was provided.
+* \copyright
+* Copyright 2014-2016, Cypress Semiconductor Corporation.  All rights reserved.
+* You may use this file only in accordance with the license, terms, conditions,
+* disclaimers, and limitations in the end user license agreement accompanying
+* the software package with which this file was provided.
 *******************************************************************************/
 
 
@@ -20,7 +21,7 @@ the software package with which this file was provided.
 
 
 /***************************************
-##Conditional Compilation Parameters
+* Conditional Compilation Parameters
 ***************************************/
 
 #define CYBLE_GATT_ROLE                              (0x01u)
@@ -35,16 +36,25 @@ the software package with which this file was provided.
 #if(CYBLE_GATT_ROLE_SERVER)
 
 #define CYBLE_GATT_DB_INDEX_COUNT                    (0x0025u)
-#define CYBLE_GATT_DB_CCCD_COUNT                     (0x06u)
+#define CYBLE_GATT_DB_ATT_VAL_COUNT                  (0x1Fu)
 #define CYBLE_GATT_DB_MAX_VALUE_LEN                  (0x0080u)
 
 #endif /* CYBLE_GATT_ROLE_SERVER */
 
+#define CYBLE_GATT_DB_CCCD_COUNT                     (0x06u)
+
+#if (CYBLE_GATT_DB_CCCD_COUNT == 0u)
+    #define CYBLE_GATT_DB_FLASH_CCCD_COUNT          (1u)
+#else
+    #define CYBLE_GATT_DB_FLASH_CCCD_COUNT          (CYBLE_GATT_DB_CCCD_COUNT)
+#endif
+
 #define CYBLE_CUSTOM
 #define CYBLE_CUSTOM_SERVER
 
+
 /***************************************
-##Common constants for LLS and IAS services
+* Common constants for LLS and IAS services
 ***************************************/
 
 #if (defined(CYBLE_IAS) || defined(CYBLE_LLS))
@@ -57,101 +67,145 @@ the software package with which this file was provided.
 
 
 /***************************************
-##Type Definitions
+* Type Definitions
 ***************************************/
 
-/* Service data received with read by group type response during discovery process */
+/**
+ \addtogroup group_common_api_gatt_definitions
+ @{
+*/
+
+/** Service data received with read by group type response during discovery process */
 typedef struct
 {
-    CYBLE_GATT_ATTR_HANDLE_RANGE_T      range;
-    uint16                              uuid;
+    CYBLE_GATT_ATTR_HANDLE_RANGE_T      range;     /**< Handle range of the request */
+    uint16                              uuid;      /**< 16-bit UUID */
 }CYBLE_DISC_SRVC_INFO_T;
 
-/* Included service data received with read by type response during discovery process */
+/** Service data received with read by group type response during discovery process including 128 bit UUID */
 typedef struct
 {
-    CYBLE_GATT_DB_ATTR_HANDLE_T    inclDefHandle;   /* Included definition handle */
-    CYBLE_GATT_ATTR_HANDLE_RANGE_T inclHandleRange; /* Included declaration handle range */
-    CYBLE_UUID_T                   uuid;            /* Included UUID */
-    uint8                          uuidFormat;      /* UUID Format - 16-bit (0x01) or 128-bit (0x02) */
+    CYBLE_GATT_ATTR_HANDLE_RANGE_T      range;     /**< Handle range of the request */
+    CYBLE_UUID_T                        uuid;      /**< 128-bit UUID */
+}CYBLE_DISC_SRVC128_INFO_T;
+
+/** Included service data received with read by type response during discovery process */
+typedef struct
+{
+    CYBLE_GATT_DB_ATTR_HANDLE_T    inclDefHandle;   /**< Included definition handle */
+    CYBLE_GATT_ATTR_HANDLE_RANGE_T inclHandleRange; /**< Included declaration handle range */
+    CYBLE_UUID_T                   uuid;            /**< Included UUID */
+    uint8                          uuidFormat;      /**< UUID Format - 16-bit (0x01) or 128-bit (0x02) */
 }CYBLE_DISC_INCL_INFO_T;
 
-/* Characteristic data received with read by type response during discovery process */
+/** Characteristic data received with read by type response during discovery process */
 typedef struct
 {
-    CYBLE_GATT_DB_ATTR_HANDLE_T charDeclHandle; /* Handle for characteristic declaration */
-    uint8                       properties;     /* Properties for value field */
-    CYBLE_GATT_DB_ATTR_HANDLE_T valueHandle;    /* Handle to server database attribute value entry */
-    CYBLE_UUID_T                uuid;           /* Characteristic UUID */
-    uint8                       uuidFormat;     /* UUID Format - 16-bit (0x01) or 128-bit (0x02) */
+    CYBLE_GATT_DB_ATTR_HANDLE_T charDeclHandle; /**< Handle for characteristic declaration */
+    uint8                       properties;     /**< Properties for value field */
+    CYBLE_GATT_DB_ATTR_HANDLE_T valueHandle;    /**< Handle to server database attribute value entry */
+    CYBLE_UUID_T                uuid;           /**< Characteristic UUID */
+    uint8                       uuidFormat;     /**< UUID Format - 16-bit (0x01) or 128-bit (0x02) */
 }CYBLE_DISC_CHAR_INFO_T;
 
-/* Characteristic Attribute handle + properties structure */
+/** Characteristic Attribute handle + properties structure */
 typedef struct
 {
-    /* Properties for value field */
+    /** Properties for value field */
     uint8  properties;
 
-    /* Handle of server database attribute value entry */
+    /** Handle of server database attribute value entry */
     CYBLE_GATT_DB_ATTR_HANDLE_T        valueHandle;
 }CYBLE_SRVR_CHAR_INFO_T;
 
-/* Characteristic descriptor data received with find info response during discovery process */
+/** Characteristic descriptor data received with find info response during discovery process */
 typedef struct
 {
-    CYBLE_CONN_HANDLE_T         connHandle;     /* Handle to server database attribute entry */
-    CYBLE_GATT_DB_ATTR_HANDLE_T descrHandle;    /* Descriptor handle */
-    CYBLE_UUID_T                uuid;           /* Descriptor UUID */
-    uint8                       uuidFormat;     /* UUID Format - 16-bit (0x01) or 128-bit (0x02) */
+    CYBLE_CONN_HANDLE_T         connHandle;     /**< Handle to server database attribute entry */
+    CYBLE_GATT_DB_ATTR_HANDLE_T descrHandle;    /**< Descriptor handle */
+    CYBLE_UUID_T                uuid;           /**< Descriptor UUID */
+    uint8                       uuidFormat;     /**< UUID Format - 16-bit (0x01) or 128-bit (0x02) */
 }CYBLE_DISC_DESCR_INFO_T;
 
 #if(CYBLE_GATT_ROLE_SERVER)
 
-/* Structure with Generic Attribute Service (GATTS) attribute handles */
+/** Structure with Generic Attribute Service (GATTS) attribute handles */
 typedef struct
 {
-    CYBLE_GATT_DB_ATTR_HANDLE_T serviceHandle;              /* Service handle*/
-    CYBLE_GATT_DB_ATTR_HANDLE_T serviceChangedHandle;       /* Handle of the Service Changed characteristic */
-    CYBLE_GATT_DB_ATTR_HANDLE_T cccdHandle;                 /* Client Characteristic Configuration descriptor handle */
+    CYBLE_GATT_DB_ATTR_HANDLE_T serviceHandle;              /**< Service handle*/
+    CYBLE_GATT_DB_ATTR_HANDLE_T serviceChangedHandle;       /**< Handle of the Service Changed characteristic */
+    CYBLE_GATT_DB_ATTR_HANDLE_T cccdHandle;                 /**< Client Characteristic Configuration descriptor handle */
 } CYBLE_GATTS_T;
 
 #endif /* CYBLE_GATT_ROLE_SERVER */
 
 #if(CYBLE_GATT_ROLE_CLIENT)
 
-/* Structure with discovered attributes information of Generic Attribute 
-   Service (GATTS) */
+/** Structure with discovered attributes information of Generic Attribute 
+    Service (GATTS) */
 typedef struct
 {
-    CYBLE_SRVR_CHAR_INFO_T serviceChanged;                  /* Handle of the Service Changed characteristic */
-    CYBLE_GATT_DB_ATTR_HANDLE_T cccdHandle;                 /* Client Characteristic Configuration descriptor handle */
+    CYBLE_SRVR_CHAR_INFO_T serviceChanged;                 /**< Handle of the Service Changed characteristic */
+    CYBLE_GATT_DB_ATTR_HANDLE_T cccdHandle;                /**< Client Characteristic Configuration descriptor handle */
 } CYBLE_GATTC_T;
 
 #endif /* CYBLE_GATT_ROLE_CLIENT */
 
+#if (CYBLE_MODE_PROFILE)
+/** Structure to store bonding data */
+typedef struct 
+{
+    /** Stack internal bonding data */
+    uint8 stackFlashptr[CYBLE_STACK_FLASH_SIZE];
+    
+	/** CCCD values */
+	uint8 attValuesCCCDFlashMemory[CYBLE_GAP_MAX_BONDED_DEVICE + 1u][CYBLE_GATT_DB_FLASH_CCCD_COUNT];
+    
+	/** Number of CCCD */
+	uint8 cccdCount; /* CYBLE_GATT_DB_CCCD_COUNT */
+    
+	/** Number of bonded devices */
+	uint8 boundedDevCount; /*CYBLE_GAP_MAX_BONDED_DEVICE*/
+}CY_BLE_FLASH_STORAGE;
+#endif /* CYBLE_MODE_PROFILE */
+
+/** @} */
+
 
 /***************************************
-##Function Prototypes
+* Function Prototypes
 ***************************************/
 
 #if(CYBLE_GATT_ROLE_SERVER)
+/**
+ \addtogroup group_common_api_gatt_server_functions
+ @{
+*/
     
 CYBLE_API_RESULT_T CyBle_GattsReInitGattDb(void);
-    
+ 
+/** @} */ 
 #endif /* CYBLE_GATT_ROLE_SERVER */
 
 #if(CYBLE_GATT_ROLE_CLIENT)
-    
+/**
+ \addtogroup group_common_api_gatt_client_functions
+ @{
+*/
+     
 CYBLE_API_RESULT_T CyBle_GattcStartDiscovery(CYBLE_CONN_HANDLE_T connHandle);
+CYBLE_API_RESULT_T CyBle_GattcStartPartialDiscovery(CYBLE_CONN_HANDLE_T connHandle,
+                        CYBLE_GATT_DB_ATTR_HANDLE_T startHandle, CYBLE_GATT_DB_ATTR_HANDLE_T endHandle);
 
+/** @} */ 
 #endif /* CYBLE_GATT_ROLE_CLIENT */
 
 
 /***************************************
-##Private Function Prototypes
+* Private Function Prototypes
 ***************************************/
 
-/* DOM-IGNORE-BEGIN */
+/** \cond IGNORE */
 #if (CYBLE_GATT_ROLE_SERVER)
     
 CYBLE_GATT_ERR_CODE_T CyBle_GattsWriteEventHandler(CYBLE_GATTS_WRITE_REQ_PARAM_T *eventParam);
@@ -165,11 +219,11 @@ void CyBle_GattcDiscoverCharDescriptorsEventHandler(CYBLE_DISC_DESCR_INFO_T *dis
 void CyBle_GattcIndicationEventHandler(CYBLE_GATTC_HANDLE_VALUE_IND_PARAM_T *eventParam);
 
 #endif /* CYBLE_GATT_ROLE_CLIENT */
-/* DOM-IGNORE-END */
+/** \endcond */
 
 
 /***************************************
-##Variables with external linkage
+* Variables with external linkage
 ***************************************/
 
 #if (CYBLE_GATT_ROLE_SERVER)
@@ -177,27 +231,34 @@ void CyBle_GattcIndicationEventHandler(CYBLE_GATTC_HANDLE_VALUE_IND_PARAM_T *eve
 extern const CYBLE_GATTS_T cyBle_gatts;
 extern const CYBLE_GATTS_DB_T cyBle_gattDB[CYBLE_GATT_DB_INDEX_COUNT];
 extern const uint8 cyBle_attUuid128[11u][16u];
+
 #if(CYBLE_GATT_DB_CCCD_COUNT != 0u)
 extern uint8 cyBle_attValuesCCCD[CYBLE_GATT_DB_CCCD_COUNT];
-extern const uint8 cyBle_attValuesCCCDFlashMemory[CYBLE_GAP_MAX_BONDED_DEVICE + 1u][CYBLE_GATT_DB_CCCD_COUNT];
 #endif /* CYBLE_GATT_DB_CCCD_COUNT != 0u */
+
+extern CYBLE_GATTS_ATT_GEN_VAL_LEN_T cyBle_attValuesLen[CYBLE_GATT_DB_ATT_VAL_COUNT];
 
 #endif /* CYBLE_GATT_ROLE_SERVER */
 
+#if ((CYBLE_MODE_PROFILE) && (CYBLE_BONDING_REQUIREMENT == CYBLE_BONDING_YES))
+extern const CY_BLE_FLASH_STORAGE cyBle_flashStorage;
+#endif /* CYBLE_MODE_PROFILE && (CYBLE_BONDING_REQUIREMENT == CYBLE_BONDING_YES) */
+    
 #if(CYBLE_GATT_ROLE_CLIENT)
     
 extern CYBLE_GATTC_T cyBle_gattc;
+extern CYBLE_GATT_ATTR_HANDLE_RANGE_T cyBle_gattcDiscoveryRange;    
     
 #endif /* CYBLE_GATT_ROLE_CLIENT */
 
 
 /***************************************
-##API Constants
+* API Constants
 ***************************************/
 
 
 /***************************************
-##Universal Unique Identifier (UUID): BLE Services
+* Universal Unique Identifier (UUID): BLE Services
 ***************************************/
 
 /* Generic Access Profile */
@@ -235,11 +296,15 @@ extern CYBLE_GATTC_T cyBle_gattc;
 #define CYBLE_UUID_WEIGHT_SCALE_SERVICE              (0x181Du)
 #define CYBLE_UUID_BOND_MANAGEMENT_SERVICE           (0x181Eu)
 #define CYBLE_UUID_CGM_SERVICE                       (0x181Fu)
+#define CYBLE_UUID_INTERNET_PROTOCOL_SUPPORT_SERVICE (0x1820u)
+#define CYBLE_UUID_IPS_SERVICE                       (0x1821u)
+#define CYBLE_UUID_HTTP_PROXY_SERVICE                (0x1823u)
 #define CYBLE_UUID_FIND_ME_SERVICE                   (0x18A3u)
+#define CYBLE_UUID_WIRELESS_POWER_TRANSFER_SERVICE   (0xFFFEu)
 
 
 /***************************************
-##UUID: GATT Attribute Types defined by GATT Profile 
+* UUID: GATT Attribute Types defined by GATT Profile 
 ***************************************/
 
 /* Primary Service Declaration */
@@ -253,7 +318,7 @@ extern CYBLE_GATTC_T cyBle_gattc;
 
 
 /***************************************
-##UUID: GATT Characteristic Descriptors
+* UUID: GATT Characteristic Descriptors
 ***************************************/
 
 /* Characteristic Extended Properties */
@@ -270,18 +335,20 @@ extern CYBLE_GATTC_T cyBle_gattc;
 #define CYBLE_UUID_CHAR_AGGREGATE_FORMAT             (0x2905u)
 /* Characteristic Valid Range */
 #define CYBLE_UUID_CHAR_VALID_RANGE                  (0x2906u)
-
-
-/***************************************
-##UUID: External Report Reference
-***************************************/
-
+/* External Report Reference */
 #define CYBLE_UUID_CHAR_EXTERNAL_REPORT_REF          (0x2907u)
+/* Report Reference */
 #define CYBLE_UUID_CHAR_REPORT_REFERENCE             (0x2908u)
+/* Environmental Sensing Configuration */
+#define CYBLE_UUID_CHAR_ES_CONFIGURATION             (0x290Bu)
+/* Environmental Sensing Measurement */
+#define CYBLE_UUID_CHAR_ES_MEASUREMENT               (0x290Cu)
+/* Environmental Sensing Trigger Setting */
+#define CYBLE_UUID_CHAR_ES_TRIGGER_SETTING           (0x290Du)
 
 
 /***************************************
-##UUID: Commonly used GATT Characteristic Types
+* UUID: Commonly used GATT Characteristic Types
 ***************************************/
 
 /* Device Name Characteristic */
@@ -296,10 +363,12 @@ extern CYBLE_GATTC_T cyBle_gattc;
 #define CYBLE_UUID_CHAR_PRFRRD_CNXN_PARAM            (0x2A04u)
 /* Service Changed Characteristic */
 #define CYBLE_UUID_CHAR_SERVICE_CHANGED              (0x2A05u)
+/* Central Address Resolution Characteristic */
+#define CYBLE_UUID_CHAR_CENTRAL_ADDRESS_RESOLUTION   (0x2AA6u)
 
 
 /***************************************
-##UUID: Other Characteristic Types
+* UUID: Other Characteristic Types
 ***************************************/
 
 #define CYBLE_UUID_CHAR_ALERT_LEVEL                  (0x2A06u)
@@ -336,6 +405,7 @@ extern CYBLE_GATTC_T cyBle_gattc;
 #define CYBLE_UUID_CHAR_MANUFACTURER_NAME            (0x2A29u)
 #define CYBLE_UUID_CHAR_REG_CERT_DATA                (0x2A2Au)
 #define CYBLE_UUID_CHAR_CURRENT_TIME                 (0x2A2Bu)
+#define CYBLE_UUID_CHAR_MAGNETIC_DECLINATION         (0x2A2Cu)
 #define CYBLE_UUID_CHAR_SCAN_REFRESH                 (0x2A31u)
 #define CYBLE_UUID_CHAR_HIDS_BOOT_KEYBOARD_OUT_RPT   (0x2A32u)
 #define CYBLE_UUID_CHAR_HIDS_BOOT_MOUSE_IN_RPT       (0x2A33u)
@@ -381,6 +451,23 @@ extern CYBLE_GATTC_T cyBle_gattc;
 #define CYBLE_UUID_CHAR_POSITION_QUALITY             (0x2A69u)
 #define CYBLE_UUID_CHAR_LN_FEATURE                   (0x2A6Au)
 #define CYBLE_UUID_CHAR_LN_CONTROL_POINT             (0x2A6Bu)
+#define CYBLE_UUID_CHAR_ELEVATION                    (0x2A6Cu)
+#define CYBLE_UUID_CHAR_PRESSURE                     (0x2A6Du)
+#define CYBLE_UUID_CHAR_THEMPERATURE                 (0x2A6Eu)
+#define CYBLE_UUID_CHAR_HUMIDITY                     (0x2A6Fu)
+#define CYBLE_UUID_CHAR_TRUE_WIND_SPEED              (0x2A70u)
+#define CYBLE_UUID_CHAR_TRUE_WIND_DIRECTION          (0x2A71u)
+#define CYBLE_UUID_CHAR_APPARENT_WIND_SPEED          (0x2A72u)
+#define CYBLE_UUID_CHAR_APPARENT_WIND_DIRECTION      (0x2A73u)
+#define CYBLE_UUID_CHAR_GUST_FACTOR                  (0x2A74u)
+#define CYBLE_UUID_CHAR_POLLEN_CONCENTRATION         (0x2A75u)
+#define CYBLE_UUID_CHAR_UV_INDEX                     (0x2A76u)
+#define CYBLE_UUID_CHAR_IRRADIANCE                   (0x2A77u)
+#define CYBLE_UUID_CHAR_RAINFALL                     (0x2A78u)
+#define CYBLE_UUID_CHAR_WIND_CHILL                   (0x2A79u)
+#define CYBLE_UUID_CHAR_HEAT_INDEX                   (0x2A7Au)
+#define CYBLE_UUID_CHAR_DEW_POINT                    (0x2A7Bu)
+#define CYBLE_UUID_CHAR_DESCR_VALUE_CHANGED          (0x2A7Du)
 #define CYBLE_UUID_CHAR_AEL                          (0x2A7Eu) /* Aerobic Heart Rate Lower Limit */
 #define CYBLE_UUID_CHAR_AEROBIC_THRESHOLD            (0x2A7Fu)
 #define CYBLE_UUID_CHAR_AGE                          (0x2A80u)
@@ -410,15 +497,25 @@ extern CYBLE_GATTC_T cyBle_gattc;
 #define CYBLE_UUID_CHAR_WEIGHT                       (0x2A98u)
 #define CYBLE_UUID_CHAR_DATABASE_CHANGE_INCREMENT    (0x2A99u)
 #define CYBLE_UUID_CHAR_USER_INDEX                   (0x2A9Au)
+#define CYBLE_UUID_CHAR_BODY_COMPOSITION_FEATURE     (0x2A9Bu)
+#define CYBLE_UUID_CHAR_BODY_COMPOSITION_MEASUREMENT (0x2A9Cu)
+#define CYBLE_UUID_CHAR_WEIGHT_MEASUREMENT           (0x2A9Du)
+#define CYBLE_UUID_CHAR_WEIGHT_SCALE_FEATURE         (0x2A9Eu)
 #define CYBLE_UUID_CHAR_USER_CONTROL_POINT           (0x2A9Fu)
+#define CYBLE_UUID_CHAR_MAGNETIC_FLUX_DENSITY_2D     (0x2AA0u)
+#define CYBLE_UUID_CHAR_MAGNETIC_FLUX_DENSITY_3D     (0x2AA1u)
 #define CYBLE_UUID_CHAR_LANGUAGE                     (0x2AA2u)
+#define CYBLE_UUID_CHAR_BAR_PRESSURE_TREND           (0x2AA3u)
+/* Bond Management Characteristics defines */
+#define CYBLE_UUID_BOND_MANAGEMENT_CONTROL_POINT     (0x2AA4u)
+#define CYBLE_UUID_BOND_MANAGEMENT_FEATURE           (0x2AA5u)
+/* CGM Characteristics defines */
 #define CYBLE_UUID_CHAR_CGM_MEASUREMENT              (0x2AA7u)
 #define CYBLE_UUID_CHAR_CGM_FEATURE                  (0x2AA8u)
 #define CYBLE_UUID_CHAR_CGM_STATUS                   (0x2AA9u)
 #define CYBLE_UUID_CHAR_CGM_SESSION_START_TIME       (0x2AAAu)
 #define CYBLE_UUID_CHAR_CGM_SESSION_RUN_TIME         (0x2AABu)
 #define CYBLE_UUID_CHAR_CGM_SOCP                     (0x2AACu) /* CGM Specific Ops Control Point */
-
 /* Pulse Oximeter Characteristics defines */
 #define CYBLE_UUID_CHAR_POX_SPOT_CHK_MSRMT           (0x2A5Eu)
 #define CYBLE_UUID_CHAR_POX_CONTINUOUS_MSRMT         (0x2A5Fu)
@@ -430,12 +527,24 @@ extern CYBLE_GATTC_T cyBle_gattc;
 #define CYBLE_UUID_CHAR_CPM_VECTOR                   (0x2A64u)
 #define CYBLE_UUID_CHAR_CPM_FEATURE                  (0x2A65u)
 #define CYBLE_UUID_CHAR_CPM_CNTRL_PNT                (0x2A66u)
-/* Location and Navigation Characteristics */
-#define CYBLE_UUID_CHAR_LOCATION_AND_SPEED           (0x2A67u)
-#define CYBLE_UUID_CHAR_NAVIGATION                   (0x2A68u)
-#define CYBLE_UUID_CHAR_LN_POSITION_QUALITY          (0x2A69u)
-#define CYBLE_UUID_CHAR_LN_FEATURE                   (0x2A6Au)
-#define CYBLE_UUID_CHAR_LN_CNTRL_PNT                 (0x2A6Bu)
+/* IPS Characteristics defines */
+#define CYBLE_UUID_CHAR_INDOOR_POSITINING_CONFIG     (0x2AADu)
+#define CYBLE_UUID_CHAR_LATITUDE                     (0x2AAEu)  
+#define CYBLE_UUID_CHAR_LONGITUDE                    (0x2AAFu)   
+#define CYBLE_UUID_CHAR_LOCAL_NORTH_COORDINATE       (0x2AB0u)     
+#define CYBLE_UUID_CHAR_LOCAL_EAST_COORDINATE        (0x2AB1u)   
+#define CYBLE_UUID_CHAR_FLOOR_NUMBER                 (0x2AB2u)    
+#define CYBLE_UUID_CHAR_ALTITUDE                     (0x2AB3u)   
+#define CYBLE_UUID_CHAR_UNCERTSINTY                  (0x2AB4u)       
+#define CYBLE_UUID_CHAR_LOCATION_NAME                (0x2AB5u)
+/* HPS Characteristics defines */
+#define CYBLE_UUID_CHAR_URI                          (0x2AB6u)
+#define CYBLE_UUID_CHAR_HTTP_HEADERS                 (0x2AB7u)
+#define CYBLE_UUID_CHAR_HTTP_ENTITY_BODY             (0x2AB9u)
+#define CYBLE_UUID_CHAR_HTTP_CP                      (0x2ABAu)
+#define CYBLE_UUID_CHAR_HTTP_STATUS_CODE             (0x2AB8u)
+#define CYBLE_UUID_CHAR_HTTPS_SECURITY               (0x2ABBu)
+
 
 /* GATT Characteristic Properties bit field */
 #define CYBLE_CHAR_PROP_BROADCAST                    (0x01u)
@@ -488,6 +597,12 @@ extern CYBLE_GATTC_T cyBle_gattc;
 #define CYBLE_CPFD_OPAQUE_STRUCTURE                  (0x1bu)
 #define CYBLE_CPFD_LEN                               (0x01u)
 
+/* Characteristic Extended Properties Descriptor values */
+#define CYBLE_CEPD_DEFAULT                           (0x0000u)
+#define CYBLE_CEPD_RELIABLE_WRITE                    (0x0001u)
+#define CYBLE_CEPD_WRITABLE_AUXILIARIES              (0x0002u)
+#define CYBLE_CEPD_LEN                               (0x02u)
+
 #define CYBLE_ATTR_HANDLE_LEN                        (0x02u)
 #define CYBLE_DB_ATTR_HANDLE_LEN                     (0x02u)
 
@@ -512,7 +627,7 @@ extern CYBLE_GATTC_T cyBle_gattc;
 
 
 /***************************************
-##Bluetooth Appearance values
+* Bluetooth Appearance values
 ***************************************/
 
 #define CYBLE_APPEARANCE_UNKNOWN                            (0u) /* Unknown */
@@ -558,7 +673,7 @@ extern CYBLE_GATTC_T cyBle_gattc;
 
 
 /***************************************
-##SMP Key size constants
+* SMP Key size constants
 ***************************************/
 
 #define CYBLE_SMP_USER_PASSKEY_SIZE                  (6u)    /* User Passkey size */
@@ -617,7 +732,7 @@ extern CYBLE_GATTC_T cyBle_gattc;
 
 
 /***************************************
-##Database macro
+* Database macro
 ***************************************/
 
 /* Get permission field of attribute handle */
@@ -634,7 +749,7 @@ extern CYBLE_GATTC_T cyBle_gattc;
 #define CYBLE_GATT_DB_ATTR_SET_GEN_VALUE(handle,src,length)\
         (void) memcpy\
         (\
-            (void *)(cyBle_gattDB[(handle)-1u].attValue.attFormatValue.attGenericVal), \
+            (void *)(cyBle_gattDB[(handle)-1u].attValue.attFormatValue.attGenericValLen->attGenericVal), \
             (const void *)(src),\
             (uint16) (length)\
         )
@@ -644,7 +759,7 @@ extern CYBLE_GATTC_T cyBle_gattc;
         (void) memcpy\
         (\
             (void *)(dst),\
-            (const void *)(cyBle_gattDB[(handle)-1u].attValue.attFormatValue.attGenericVal), \
+            (const void *)(cyBle_gattDB[(handle)-1u].attValue.attFormatValue.attGenericValLen->attGenericVal), \
             (uint16)(length)\
         )
 
@@ -652,7 +767,7 @@ extern CYBLE_GATTC_T cyBle_gattc;
    Start handle is only meaningful for characteristic and
    service declaration */
 #define CYBLE_GATT_DB_GET_START_HANDLE(handle)\
-        cyBle_gattDB[(handle)-1u].connHandle
+        cyBle_gattDB[(handle)-1u].attHandle
 
 /* Macro to get end handle of attribute
    Start handle is only meaningful for characteristic and
@@ -669,13 +784,26 @@ extern CYBLE_GATTC_T cyBle_gattc;
 #define CYBLE_GATT_DB_GET_ATTR_VALUE_UUID(handle)\
         cyBle_gattDB[(handle)-1u].attValue.attValueUuid
 
-/* Macro to get length of characteristic generic value */
+/* Macro to get actual length of characteristic generic value */
 #define CYBLE_GATT_DB_ATTR_GET_ATTR_GEN_LEN(handle)\
-          cyBle_gattDB[(handle)-1u].attValue.attFormatValue.length
+          cyBle_gattDB[(handle)-1u].attValue.attFormatValue.attGenericValLen->actualLength
+
+/* Macro to set actual length of characteristic generic value.
+   Note that this macro doesn't validate the actual length, which can't be greater then maximum length.
+   Use CYBLE_GATT_DB_ATTR_GET_ATTR_GEN_MAX_LEN macro to read and validate maximum length. 
+*/
+#define CYBLE_GATT_DB_ATTR_SET_ATTR_GEN_LEN(handle, value)\
+        do{  \
+          cyBle_gattDB[(handle)-1u].attValue.attFormatValue.attGenericValLen->actualLength = (value); \
+        }while(0)
+
+/* Macro to get maximum length of characteristic generic value */
+#define CYBLE_GATT_DB_ATTR_GET_ATTR_GEN_MAX_LEN(handle)\
+          cyBle_gattDB[(handle)-1u].attValue.attFormatValue.maxAttrLength
 
 /* Macro to get pointer to characteristic generic value */
 #define CYBLE_GATT_DB_ATTR_GET_ATTR_GEN_PTR(handle)\
-          (uint8 *)(cyBle_gattDB[(handle)-1u].attValue.attFormatValue.attGenericVal)
+          (uint8 *)(cyBle_gattDB[(handle)-1u].attValue.attFormatValue.attGenericValLen->attGenericVal)
         
 /* Checks Notification properties in permission field of attribute entry */
 #define CYBLE_IS_NOTIFICATION_SUPPORTED(handle)\
@@ -712,6 +840,18 @@ extern CYBLE_GATTC_T cyBle_gattc;
 /* Checks Broadcast bit in attribute value referenced by handle */
 #define CYBLE_IS_BROADCAST_ENABLED(handle)\
         CYBLE_IS_BROADCAST_ENABLED_IN_PTR(CYBLE_GATT_DB_ATTR_GET_ATTR_GEN_PTR(handle))
+
+/* Checks Reliable Write bit in attribute value referenced by pointer */
+#define CYBLE_IS_RELIABLE_WRITE_ENABLED_IN_PTR(valPtr)\
+        ((0u) != (CYBLE_CEPD_RELIABLE_WRITE & CyBle_Get16ByPtr(valPtr)))
+        
+/* Checks Reliable Write bit in attribute value referenced by handle */
+#define CYBLE_IS_RELIABLE_WRITE_ENABLED(handle)\
+        CYBLE_IS_RELIABLE_WRITE_ENABLED_IN_PTR(CYBLE_GATT_DB_ATTR_GET_ATTR_GEN_PTR(handle))
+
+
+/* BWC macro */
+#define cyBle_attValuesCCCDFlashMemory (cyBle_flashStorage.attValuesCCCDFlashMemory)
 
 #endif /* CY_BLE_CYBLE_GATT_H  */
 

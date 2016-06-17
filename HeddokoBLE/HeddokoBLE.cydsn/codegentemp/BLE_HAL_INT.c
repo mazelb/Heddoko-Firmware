@@ -1,13 +1,14 @@
-/*******************************************************************************
-* File Name: BLE_HAL_INT.c
-* Version 1.20
+/***************************************************************************//**
+* \file BLE_HAL_INT.c
+* \version 3.10
 *
-* Description:
+* \brief
 *  This file contains the source code for the Interrupt Service Routine for the
 *  HAL section of the BLE component
 *
 ********************************************************************************
-* Copyright 2014-2015, Cypress Semiconductor Corporation.  All rights reserved.
+* \copyright
+* Copyright 2014-2016, Cypress Semiconductor Corporation.  All rights reserved.
 * You may use this file only in accordance with the license, terms, conditions,
 * disclaimers, and limitations in the end user license agreement accompanying
 * the software package with which this file was provided.
@@ -18,15 +19,11 @@
 
 /*******************************************************************************
 * Function Name: CyBLE_Bless_Interrupt
-********************************************************************************
+****************************************************************************//**
 *
-* Summary:
 *  Handles the Interrupt Service Routine for the BLE sub-system.
 *
-* Parameters:
-*  None
-*
-* Return:
+* \return
 *  None
 *
 *******************************************************************************/
@@ -47,15 +44,11 @@ CY_ISR(CyBLE_Bless_Interrupt)
 
 /*******************************************************************************
 * Function Name: CyBLE_Uart_Interrupt
-********************************************************************************
+****************************************************************************//**
 *
-* Summary:
 *  Handles the Interrupt Service Routine for the UART.
 *
-* Parameters:
-*  None
-*
-* Return:
+* \return
 *  None
 *
 *******************************************************************************/

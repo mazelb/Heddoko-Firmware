@@ -19,6 +19,7 @@
 #include <cydevice_trm.h>
 #include <CyLib.h>
 #include <BLE_bless_isr.h>
+#include "cyapicallbacks.h"
 
 #if !defined(BLE_bless_isr__REMOVED) /* Check for removal by optimization */
 
@@ -157,6 +158,10 @@ void BLE_bless_isr_Stop(void)
 *******************************************************************************/
 CY_ISR(BLE_bless_isr_Interrupt)
 {
+    #ifdef BLE_bless_isr_INTERRUPT_INTERRUPT_CALLBACK
+        BLE_bless_isr_Interrupt_InterruptCallback();
+    #endif /* BLE_bless_isr_INTERRUPT_INTERRUPT_CALLBACK */ 
+
     /*  Place your Interrupt code here. */
     /* `#START BLE_bless_isr_Interrupt` */
 

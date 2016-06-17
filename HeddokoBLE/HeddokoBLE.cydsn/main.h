@@ -34,6 +34,7 @@
     #define PACKET_COMMAND_ID_SEND_RAW_DATA_RESP        0x4a
     #define PACKET_COMMAND_ID_GET_RAW_DATA_REQ          0x4b
     #define PACKET_COMMAND_ID_GET_RAW_DATA_RESP         0x4c
+    #define PACKET_COMMAND_ID_START_FAST_ADV            0x4f
     
     typedef enum
     {

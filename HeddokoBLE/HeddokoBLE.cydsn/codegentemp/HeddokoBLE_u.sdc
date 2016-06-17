@@ -1,3 +1,3 @@
-# Component constraints for C:\Users\Hriday Mehta\Qsync\Hriday Mehta\_Documents\Cypress\HeddokoBLE\HeddokoBLE.cydsn\TopDesign\TopDesign.cysch
-# Project: C:\Users\Hriday Mehta\Qsync\Hriday Mehta\_Documents\Cypress\HeddokoBLE\HeddokoBLE.cydsn\HeddokoBLE.cyprj
-# Date: Thu, 16 Jun 2016 20:51:09 GMT
+# Component constraints for C:\Users\Hriday Mehta\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\TopDesign\TopDesign.cysch
+# Project: C:\Users\Hriday Mehta\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\HeddokoBLE.cyprj
+# Date: Fri, 17 Jun 2016 18:23:01 GMT

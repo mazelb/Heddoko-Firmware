@@ -9,6 +9,7 @@
  *
  * ========================================
 */
+
 #include <project.h>
 #include "main.h"
 
@@ -101,6 +102,13 @@ void cmd_processPacket(rawPacket_t* packet)
             
             case PACKET_COMMAND_ID_SEND_RAW_DATA_REQ:
                 saveReceivedRawData((uint8 *) &packet->payload[2], packet->payloadSize);
+            break;
+                
+            case PACKET_COMMAND_ID_START_FAST_ADV:
+                if (cyBle_state != CYBLE_STATE_CONNECTED)
+                {
+                    CyBle_GappStartAdvertisement(CYBLE_ADVERTISING_FAST);
+                }
             break;
             
             default:

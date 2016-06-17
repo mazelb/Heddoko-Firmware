@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-16"?>
-<CyBleConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="1.20">
+<CyBleConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="3.00">
   <OperationMode>Profile</OperationMode>
   <CyProfile ID="1" DisplayName="Heddoko" Name="Custom" Type="org.bluetooth.profile.custom">
     <CyProfileRole ID="198" DisplayName="Server" Name="Server">
@@ -10,7 +10,7 @@
             <ByteLength>7</ByteLength>
             <FillRequirement>C1</FillRequirement>
             <ValueType>BASIC</ValueType>
-            <GeneralValue>HRD_NET</GeneralValue>
+            <GeneralValue>Heddoko</GeneralValue>
             <ArrayValue />
           </Field>
           <Properties>
@@ -456,6 +456,44 @@
             </Properties>
             <Permission />
           </CyDescriptor>
+          <CyDescriptor ID="256" DisplayName="Client Characteristic Configuration" Name="Client Characteristic Configuration" Type="org.bluetooth.descriptor.gatt.client_characteristic_configuration" UUID="2902">
+            <Field Name="Properties">
+              <DataFormat>16bit</DataFormat>
+              <ByteLength>2</ByteLength>
+              <Range>
+                <IsDeclared>true</IsDeclared>
+                <Minimum>0</Minimum>
+                <Maximum>3</Maximum>
+              </Range>
+              <ValueType>BITFIELD</ValueType>
+              <Bit>
+                <Index>0</Index>
+                <Size>1</Size>
+                <Value>0</Value>
+                <Enumerations>
+                  <Enumeration key="0" value="Notifications disabled" />
+                  <Enumeration key="1" value="Notifications enabled" />
+                </Enumerations>
+              </Bit>
+              <Bit>
+                <Index>1</Index>
+                <Size>1</Size>
+                <Value>0</Value>
+                <Enumerations>
+                  <Enumeration key="0" value="Indications disabled" />
+                  <Enumeration key="1" value="Indications enabled" />
+                </Enumerations>
+              </Bit>
+              <ArrayValue />
+            </Field>
+            <Properties>
+              <Property Type="READ" Present="true" Mandatory="false" />
+              <Property Type="WRITE" Present="true" Mandatory="false" />
+            </Properties>
+            <Permission>
+              <AccessPermission>READ_WRITE</AccessPermission>
+            </Permission>
+          </CyDescriptor>
           <Field Name="New field">
             <DataFormat>uint8_array</DataFormat>
             <ByteLength>23</ByteLength>
@@ -467,7 +505,7 @@
             <Property Type="READ" Present="true" Mandatory="false" />
             <Property Type="WRITE" Present="false" Mandatory="false" />
             <Property Type="WRITE_WITHOUT_RESPONSE" Present="true" Mandatory="false" />
-            <Property Type="NOTIFY" Present="false" Mandatory="false" />
+            <Property Type="NOTIFY" Present="true" Mandatory="false" />
             <Property Type="INDICATE" Present="false" Mandatory="false" />
             <Property Type="AUTHENTICATED_SIGNED_WRITES" Present="false" Mandatory="false" />
             <Property Type="RELIABLE_WRITE" Present="false" Mandatory="false" />
@@ -489,13 +527,24 @@
     <DevAddress>BBA050101112</DevAddress>
     <SiliconGeneratedAddress>false</SiliconGeneratedAddress>
     <MtuSize>512</MtuSize>
+    <MaxTxPayloadSize>27</MaxTxPayloadSize>
+    <MaxRxPayloadSize>27</MaxRxPayloadSize>
     <TxPowerLevel>0</TxPowerLevel>
+    <TxPowerLevelConnection>0</TxPowerLevelConnection>
+    <TxPowerLevelAdvScan>0</TxPowerLevelAdvScan>
     <SecurityConfig>
       <SecurityMode>SECURITY_MODE_1</SecurityMode>
       <SecurityLevel>NO_SECURITY</SecurityLevel>
+      <StrictPairing>false</StrictPairing>
+      <KeypressNotifications>false</KeypressNotifications>
       <IOCapability>NO_INPUT_NO_OUTPUT</IOCapability>
       <PairingMethod>JUST_WORKS</PairingMethod>
       <Bonding>NO_BOND</Bonding>
+      <MaxBondedDevices>4</MaxBondedDevices>
+      <AutoPopWhitelistBondedDev>true</AutoPopWhitelistBondedDev>
+      <MaxWhitelistSize>8</MaxWhitelistSize>
+      <EnableLinkLayerPrivacy>false</EnableLinkLayerPrivacy>
+      <MaxResolvableDevices>8</MaxResolvableDevices>
       <EncryptionKeySize>16</EncryptionKeySize>
     </SecurityConfig>
     <AdvertisementConfig>
@@ -549,23 +598,37 @@
         </CyADStructure>
         <CyADStructure>
           <ADType>9</ADType>
-          <ADData>48 52 44 5F 4E 45 54</ADData>
+          <ADData>48:65:64:64:6F:6B:6F</ADData>
         </CyADStructure>
       </Items>
+      <IncludedServicesServiceUuid />
+      <IncludedServicesServiceSolicitation />
+      <IncludedServicesServiceData />
     </AdvertisementPacket>
     <ScanResponsePacket>
       <PacketType>SCAN_RESPONSE</PacketType>
       <Items>
         <CyADStructure>
           <ADType>9</ADType>
-          <ADData>48 52 44 5F 4E 45 54</ADData>
+          <ADData>48:65:64:64:6F:6B:6F</ADData>
         </CyADStructure>
         <CyADStructure>
           <ADType>25</ADType>
-          <ADData>00 00</ADData>
+          <ADData>00:00</ADData>
         </CyADStructure>
       </Items>
+      <IncludedServicesServiceUuid />
+      <IncludedServicesServiceSolicitation />
+      <IncludedServicesServiceData />
     </ScanResponsePacket>
   </GapConfiguration>
+  <L2capConfiguration>
+    <NumChannels>1</NumChannels>
+    <NumPsm>1</NumPsm>
+    <MtuSize>23</MtuSize>
+    <MpsSize>23</MpsSize>
+    <L2capEnabled>true</L2capEnabled>
+  </L2capConfiguration>
   <UseDeepSleep>true</UseDeepSleep>
+  <EnablePAControl>false</EnablePAControl>
 </CyBleConfiguration>
