@@ -79,7 +79,10 @@ sensorSettings_t settings =
 	#else
 	.enableHPR = 0,
 	#endif
-	.baud = 460800
+	.baud = 460800,
+	.magRate = EM_MAG_OUPUT_DATA_RATE,
+	.accelRate = EM_ACCEL_OUPUT_DATA_RATE,
+	.gyroRate = EM_GYRO_OUPUT_DATA_RATE
 };
 
 /*	I2C structures declarations	*/

@@ -62,7 +62,7 @@ void pkt_SendRawPacket(uint8_t* payload, uint16_t payloadSize)
 	{
 		(*(pktConfig->transmitEnable))();
 	}
-	delay_us(2);
+	delay_us(2); 
 	sendQueuedPacket();
 	//TODO: set gpio for receive mode on RS485
 	if(pktConfig->transmitDisable != NULL)

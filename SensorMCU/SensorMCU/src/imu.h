@@ -28,6 +28,10 @@
 #define EM_INTERRUPT_CONFIG_REGISTER	0x33
 #define EM_RUN_REQUEST_REGISTER			0x34
 
+#define EM_MAG_RATE_ACTUAL_REGISTER		0x45
+#define EM_ACCEL_RATE_ACTUAL_REGISTER	0x46
+#define EM_GYRO_RATE_ACTUAL_REGISTER	0x47
+
 #define EM_QUATERNION_RESULT_ADDRESS	0x00
 
 #define EM_HPR_OUTPUT_ENABLE_MASK		0x04
@@ -75,15 +79,15 @@ typedef struct
 	float32_t Quaternion_y;
 	float32_t Quaternion_z;
 	float32_t Quaternion_w;
-	uint16_t Magnetic_x;
-	uint16_t Magnetic_y;
-	uint16_t Magnetic_z;
-	uint16_t Acceleration_x;
-	uint16_t Acceleration_y;
-	uint16_t Acceleration_z;
-	uint16_t Rotation_x;
-	uint16_t Rotation_y;
-	uint16_t Rotation_z;
+	int16_t Magnetic_x;
+	int16_t Magnetic_y;
+	int16_t Magnetic_z;
+	int16_t Acceleration_x;
+	int16_t Acceleration_y;
+	int16_t Acceleration_z;
+	int16_t Rotation_x;
+	int16_t Rotation_y;
+	int16_t Rotation_z;
 }imuFrame_t;
 #pragma	pack(pop)
 

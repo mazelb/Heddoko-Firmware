@@ -105,21 +105,21 @@ int resetAndInitialize(slave_twi_config_t* slave_config)
 	//#endif
 	
 	//mag rate
-	status = drv_i2c_write(slave_config, EM_MAG_RATE_CONFIG_REGISTER, EM_MAG_OUPUT_DATA_RATE);
+	status = drv_i2c_write(slave_config, EM_MAG_RATE_CONFIG_REGISTER, settings.magRate);
 	if (status != STATUS_PASS)
 	{
 		return STATUS_FAIL;
 	}
 	
 	//accel rate
-	status = drv_i2c_write(slave_config, EM_ACCEL_RATE_CONFIG_REGISTER, EM_ACCEL_OUPUT_DATA_RATE);
+	status = drv_i2c_write(slave_config, EM_ACCEL_RATE_CONFIG_REGISTER, settings.accelRate);
 	if (status != STATUS_PASS)
 	{
 		return STATUS_FAIL;
 	}
 	
 	//gyro rate
-	status = drv_i2c_write(slave_config, EM_GYRO_RATE_CONFIG_REGISTER, EM_GYRO_OUPUT_DATA_RATE);
+	status = drv_i2c_write(slave_config, EM_GYRO_RATE_CONFIG_REGISTER, settings.gyroRate);
 	if (status != STATUS_PASS)
 	{
 		return STATUS_FAIL;
@@ -169,12 +169,22 @@ void sendButtonPressEvent()
 
 void sendGetStatusResponse()
 {
+	uint8_t data = 0;
 	outputDataBuffer[0] = PACKET_TYPE_IMU_SENSOR;
 	outputDataBuffer[1] = PACKET_COMMAND_ID_GET_STATUS_RESP;
 	outputDataBuffer[2] = settings.sensorId;
-	#ifdef ENABLE_DEBUG_DATA
-	debugStructure.accelReadErrorCount++;
-	#endif
+	if(drv_i2c_read(&em7180Config, EM_MAG_RATE_ACTUAL_REGISTER, &data, 1) == STATUS_PASS)
+	{
+		debugStructure.magReadErrorCount = data;
+	}
+	if(drv_i2c_read(&em7180Config, EM_ACCEL_RATE_ACTUAL_REGISTER, &data, 1) == STATUS_PASS)
+	{
+		debugStructure.accelReadErrorCount = data;
+	}
+	if(drv_i2c_read(&em7180Config, EM_GYRO_RATE_ACTUAL_REGISTER, &data, 1) == STATUS_PASS)
+	{
+		debugStructure.gyroReadErrorCount = data;
+	}
 	memcpy(outputDataBuffer+3,&debugStructure,24);
 	//delay_us(100);
 	pkt_SendRawPacket(outputDataBuffer, 27);	
@@ -317,7 +327,7 @@ void cmd_processPacket(rawPacket_t* packet)
 					//send out the IMU data
 					sendGetStatusResponse();
 				}
-			break; 
+			break; 		
 			case PACKET_COMMAND_ID_CHANGE_BAUD:
 				/*	don't check for ID, all sensors should work in same config	*/
 				// 4 bytes are received in the order of LSB first
@@ -337,7 +347,16 @@ void cmd_processPacket(rawPacket_t* packet)
 					settings.enableHPR = 0;
 					resetAndInitialize(&em7180Config);
 				}
-			break;		
+			break;
+			case PACKET_COMMAND_ID_SET_RATES:
+			//check if the ID matches the one assigned
+			settings.magRate = packet->payload[2];
+			settings.accelRate = packet->payload[3];
+			settings.gyroRate = packet->payload[4];
+			resetAndInitialize(&em7180Config);
+
+			break;				
+			
 		}
 	}
 }

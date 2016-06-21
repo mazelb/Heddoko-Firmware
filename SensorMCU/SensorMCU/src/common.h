@@ -42,6 +42,10 @@ typedef struct
 	bool setupModeEnabled;
 	bool enableHPR;
 	uint32_t baud;
+	uint8_t magRate;
+	uint8_t accelRate;
+	uint8_t gyroRate;
+	
 }sensorSettings_t;
 
 /* Board Init configuration */
