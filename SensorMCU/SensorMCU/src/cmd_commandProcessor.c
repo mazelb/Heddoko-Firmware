@@ -16,6 +16,7 @@
 extern sensorSettings_t settings;
 extern drv_twi_config_t twiConfig;
 extern slave_twi_config_t em7180Config;
+extern void reConfigure_uart();
 
 volatile cmd_debugStructure_t debugStructure = 
 {
@@ -84,21 +85,24 @@ int resetAndInitialize(slave_twi_config_t* slave_config)
 		}
 	}
 	
-	#ifdef HPR
-	//read the algorithm control register
-	status = drv_i2c_read(slave_config, EM_ALGORITHM_CONTROL_REGISTER, &readData[0], 1);
-	if (status != STATUS_PASS)
+	//#ifdef HPR
+	if(settings.enableHPR == 1)
 	{
-		return STATUS_FAIL;
+		//read the algorithm control register
+		status = drv_i2c_read(slave_config, EM_ALGORITHM_CONTROL_REGISTER, &readData[0], 1);
+		if (status != STATUS_PASS)
+		{
+			return STATUS_FAIL;
+		}
+		readData[0] |= EM_HPR_OUTPUT_ENABLE_MASK;	//switch to head, pitch, roll mode
+		//write back to register
+		status = drv_i2c_write(slave_config, EM_ALGORITHM_CONTROL_REGISTER, readData[0]);
+		if (status != STATUS_PASS)
+		{
+			return STATUS_FAIL;
+		}
 	}
-	readData[0] |= EM_HPR_OUTPUT_ENABLE_MASK;	//switch to head, pitch, roll mode
-	//write back to register
-	status = drv_i2c_write(slave_config, EM_ALGORITHM_CONTROL_REGISTER, readData[0]);
-	if (status != STATUS_PASS)
-	{
-		return STATUS_FAIL;
-	}
-	#endif
+	//#endif
 	
 	//mag rate
 	status = drv_i2c_write(slave_config, EM_MAG_RATE_CONFIG_REGISTER, EM_MAG_OUPUT_DATA_RATE);
@@ -143,6 +147,7 @@ void sendImuDataFrame()
 	outputDataBuffer[1] = PACKET_COMMAND_ID_GET_FRAME_RESP;
 	outputDataBuffer[2] = settings.sensorId;
 	memcpy(outputDataBuffer+3,&imuFrameData,34);
+	//delay_us(100);
 	pkt_SendRawPacket(outputDataBuffer, 37);	
 }
 void sendSetImuIdResponse()
@@ -167,7 +172,11 @@ void sendGetStatusResponse()
 	outputDataBuffer[0] = PACKET_TYPE_IMU_SENSOR;
 	outputDataBuffer[1] = PACKET_COMMAND_ID_GET_STATUS_RESP;
 	outputDataBuffer[2] = settings.sensorId;
-	memcpy(outputDataBuffer+3,&debugStructure,25);
+	#ifdef ENABLE_DEBUG_DATA
+	debugStructure.accelReadErrorCount++;
+	#endif
+	memcpy(outputDataBuffer+3,&debugStructure,24);
+	//delay_us(100);
 	pkt_SendRawPacket(outputDataBuffer, 27);	
 }
 
@@ -189,23 +198,55 @@ void updateImuData()
 			{
 				debugStructure.quatReadErrorCount++;	
 			}	
-			if(drv_i2c_read(&em7180Config, 0x00, &imuFrameData.Magnetic_x, 12) != STATUS_PASS)
+			if(drv_i2c_read(&em7180Config, 0x12, &imuFrameData.Magnetic_x, 12) != STATUS_PASS)
 			{
 				debugStructure.magReadErrorCount++;
 			}
-			if(drv_i2c_read(&em7180Config, 0x00, &imuFrameData.Acceleration_x, 12) != STATUS_PASS)
+			if(drv_i2c_read(&em7180Config, 0x1A, &imuFrameData.Acceleration_x, 12) != STATUS_PASS)
 			{
 				debugStructure.accelReadErrorCount++;
 			}
-			if(drv_i2c_read(&em7180Config, 0x00, &imuFrameData.Rotation_x, 12) != STATUS_PASS)
+			if(drv_i2c_read(&em7180Config, 0x22, &imuFrameData.Rotation_x, 12) != STATUS_PASS)
 			{
 				debugStructure.gyroReadErrorCount++;
 			}	
 		}
 	}
-	
 }
 
+void updateImuDataFake()
+{
+	imuFrameData.Acceleration_x++;
+	imuFrameData.Acceleration_y++;
+	imuFrameData.Acceleration_z++;
+	imuFrameData.Magnetic_x++;
+	imuFrameData.Magnetic_y++;
+	imuFrameData.Magnetic_z++;
+	imuFrameData.Rotation_x++;
+	imuFrameData.Rotation_y++;
+	imuFrameData.Rotation_z++;
+	imuFrameData.Quaternion_w++;
+	imuFrameData.Quaternion_x++;
+	imuFrameData.Quaternion_y++;
+	imuFrameData.Quaternion_z++;
+}
+
+void resetImuDataFake()
+{
+	imuFrameData.Quaternion_x = 0.1;
+	imuFrameData.Quaternion_y = 0.2;
+	imuFrameData.Quaternion_z = 0.3;
+	imuFrameData.Quaternion_w = 0.4;
+	imuFrameData.Magnetic_x = 1;
+	imuFrameData.Magnetic_y = 2;
+	imuFrameData.Magnetic_z = 3;
+	imuFrameData.Acceleration_x = 4;
+	imuFrameData.Acceleration_y = 5;
+	imuFrameData.Acceleration_z = 6;
+	imuFrameData.Rotation_x = 7;
+	imuFrameData.Rotation_y = 8;
+	imuFrameData.Rotation_z = 9;
+}
 
 //
 /* all packets have the format
@@ -228,6 +269,12 @@ void cmd_processPacket(rawPacket_t* packet)
 			case PACKET_COMMAND_ID_UPDATE:
 				//call function here to update the IMU data
 				updateImuData(); 
+			break;
+			case PACKET_COMMAND_ID_RESET_FAKE:
+				resetImuDataFake();	//sent by the Master to reset the data structure for sync
+			break;
+			case PACKET_COMMAND_ID_UPDATE_FAKE:
+				updateImuDataFake();	//increments the count of variables in the structure
 			break;
 			case PACKET_COMMAND_ID_GET_FRAME:
 				//check if the ID matches the one assigned
@@ -270,8 +317,27 @@ void cmd_processPacket(rawPacket_t* packet)
 					//send out the IMU data
 					sendGetStatusResponse();
 				}
-			break; 			
-			
+			break; 
+			case PACKET_COMMAND_ID_CHANGE_BAUD:
+				/*	don't check for ID, all sensors should work in same config	*/
+				// 4 bytes are received in the order of LSB first
+				settings.baud = ((uint32_t)packet->payload[2]) | ((uint32_t)packet->payload[3] << 8) 
+								| ((uint32_t)packet->payload[4] << 16) | ((uint32_t)packet->payload[5] << 24);
+				reConfigure_uart();
+			break;
+			case PACKET_COMMAND_ID_ENABLE_HPR:
+				/*	don't check for ID, all sensors should work in same config	*/
+				if(packet->payload[2] == 1)
+				{
+					settings.enableHPR = 1;
+					resetAndInitialize(&em7180Config);
+				}
+				else
+				{
+					settings.enableHPR = 0;
+					resetAndInitialize(&em7180Config);
+				}
+			break;		
 		}
 	}
 }

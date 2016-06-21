@@ -73,7 +73,13 @@ sensorSettings_t settings =
 {
 	.sensorId = SENSOR_ID_DEFAULT,
 	.serialNumber = {0,0,0,0,0,0,0,0,0,0,0,0},
-	.setupModeEnabled = false
+	.setupModeEnabled = false,
+	#ifdef HPR
+	.enableHPR = 1,
+	#else
+	.enableHPR = 0,
+	#endif
+	.baud = 460800
 };
 
 /*	I2C structures declarations	*/
@@ -192,12 +198,19 @@ __attribute__((optimize("O0"))) static void configure_uart(void)
 	usart_conf.pinmux_pad1 = CMD_UART_PINMUX_PAD1;
 	usart_conf.pinmux_pad2 = CMD_UART_PAD2;
 	usart_conf.pinmux_pad3 = CMD_UART_PAD3;
-	usart_conf.baudrate    = 460800;
+	usart_conf.baudrate    = settings.baud;
 	usart_conf.sample_rate = USART_SAMPLE_RATE_16X_ARITHMETIC;
 	status_code_genare_t status = STATUS_NO_CHANGE;
 	status = usart_init(&cmd_uart_module, CMD_UART_MODULE, &usart_conf);
 	usart_enable(&cmd_uart_module);	
 }
+
+void reConfigure_uart()
+{
+	usart_disable(&cmd_uart_module);
+	configure_uart();
+}
+
 volatile uint8_t receivedByte = 0;
 void receiveCallback(const struct usart_module *const usart_module)
 {		

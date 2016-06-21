@@ -11,7 +11,7 @@
 #ifndef COMMON_H_
 #define COMMON_H_
 
-#define VERSION "V0.3b"
+#define VERSION "V0.1b"
 
 #define ALL_INTERRUPT_MASK  0xffffffff
 #define TRUE 1
@@ -26,12 +26,7 @@
 /** Stopbit setting  : No extra stopbit, i.e., use 1 (don't care for UART) */
 #define CONF_STOPBITS   US_MR_NBSTOP_1_BIT
 
-#define USE_ALL_QUINTICS
-//#define USE_Q1_Q2
-#define CREATE_DUMMY_PACKETS 
-
-//#define OBFUSCATION_ENABLED	//no need as the setting is saved in NVM
-//#define TEST_JACK_DETECTS	//Enables toggling of LED for an indication
+//#define ENABLE_DEBUG_DATA	//enable free running counter instead of actual imu Data.
 
 typedef enum 
 {
@@ -45,6 +40,8 @@ typedef struct
 	uint8_t sensorId;
 	uint8_t serialNumber[16];
 	bool setupModeEnabled;
+	bool enableHPR;
+	uint32_t baud;
 }sensorSettings_t;
 
 /* Board Init configuration */
@@ -65,9 +62,6 @@ typedef struct
 //Time conversions defines
 #define SECONDS									1000	//converts seconds to milli-seconds
 #define MINS									60 * 1000	//converts minutes to milli-seconds
-
-//EM7180 defines
-#define	EM_TWI_MASTER	TWI0
 
 int itoa(int value, char* sp, int radix);
 

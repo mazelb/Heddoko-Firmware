@@ -1,0 +1,18 @@
+/**
+ * \file
+ *
+* Copyright Heddoko(TM) 2015, all rights reserved
+ * \brief keeps track of the version changes
+ *
+ */
+
+/*
+ * VersionNotes.txt
+ *
+ * Created: 2016-05-18 12:45:19 PM
+ *  Author: Hriday Mehta
+ */ 
+
+ VERSION 0.1b
+ 1. Added in commands to change the baud rate and to switch between HPR and quaternion
+ 2. Added in enableHPR and baud variable to the settings structure.
