@@ -61,3 +61,11 @@
 
  VERSION 0.4i (for integrity!)
  1. Added in a bug fix in GPIO driver in enabling peripheral clock
+
+ VERSION 0.4j (for jolly!)
+ 1. Added in request for time command from the power board. 
+ 2. Added fix for first frame issue, where recording first frame can contain data from last recording
+ 3. Added in header with timestamp, fw version, and serial number to the recording files to track when the file was created. 
+
+ VERSION 0.4k (for king!)
+ 1. Added semaphore for writting data to command UART, to solve issue with corrupt stream. 

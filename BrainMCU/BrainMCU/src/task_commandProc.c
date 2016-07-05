@@ -41,7 +41,9 @@ commandProcConfig_t* config = NULL;
 static void printStats();
 static status_t processCommand(char* command, size_t cmdSize); 
 static void setTimeFromString(char* dateTime); 
-static char* getTimeString();
+
+xSemaphoreHandle semaphore_cmdUartWrite = NULL; 
+
 
 drv_uart_config_t uartInitialization =
 {
@@ -74,8 +76,12 @@ void task_commandHandler(void *pvParameters)
 	//drv_uart_putString(&uartInitialization,"AT+BAUD8\r\n");
 	//vTaskDelay(100);
 	//drv_uart_init(config->uart);
-	
 	//char val = 0xA5; 
+	semaphore_cmdUartWrite = xSemaphoreCreateMutex();
+	vTaskDelay(100);
+	drv_uart_flushRx(config->uart);
+	vTaskDelay(100);
+	drv_uart_putChar(config->uart, POWER_BOARD_CMD_GET_TIME); 
 	while(1)
 	{
 		if(drv_uart_getline(config->uart,buffer,sizeof(buffer)) == STATUS_PASS)
@@ -89,7 +95,7 @@ void task_commandHandler(void *pvParameters)
 
 void cmd_sendJackToggleToPowerBoard()
 {
-	drv_uart_putChar(config->uart, 0xAA); 
+	drv_uart_putChar(config->uart, POWER_BOARD_CMD_TOGGLE_JACKS); 
 }
 
 void cmd_sendPowerDownCompleteToPb()
@@ -425,12 +431,14 @@ static void setTimeFromString(char* dateTime)
 		printString("NACK\r\n");
 	}
 }
-char timeString[100] = {0}; 
-static char* getTimeString()
+char timeString[50] = {0}; 
+char* getTimeString()
 {
 	uint32_t hour, minute, second; 
+	uint32_t year, month, day, dow; //dow is day of week (1-7)
 	rtc_get_time(RTC,&hour,&minute,&second); 
-	sprintf(timeString,"%02d:%02d:%02d",hour,minute,second); 
+	rtc_get_date(RTC,&year,&month,&day,&dow); 
+	sprintf(timeString,"%04d-%02d-%02dT%02d:%02d:%02d",year,month,day,hour,minute,second); 
 	return timeString; 
 } 
 
@@ -483,10 +491,37 @@ void __attribute__((optimize("O0"))) debugPrintString(char* str)
 
 void printString(char* str)
 {
-	drv_uart_putString((config->uart), str);
+	//if the semaphore is initialized, use it, otherwise just send the data.
+	if(semaphore_cmdUartWrite != NULL)
+	{		
+		if(xSemaphoreTake(semaphore_cmdUartWrite,25) == true)
+		{	
+			drv_uart_putString((config->uart), str);	
+			xSemaphoreGive(semaphore_cmdUartWrite);
+		}
+	}
+	else
+	{
+		drv_uart_putString((config->uart), str);	
+	}
+	
+	
 }
 
 void sendPacket(char* buf, size_t length)
 {
-	drv_uart_putData((config->uart), buf, length);
+	if(semaphore_cmdUartWrite != NULL)
+	{
+		//wait 5ms max to send the packet.
+		if(xSemaphoreTake(semaphore_cmdUartWrite,5) == true)
+		{
+			drv_uart_putData((config->uart), buf, length);
+			xSemaphoreGive(semaphore_cmdUartWrite);
+		}		
+	}
+	else
+	{
+		drv_uart_putData((config->uart), buf, length);	
+	}
+	
 }

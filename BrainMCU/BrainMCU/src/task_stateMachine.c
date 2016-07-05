@@ -785,6 +785,9 @@ void stateEntry_GetAccelData()
 		task_stateMachine_EnqueueEvent(SYS_EVENT_SD_FILE_ERROR, 0);
 		return;
 	}
+	
+	
+	
 	//wait for user to get into position
 	vTaskDelay(2500);
 	if(brainSettings.numberOfAccelFrames > 0)

@@ -18,7 +18,7 @@
 #ifndef COMMON_H_
 #define COMMON_H_
 
-#define VERSION "V0.4i"
+#define VERSION "V0.4k"
 /*
 * Changes from previous version:
 * @brief: see VersionNotes.txt for details
@@ -47,6 +47,11 @@
 //#define TEST_JACK_DETECTS	//Enables toggling of LED for an indication
 
 #define SD_DISK_SPACE_LOW_THRESHOLD	307200	//307200 = 300 MB
+
+#define POWER_BOARD_CMD_TOGGLE_JACKS 0xAA
+#define POWER_BOARD_CMD_GET_TIME 0xAC
+
+
 
 typedef enum 
 {

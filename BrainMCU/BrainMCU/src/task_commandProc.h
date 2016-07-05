@@ -32,4 +32,5 @@ void __attribute__((optimize("O0"))) debugPrintString(char* str);
 void __attribute__((optimize("O0"))) debugPrintStringInt(char* str, int number); 
 void cmd_sendJackToggleToPowerBoard();
 void cmd_sendPowerDownCompleteToPb();
+char* getTimeString();
 #endif /* TASK_COMMANDPROC_H_ */

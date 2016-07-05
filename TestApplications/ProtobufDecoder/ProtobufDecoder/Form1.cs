@@ -1,20 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using PacketTester;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO.Ports;
 using System.Threading;
 using heddoko;
- using ProtoBuf;
+using ProtoBuf;
+using System.Collections.Concurrent;
 
 namespace ProtobufDecoder
 {
@@ -29,7 +24,6 @@ namespace ProtobufDecoder
         public form_decoder()
         {
             InitializeComponent();
-             
         }
 
         private void form_decoder_Load(object sender, EventArgs e)
@@ -261,7 +255,7 @@ namespace ProtobufDecoder
         //        FileStream dataFile = File.Open(ofd_OpenFile.FileName, FileMode.Open);
                 FileStream outputFile = File.Open(sfd_SaveFile.FileName, FileMode.Create);
                 debugMessageQueue.Enqueue(String.Format("Processing File: {0}\r\n", ofd_OpenFile.FileName));
-                int percent = 0;
+                float percent = 0.0F;
                 //initialize the start time of the file. 
                 startTime = 0;
                 if(cb_decodeForApp.Checked)
@@ -277,11 +271,11 @@ namespace ProtobufDecoder
                 byte[] vByteArray = File.ReadAllBytes(ofd_OpenFile.FileName);
                 for (int i = 0; i < vByteArray.Length; i++)
                 {
-                    int newPercent = (i * 100) / vByteArray.Length;
+                    float newPercent = ((i ) / vByteArray.Length) * 100;
                     if (newPercent != percent)
                     {
-                        pb_progressBar.Value = newPercent;
-                        percent = newPercent;
+                        pb_progressBar.Value = (int)newPercent;
+                        percent = newPercent; 
                     }
                     
                     byte newByte = vByteArray[i];
@@ -292,7 +286,7 @@ namespace ProtobufDecoder
                         case PacketStatus.PacketComplete:
                             //debugMessageQueue.Enqueue(String.Format("{0} Packet Received {1} bytes\r\n", (DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond), packet.PayloadSize));
                             RawPacket packetCopy = new RawPacket(packet);
-                            string frameString = processRawPacket(packetCopy);
+                            string frameString = processRawPacket(packetCopy);                            
                             if (frameString.Length > 0)
                             {
                                 outputFile.Write(ASCIIEncoding.ASCII.GetBytes(frameString), 0, frameString.Length);

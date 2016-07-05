@@ -494,7 +494,7 @@ void drv_uart_flushRx(drv_uart_config_t* uartConfig)
 		uartMemBuf[uartConfig->mem_index].uart_rx_fifo_full_flag = 0;
 		uartMemBuf[uartConfig->mem_index].uart_rx_fifo_not_empty_flag = 0;
 		uartMemBuf[uartConfig->mem_index].uart_rx_fifo_ovf_flag = 0;		
-		//flush the RX buffer as well. 
+		//flush the TX buffer as well. 
 		uartMemBuf[uartConfig->mem_index].tx_fifo.i_first = 0;
 		uartMemBuf[uartConfig->mem_index].tx_fifo.i_last = 0;
 		uartMemBuf[uartConfig->mem_index].tx_fifo.num_bytes = 0;

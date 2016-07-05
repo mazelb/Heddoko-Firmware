@@ -281,8 +281,11 @@ status_t task_sdCard_OpenNewFile()
 		status = STATUS_FAIL; 
 		return status; 
 	}	
+	
 	if (xSemaphoreTake(semaphore_fatFsAccess, 100) == true)
 	{	
+		//Clear the buffer so we don't get any old frames in the new file
+		sdCardBufferPointer = 0;
 		//get the file index for the newly created file
 		//open the file that contains the index numbers
 		#if (FILE_CREATION_ALGO == COMMON_INDEX) 
@@ -474,7 +477,10 @@ status_t task_sdCard_OpenNewFile()
 				strncat(temp, "\r\n", 2);
 				debugPrintString(temp);
 				res = f_lseek(&dataLogFile_obj, dataLogFile_obj.fsize);
-				dataLogFileOpen = true;
+				//write the header to the file containing the time/date stamp, version and serial number. 
+				snprintf(temp,sizeof(temp),"BPVERSION:%s,%s,%s\r\n",VERSION, brainSettings.suitNumber,getTimeString());
+				f_write(&dataLogFile_obj, (void*)temp,strlen(temp),&bytes_written);
+				dataLogFileOpen = true;				
 			}
 			else
 			{

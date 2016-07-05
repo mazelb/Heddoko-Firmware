@@ -89,7 +89,7 @@ void task_dataHandler(void *pvParameters)
 	//int index = dataFrameTail; 
 	while(1)
 	{		
-		if(xQueueReceive( queue_dataHandler, &( packet ), 1000) == TRUE)
+		if(xQueueReceive(queue_dataHandler, &( packet ), 1000) == TRUE)
 		{			
 			//handle packet
 			if(packet.type == DATA_PACKET_TYPE_IMU && accelFramesToWrite == 0)
