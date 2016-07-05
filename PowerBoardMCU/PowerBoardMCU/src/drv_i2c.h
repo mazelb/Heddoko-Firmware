@@ -47,6 +47,7 @@ typedef struct
 	twi_options_t twi_options;
 	IRQn_Type IRQtype;
 	int mem_index;
+	uint32_t peripheral_Id; 
 }drv_twi_config_t;
 
 typedef struct

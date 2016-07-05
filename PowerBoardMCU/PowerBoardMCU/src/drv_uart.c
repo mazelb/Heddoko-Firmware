@@ -35,7 +35,7 @@ typedef struct
 
 extern unsigned long sgSysTickCount;
 //global variables
-volatile drv_uart_memory_buf_t uartMemBuf[2]; //4 UARTS, 4 buffers
+volatile drv_uart_memory_buf_t uartMemBuf[2]; //2 UARTS, 2 buffers
 //static function declarations
 static int uart_get_byte(drv_uart_memory_buf_t* memBuf, char* c); 
 static void uart_process_byte(Usart *p_usart, drv_uart_memory_buf_t* memBuf);

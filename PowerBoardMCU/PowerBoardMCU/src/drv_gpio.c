@@ -37,7 +37,7 @@ drv_gpio_config_t gpioConfig[] =
 	{DRV_GPIO_ID_PIN_CHRG_STAT1	, DRV_GPIO_PIN_MODE_INPUT,   DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_NONE    ,	NULL,			TRUE,	TRUE,			0,	DRV_GPIO_PIN_STATE_LOW},
 	{DRV_GPIO_ID_PIN_GPIO,		  DRV_GPIO_PIN_MODE_OUTPUT,  DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_NONE	 ,	NULL,			TRUE,	TRUE,			0,	DRV_GPIO_PIN_STATE_HIGH},
 	{DRV_GPIO_ID_PIN_PWR_BTN,	  DRV_GPIO_PIN_MODE_INPUT,   DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_LOW_EDGE,	drv_gpio_int_pw,TRUE,	TRUE,			0,	DRV_GPIO_PIN_STATE_HIGH},
-	{DRV_GPIO_ID_PIN_USB_DET,	  DRV_GPIO_PIN_MODE_INPUT,   DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_HIGH_EDGE    ,	drv_gpio_int_usb,FALSE,	TRUE,			0,	DRV_GPIO_PIN_STATE_HIGH},
+	{DRV_GPIO_ID_PIN_USB_DET,	  DRV_GPIO_PIN_MODE_INPUT,   DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_HIGH_EDGE,	drv_gpio_int_usb,FALSE,	TRUE,			0,	DRV_GPIO_PIN_STATE_HIGH},
 	{DRV_GPIO_ID_PIN_LED_BLUE,	  DRV_GPIO_PIN_MODE_OUTPUT,  DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_NONE    ,	NULL,			FALSE,	FALSE,			0,	DRV_GPIO_PIN_STATE_HIGH},
 	{DRV_GPIO_ID_PIN_LED_GREEN,	  DRV_GPIO_PIN_MODE_OUTPUT,  DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_NONE    ,	NULL,			FALSE,	FALSE,			0,	DRV_GPIO_PIN_STATE_HIGH},
 	{DRV_GPIO_ID_PIN_LED_RED,	  DRV_GPIO_PIN_MODE_OUTPUT,  DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_NONE    ,	NULL,			FALSE,	FALSE,			0,	DRV_GPIO_PIN_STATE_HIGH}
@@ -94,7 +94,7 @@ status_t drv_gpio_config(drv_gpio_config_t* gpioConfig)
 			pio_set_debounce_filter(p_pio, PinMask, DEBOUNCE_PERIOD);
 		}
 		
-		pmc_enable_periph_clk(gpioConfig->pinId);	
+		pmc_enable_periph_clk(pio_get_pin_group_id(gpioConfig->pinId));	//pio_get_pin_group_id(gpioConfig->pinId
 		pio_configure_pin(gpioConfig->pinId, PinFlag);
 		 
 		PinFlag = 0;	//Reset the PinFlag to use it to configure interrupt
@@ -147,7 +147,7 @@ status_t drv_gpio_config(drv_gpio_config_t* gpioConfig)
 			PinFlag |= PIO_TYPE_PIO_OUTPUT_0;	//set default pin state
 		}
 		
-		pmc_enable_periph_clk(gpioConfig->pinId);
+		pmc_enable_periph_clk(pio_get_pin_group_id(gpioConfig->pinId)); //pio_get_pin_group_id(
 		pio_configure_pin(gpioConfig->pinId, PinFlag);
 	}
 	

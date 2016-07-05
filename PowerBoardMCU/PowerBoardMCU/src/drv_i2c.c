@@ -89,7 +89,7 @@ int drv_i2c_init(drv_twi_config_t* twi_config)
 	twi_set_speed(twi_config->p_i2c, twi_config->twi_options.speed, twi_config->twi_options.master_clk);
 	
 	#else
-	pmc_enable_periph_clk(twi_config->p_i2c);	//enable clock for I2C
+	pmc_enable_periph_clk(twi_config->peripheral_Id);	//enable clock for I2C
 	status = twi_master_init(twi_config->p_i2c, &twi_config->twi_options);	//can also use twi_master_setup
 	if (status != TWI_SUCCESS)
 	{

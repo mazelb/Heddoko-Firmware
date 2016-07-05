@@ -14,7 +14,11 @@ src\ASF\common\services\usb\class\cdc\device\udi_cdc.c
 
 src\ASF\common\services\usb\udc\udc.c
 
+src\ASF\sam\drivers\efc\efc.c
+
 src\ASF\sam\drivers\udp\udp_device.c
+
+src\ASF\sam\services\flash_efc\flash_efc.c
 
 src\brd_board.c
 
@@ -27,6 +31,8 @@ src\common.c
 src\dat_dataRouter.c
 
 src\drv_gpio.c
+
+src\LTC2941-1.c
 
 src\mgr_managerTask.c
 

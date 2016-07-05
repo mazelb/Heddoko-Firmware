@@ -17,6 +17,7 @@ extern slave_twi_config_t ltc2941Config;
 extern dat_dataRouterConfig_t dataRouterConfiguration;
 //static function forward declarations
 static void setTimeFromString(char* dateTime);
+static char* getTimeString(); 
 
 char tempString[255] = {0}; 
 
@@ -59,7 +60,20 @@ void cmd_task_commandProcesor(void *pvParameters)
 						}
 					}
 				}
-				else if(strncmp(packet.packetData,"getRawCharge",9)==0)
+				else if(strncmp(packet.packetData,"pbGetTime",9)==0)
+				{
+					forwardCommand = false; 
+					cmd_sendDateTimeCommand();
+					if(packet.packetSource == CMD_COMMAND_SOURCE_DAUGHTER)
+					{
+						drv_uart_putString(dataRouterConfiguration.daughterBoard, getTimeString());
+					}
+					else if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+					{
+						dat_sendStringToUsb(getTimeString());
+					}
+				}
+				else if(strncmp(packet.packetData,"getRawCharge",12)==0)
 				{
 					//handle the set time command. 					
 					chargeLevel = ltc2941GetCharge(&ltc2941Config);
@@ -208,6 +222,15 @@ void cmd_task_commandProcesor(void *pvParameters)
 	}
 		
 }
+char timeString[100] = {0};
+static char* getTimeString()
+{
+	uint32_t hour, minute, second;
+	rtc_get_time(RTC,&hour,&minute,&second);
+	sprintf(timeString,"%02d:%02d:%02d\r\n",hour,minute,second);
+	return timeString;
+}
+
 
 void cmd_initPacketStructure(cmd_commandPacket_t* packet)
 {
@@ -238,7 +261,7 @@ status_t cmd_sendDateTimeCommand()
 	uint32_t hour, minute, second, year, month, day, dow; 
 	rtc_get_date(RTC,&year,&month,&day, &dow); 
 	rtc_get_time(RTC,&hour,&minute,&second); 
-	sprintf(packet.packetData,"SetTime%d-%d-%d-%d-%d:%d:%d\r\n", year, month, day, dow, hour, minute, second ); 	
+	sprintf(packet.packetData,"setTime%04d-%02d-%02d-%02d-%02d:%02d:%02d\r\n", year, month, day, dow, hour, minute, second ); 	
 	packet.packetSize = strlen(packet.packetData); 
 	if(cmd_queue_commandQueue != NULL)
 	{

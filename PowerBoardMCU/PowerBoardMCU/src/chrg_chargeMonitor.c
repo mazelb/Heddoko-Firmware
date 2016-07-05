@@ -109,8 +109,7 @@ void chrg_task_chargeMonitor(void *pvParameters)
 			powerButtonLowCount++;
 		}
 		if(powerButtonLowCount == 10) //approximately 3.5 seconds
-		{
-			
+		{			
 			//should be we reset the power board? or just power off
 			eventMessage.sysEvent = SYS_EVENT_POWER_SWITCH;
 			if(mgr_eventQueue != NULL)
@@ -143,8 +142,7 @@ void chrg_task_chargeMonitor(void *pvParameters)
 				{					
 					sprintf(tempString,"PwrBrdMsg:Receive Battery Full indication at %d level\r\n",ltc2941GetCharge(&ltc2941Config));
 					dat_sendDebugMsgToDataBoard(tempString);
-					ltc2941SetChargeComplete(&ltc2941Config);		
-								
+					ltc2941SetChargeComplete(&ltc2941Config);									
 					drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
 				}
 				break;

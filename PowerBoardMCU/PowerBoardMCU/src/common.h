@@ -11,7 +11,7 @@
 #ifndef COMMON_H_
 #define COMMON_H_
 
-#define VERSION "V0.1f"
+#define VERSION "V0.1g"
 
 #define ALL_INTERRUPT_MASK  0xffffffff
 #define TRUE 1
@@ -59,7 +59,7 @@ typedef enum
 #define WDT_PERIOD                        10000
 
 #define POWER_BOARD_CMD_TOGGLE_JACKS 0xAA
-
+#define POWER_BOARD_CMD_GET_TIME 0xAC
 
 /*	task_dataProcessor.c	*/
 #define PACKET_WAIT_TIMEOUT						22

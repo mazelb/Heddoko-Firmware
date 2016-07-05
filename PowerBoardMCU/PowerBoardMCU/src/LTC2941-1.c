@@ -13,9 +13,7 @@ status_t ltc2941Init(slave_twi_config_t* slaveConfig)
 {
 	status_t status = STATUS_FAIL;
 	
-	//Set configuration for charger 0xFC 
-	
-	
+	//Set configuration for charger 0xFC 	
 	status = drv_i2c_write(slaveConfig, LTC_2941_CONTROL_REG_ADDR, 0xf0);
 	if (status != STATUS_PASS)
 	{

@@ -56,7 +56,8 @@ drv_twi_config_t twiConfig[] =
 			.smbus = 0
 		},
 		.IRQtype = TWI0_IRQn,
-		.mem_index = 0
+		.mem_index = 0,
+		.peripheral_Id = ID_TWI0
 	},
 	{
 		.p_i2c = TWI1,
@@ -68,7 +69,8 @@ drv_twi_config_t twiConfig[] =
 			.smbus = 0
 		},
 		.IRQtype = TWI1_IRQn,
-		.mem_index = 1
+		.mem_index = 1,
+		.peripheral_Id = ID_TWI1
 	}
 };
 

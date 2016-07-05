@@ -71,25 +71,21 @@ void dat_task_dataRouter(void *pvParameters)
 		//try to read byte from databoard mcu
 		if(drv_uart_getChar(dataRouterConfig->dataBoardUart, &receivedByte) == STATUS_PASS)
 		{
-			if(receivedByte == POWER_BOARD_CMD_TOGGLE_JACKS)
+			if((receivedByte & 0xA0) == 0xA0)
 			{
-				drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_HIGH);
-				drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
-				vTaskDelay(500);
-				drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
-				drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);
+				if(receivedByte == POWER_BOARD_CMD_TOGGLE_JACKS)
+				{
+					drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_HIGH);
+					drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
+					vTaskDelay(500);
+					drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
+					drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);
+				}
+				else if(receivedByte == POWER_BOARD_CMD_GET_TIME)
+				{
+					cmd_sendDateTimeCommand();
+				}			
 			}
-			//else if(receivedByte == 0xBB) //power down complete command
-			//{
-				//eventMessage.sysEvent = SYS_EVENT_POWER_DOWN_COMPLETE;
-				//if(mgr_eventQueue != NULL)
-				//{
-					//if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
-					//{
-						////this is an error, we should log it.
-					//}
-				//}
-			//}
 			else
 			{			
 				//if byte exists, pass through to the daughter board and USB (if connected)
