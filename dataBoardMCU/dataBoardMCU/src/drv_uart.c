@@ -17,6 +17,7 @@
 #include <interrupt.h>
 #include <string.h>
 #include <stdio.h>
+
 typedef struct
 {
 	sw_fifo_typedef rx_fifo; 
@@ -35,16 +36,24 @@ typedef struct
 
 //	PDC/DMA part
 /* PDC data packet for transfer */
-pdc_packet_t g_pdc_uart_rx_packet[4], g_pdc_uart_tx_packet[4];
+pdc_packet_t g_pdc_uart_rx_packet[MAX_NUM_OF_UARTS], g_pdc_uart_tx_packet[MAX_NUM_OF_UARTS];
+pdc_packet_t g_pdc_uart_rx_packet_next[MAX_NUM_OF_UARTS], g_pdc_uart_tx_packet_next[MAX_NUM_OF_UARTS];
 /* Pointer to UART PDC register base */
-Pdc *g_p_uart_pdc[4];
+Pdc *g_p_uart_pdc[MAX_NUM_OF_UARTS];
 
 //global variables
-volatile drv_uart_memory_buf_t uartMemBuf[4]; //4 UARTS, 4 buffers
+volatile drv_uart_memory_buf_t uartMemBuf[MAX_NUM_OF_UARTS], uartMemBufNext[MAX_NUM_OF_UARTS]; //4 UARTS, 4 buffers
+drv_uart_config_t *p_uartConfig[MAX_NUM_OF_UARTS] = {NULL};		//pointer to the UART config.
+bool toggleDmaBuffers[MAX_NUM_OF_UARTS] = {UART_DMA_BUFFER_A};	//flag to know toggle of buffers.
+
+//extern function declarations
+//extern void pkt_bufferFull(drv_uart_config_t* p_comPortConfig, bool activeBuffer);
+
 //static function declarations
-static int uart_get_byte(drv_uart_memory_buf_t* memBuf, char* c); 
+static int  uart_get_byte(drv_uart_memory_buf_t* memBuf, char* c); 
 static void uart_process_byte(Usart *p_usart, drv_uart_memory_buf_t* memBuf);
 static void uart_process_tx_byte(Usart *p_usart, drv_uart_memory_buf_t* memBuf);
+static void uart_process_wrapped_data(drv_uart_config_t *p_uartConfig);
 /***********************************************************************************************
  * drv_uart_init(drv_uart_config_t* uartConfig)
  * @brief initialize uart driver and circular buffer
@@ -57,20 +66,19 @@ status_t drv_uart_init(drv_uart_config_t* uartConfig)
 	
 	if(uartConfig->p_usart == UART0)
 	{
-		uartConfig->mem_index = 0;
+		uartConfig->mem_index = UART0_IDX;
 	}
 	else if(uartConfig->p_usart == UART1)
 	{	
-		uartConfig->mem_index = 1;
+		uartConfig->mem_index = UART1_IDX;
 	}
 	else if(uartConfig->p_usart == USART0)
 	{	
-		uartConfig->mem_index = 2;
+		uartConfig->mem_index = USART0_IDX;
 	}
 	else if(uartConfig->p_usart == USART1)
 	{
-
-		uartConfig->mem_index = 3;
+		uartConfig->mem_index = USART1_IDX;
 	}
 	else
 	{
@@ -90,6 +98,9 @@ status_t drv_uart_init(drv_uart_config_t* uartConfig)
 		//buffer already in use, call drv_uart_deinit() first
 		return STATUS_FAIL; 
 	}
+	
+	//assign a pointer to the config
+	p_uartConfig[uartConfig->mem_index] = uartConfig;
 	
 	//initialize the UART hardware 
 	usart_serial_init(uartConfig->p_usart, &uartConfig->uart_options);
@@ -112,7 +123,13 @@ status_t drv_uart_init(drv_uart_config_t* uartConfig)
 		{
 			g_p_uart_pdc[uartConfig->mem_index] = uart_get_pdc_base(uartConfig->p_usart);
 			g_pdc_uart_rx_packet[uartConfig->mem_index].ul_addr = (uint32_t) uartMemBuf[uartConfig->mem_index].rx_fifo.data_buf;
-			g_pdc_uart_rx_packet[uartConfig->mem_index].ul_size = FIFO_BUFFER_SIZE;
+			g_pdc_uart_rx_packet[uartConfig->mem_index].ul_size = uartConfig->dma_bufferDepth;
+			if (uartConfig->enable_dma_interrupt == TRUE)		//only use swappable buffers with interrupt driven DMA mode.
+			{
+				g_pdc_uart_rx_packet_next[uartConfig->mem_index].ul_addr = (uint32_t) uartMemBufNext[uartConfig->mem_index].rx_fifo.data_buf;
+				g_pdc_uart_rx_packet_next[uartConfig->mem_index].ul_size = uartConfig->dma_bufferDepth;
+				toggleDmaBuffers[uartConfig->mem_index] = UART_DMA_BUFFER_A;
+			}
 			pdc_rx_init(g_p_uart_pdc[uartConfig->mem_index], &g_pdc_uart_rx_packet[uartConfig->mem_index], NULL);
 			pdc_enable_transfer(g_p_uart_pdc[uartConfig->mem_index], PERIPH_PTCR_RXTEN | PERIPH_PTCR_TXTEN);	//enable transfers only for RX
 		}
@@ -133,7 +150,13 @@ status_t drv_uart_init(drv_uart_config_t* uartConfig)
 		{
 			g_p_uart_pdc[uartConfig->mem_index] = uart_get_pdc_base(uartConfig->p_usart);
 			g_pdc_uart_rx_packet[uartConfig->mem_index].ul_addr = (uint32_t) uartMemBuf[uartConfig->mem_index].rx_fifo.data_buf;
-			g_pdc_uart_rx_packet[uartConfig->mem_index].ul_size = FIFO_BUFFER_SIZE;
+			g_pdc_uart_rx_packet[uartConfig->mem_index].ul_size = uartConfig->dma_bufferDepth;
+			if (uartConfig->enable_dma_interrupt == TRUE)		//only use swappable buffers with interrupt driven DMA mode.
+			{
+				g_pdc_uart_rx_packet_next[uartConfig->mem_index].ul_addr = (uint32_t) uartMemBufNext[uartConfig->mem_index].rx_fifo.data_buf;
+				g_pdc_uart_rx_packet_next[uartConfig->mem_index].ul_size = uartConfig->dma_bufferDepth;
+				toggleDmaBuffers[uartConfig->mem_index] = UART_DMA_BUFFER_A;
+			}
 			pdc_rx_init(g_p_uart_pdc[uartConfig->mem_index], &g_pdc_uart_rx_packet[uartConfig->mem_index], NULL);
 			pdc_enable_transfer(g_p_uart_pdc[uartConfig->mem_index], PERIPH_PTCR_RXTEN | PERIPH_PTCR_TXTEN);	//enable transfers only for RX
 		}
@@ -161,7 +184,13 @@ status_t drv_uart_init(drv_uart_config_t* uartConfig)
 		{
 			g_p_uart_pdc[uartConfig->mem_index] = usart_get_pdc_base(uartConfig->p_usart);
 			g_pdc_uart_rx_packet[uartConfig->mem_index].ul_addr = (uint32_t) uartMemBuf[uartConfig->mem_index].rx_fifo.data_buf;
-			g_pdc_uart_rx_packet[uartConfig->mem_index].ul_size = FIFO_BUFFER_SIZE;
+			g_pdc_uart_rx_packet[uartConfig->mem_index].ul_size = uartConfig->dma_bufferDepth;
+			if (uartConfig->enable_dma_interrupt == TRUE)		//only use swappable buffers with interrupt driven DMA mode.
+			{
+				g_pdc_uart_rx_packet_next[uartConfig->mem_index].ul_addr = (uint32_t) uartMemBufNext[uartConfig->mem_index].rx_fifo.data_buf;
+				g_pdc_uart_rx_packet_next[uartConfig->mem_index].ul_size = uartConfig->dma_bufferDepth;
+				toggleDmaBuffers[uartConfig->mem_index] = UART_DMA_BUFFER_A;
+			}
 			pdc_rx_init(g_p_uart_pdc[uartConfig->mem_index], &g_pdc_uart_rx_packet[uartConfig->mem_index], NULL);
 			pdc_enable_transfer(g_p_uart_pdc[uartConfig->mem_index], PERIPH_PTCR_RXTEN | PERIPH_PTCR_TXTEN);	//enable transfers only for RX
 		}
@@ -189,7 +218,13 @@ status_t drv_uart_init(drv_uart_config_t* uartConfig)
 		{
 			g_p_uart_pdc[uartConfig->mem_index] = usart_get_pdc_base(uartConfig->p_usart);
 			g_pdc_uart_rx_packet[uartConfig->mem_index].ul_addr = (uint32_t) uartMemBuf[uartConfig->mem_index].rx_fifo.data_buf;
-			g_pdc_uart_rx_packet[uartConfig->mem_index].ul_size = FIFO_BUFFER_SIZE;
+			g_pdc_uart_rx_packet[uartConfig->mem_index].ul_size = uartConfig->dma_bufferDepth;
+			if (uartConfig->enable_dma_interrupt == TRUE)		//only use swappable buffers with interrupt driven DMA mode.
+			{
+				g_pdc_uart_rx_packet_next[uartConfig->mem_index].ul_addr = (uint32_t) uartMemBufNext[uartConfig->mem_index].rx_fifo.data_buf;
+				g_pdc_uart_rx_packet_next[uartConfig->mem_index].ul_size = uartConfig->dma_bufferDepth;
+				toggleDmaBuffers[uartConfig->mem_index] = UART_DMA_BUFFER_A;
+			}
 			pdc_rx_init(g_p_uart_pdc[uartConfig->mem_index], &g_pdc_uart_rx_packet[uartConfig->mem_index], NULL);
 			pdc_enable_transfer(g_p_uart_pdc[uartConfig->mem_index], PERIPH_PTCR_RXTEN | PERIPH_PTCR_TXTEN);	//enable transfers only for RX
 		}
@@ -203,9 +238,16 @@ status_t drv_uart_init(drv_uart_config_t* uartConfig)
 	}
 	uartMemBuf[uartConfig->mem_index].isinit = true;
 	
-	if (uartConfig->init_as_DMA == FALSE)		//enable the interrupts only if not using DMA
+	if (uartConfig->init_as_DMA == FALSE)		//enable the UART interrupts only if not using DMA
 	{
 		usart_enable_interrupt(uartConfig->p_usart, UART_IER_RXRDY | UART_IER_TXEMPTY); //enable RXRDY interrupt
+	}
+	else
+	{
+		if (uartConfig->enable_dma_interrupt)
+		{
+			usart_enable_interrupt(uartConfig->p_usart, UART_IER_RXBUFF);
+		}
 	}
 	
 	//clear the buffer
@@ -224,6 +266,25 @@ status_t drv_uart_init(drv_uart_config_t* uartConfig)
 	uartMemBuf[uartConfig->mem_index].uart_tx_fifo_not_empty_flag = 0;
 	uartMemBuf[uartConfig->mem_index].uart_tx_fifo_ovf_flag = 0;
 	uartMemBuf[uartConfig->mem_index].tx_fifo.num_bytes = 0;
+
+	if (uartConfig->enable_dma_interrupt == TRUE)
+	{
+		memset(uartMemBufNext[uartConfig->mem_index].rx_fifo.data_buf, 0,FIFO_BUFFER_SIZE);
+		uartMemBufNext[uartConfig->mem_index].rx_fifo.i_first = 0;
+		uartMemBufNext[uartConfig->mem_index].rx_fifo.i_last = 0;
+		uartMemBufNext[uartConfig->mem_index].uart_rx_fifo_full_flag = 0;
+		uartMemBufNext[uartConfig->mem_index].uart_rx_fifo_not_empty_flag = 0;
+		uartMemBufNext[uartConfig->mem_index].uart_rx_fifo_ovf_flag = 0;
+		uartMemBufNext[uartConfig->mem_index].rx_fifo.num_bytes = 0;
+		
+		memset(uartMemBufNext[uartConfig->mem_index].tx_fifo.data_buf, 0,FIFO_BUFFER_SIZE);
+		uartMemBufNext[uartConfig->mem_index].tx_fifo.i_first = 0;
+		uartMemBufNext[uartConfig->mem_index].tx_fifo.i_last = 0;
+		uartMemBufNext[uartConfig->mem_index].uart_tx_fifo_full_flag = 0;
+		uartMemBufNext[uartConfig->mem_index].uart_tx_fifo_not_empty_flag = 0;
+		uartMemBufNext[uartConfig->mem_index].uart_tx_fifo_ovf_flag = 0;
+		uartMemBufNext[uartConfig->mem_index].tx_fifo.num_bytes = 0;
+	}
 	
 	return status; 
 }
@@ -307,7 +368,8 @@ status_t drv_uart_getChar(drv_uart_config_t* uartConfig, char* c)
 	}
 	else
 	{
-		drv_uart_DMA_getChar(uartConfig, c);
+		// NOTE: in DMA mode this function will never return STATUS_FAIL or STATUS_EOF
+		drv_uart_DMA_getChar(uartConfig, c, UART_DMA_BUFFER_A);
 	}
 	return status;	
 }
@@ -324,10 +386,11 @@ status_t drv_uart_deInit(drv_uart_config_t* uartConfig)
 	{
 		/* Disable all the interrupts. */
 		usart_disable_interrupt(uartConfig->p_usart, ALL_INTERRUPT_MASK);
-		uartMemBuf[uartConfig->mem_index].isinit = false;	
+		uartMemBuf[uartConfig->mem_index].isinit = false;
 	}
 	else
 	{
+		uartMemBuf[uartConfig->mem_index].isinit = false;
 		drv_uart_deInitRx(uartConfig);
 	}
 	return status;	
@@ -531,7 +594,6 @@ void drv_uart_putString(drv_uart_config_t* uartConfig, char* str)
 	else
 	{
 		drv_uart_DMA_putData(uartConfig, str, size);
-		drv_uart_DMA_wait_endTx(uartConfig);
 	}
 }
 
@@ -551,7 +613,6 @@ void drv_uart_putData(drv_uart_config_t* uartConfig, char* str, size_t length)
 	else
 	{
 		drv_uart_DMA_putData(uartConfig, str, length);
-		drv_uart_DMA_wait_endTx(uartConfig);
 	}
 }
 uint32_t drv_uart_getNumBytes(drv_uart_config_t* uartConfig)
@@ -590,40 +651,61 @@ void UART0_Handler()
 	//{
 		//uart_process_byte(UART0, &(uartMemBuf[0]));	
 	//}
-	uint32_t status = uart_get_status(UART0); 
-	if(status & UART_SR_RXRDY > 0)
-	{	
-		if(uartMemBuf[0].isinit) //only handle the interrupt if the driver is initialized.
+	uint32_t status = uart_get_status(UART0);
+	 
+	if (p_uartConfig[UART0_IDX]->init_as_DMA == FALSE)	//(enableUartInterrupt[0] == TRUE)
+	{
+		if(status & UART_SR_RXRDY > 0)
+		{	
+			if(uartMemBuf[UART0_IDX].isinit) //only handle the interrupt if the driver is initialized.
+			{
+				uart_process_byte(UART0, &(uartMemBuf[UART0_IDX]));
+			}
+		}
+	
+		if(status & UART_SR_TXEMPTY)
 		{
-			uart_process_byte(UART0, &(uartMemBuf[0]));
+			if(uartMemBuf[UART0_IDX].isinit) //only handle the interrupt if the driver is initialized.
+			{
+				uart_process_tx_byte(UART0, &(uartMemBuf[UART0_IDX])); 	
+			}
+		}	
+	}
+	else if (p_uartConfig[UART0_IDX]->enable_dma_interrupt == TRUE)	//(enableDmaInterrupt[0] == TRUE)
+	{
+		if (status & UART_SR_RXBUFF)
+		{
+			uart_process_wrapped_data(p_uartConfig[UART0_IDX]);
 		}
 	}
-	
-	if(status & UART_SR_TXEMPTY)
-	{
-		if(uartMemBuf[0].isinit) //only handle the interrupt if the driver is initialized.
-		{
-			uart_process_tx_byte(UART0, &(uartMemBuf[0])); 	
-		}
-	}	
 }
 
 void UART1_Handler()
 {
 	uint32_t status = uart_get_status(UART1); 
-	if(status & UART_SR_RXRDY > 0)
-	{	
-		if(uartMemBuf[1].isinit) //only handle the interrupt if the driver is initialized.
+	if (p_uartConfig[UART1_IDX]->init_as_DMA == FALSE)	//(enableUartInterrupt[1] == TRUE)
+	{
+		if(status & UART_SR_RXRDY > 0)
+		{	
+			if(uartMemBuf[UART1_IDX].isinit) //only handle the interrupt if the driver is initialized.
+			{
+				uart_process_byte(UART1, &(uartMemBuf[UART1_IDX]));
+			}
+		}
+	
+		if(status & UART_SR_TXEMPTY)
 		{
-			uart_process_byte(UART1, &(uartMemBuf[1]));
+			if(uartMemBuf[UART1_IDX].isinit) //only handle the interrupt if the driver is initialized.
+			{
+				uart_process_tx_byte(UART1, &(uartMemBuf[UART1_IDX])); 	
+			}
 		}
 	}
-	
-	if(status & UART_SR_TXEMPTY)
+	else if (p_uartConfig[UART1_IDX]->enable_dma_interrupt == TRUE)	//(enableDmaInterrupt[1] == TRUE)
 	{
-		if(uartMemBuf[1].isinit) //only handle the interrupt if the driver is initialized.
+		if (status & UART_SR_RXBUFF)
 		{
-			uart_process_tx_byte(UART1, &(uartMemBuf[1])); 	
+			uart_process_wrapped_data(p_uartConfig[UART1_IDX]);
 		}
 	}
 }
@@ -635,21 +717,31 @@ void USART0_Handler()
 		//uart_process_byte(USART0, &(uartMemBuf[2]));
 	//}
 	uint32_t status = uart_get_status(USART0); 
-	if(status & UART_SR_RXRDY > 0)
-	{	
-		if(uartMemBuf[2].isinit) //only handle the interrupt if the driver is initialized.
+	if (p_uartConfig[USART0_IDX]->init_as_DMA == FALSE)	//(enableUartInterrupt[2] == TRUE)
+	{
+		if(status & UART_SR_RXRDY > 0)
+		{	
+			if(uartMemBuf[USART0_IDX].isinit) //only handle the interrupt if the driver is initialized.
+			{
+				uart_process_byte(USART0, &(uartMemBuf[USART0_IDX]));
+			}
+		}
+	
+		if(status & UART_SR_TXEMPTY)
 		{
-			uart_process_byte(USART0, &(uartMemBuf[2]));
+			if(uartMemBuf[USART0_IDX].isinit) //only handle the interrupt if the driver is initialized.
+			{
+				uart_process_tx_byte(USART0, &(uartMemBuf[USART0_IDX])); 	
+			}
+		}	
+	}
+	else if (p_uartConfig[USART0_IDX]->enable_dma_interrupt == TRUE)	//(enableDmaInterrupt[2] == TRUE)
+	{
+		if (status & UART_SR_RXBUFF)
+		{
+			uart_process_wrapped_data(p_uartConfig[USART0_IDX]);
 		}
 	}
-	
-	if(status & UART_SR_TXEMPTY)
-	{
-		if(uartMemBuf[2].isinit) //only handle the interrupt if the driver is initialized.
-		{
-			uart_process_tx_byte(USART0, &(uartMemBuf[2])); 	
-		}
-	}	
 }
 
 void USART1_Handler()
@@ -659,23 +751,32 @@ void USART1_Handler()
 		//uart_process_byte(USART1, &(uartMemBuf[3]));
 	//}
 	uint32_t status = uart_get_status(USART1); 
-	if(status & UART_SR_RXRDY > 0)
-	{	
-		if(uartMemBuf[3].isinit) //only handle the interrupt if the driver is initialized.
+	if (p_uartConfig[USART1_IDX]->init_as_DMA == FALSE)	//(enableUartInterrupt[3] == TRUE)
+	{
+		if(status & UART_SR_RXRDY > 0)
+		{	
+			if(uartMemBuf[USART1_IDX].isinit) //only handle the interrupt if the driver is initialized.
+			{
+				uart_process_byte(USART1, &(uartMemBuf[USART1_IDX]));
+			}
+		}
+	
+		if(status & UART_SR_TXEMPTY)
 		{
-			uart_process_byte(USART1, &(uartMemBuf[3]));
+			if(uartMemBuf[USART1_IDX].isinit) //only handle the interrupt if the driver is initialized.
+			{
+				uart_process_tx_byte(USART1, &(uartMemBuf[USART1_IDX])); 	
+			}
 		}
 	}
-	
-	if(status & UART_SR_TXEMPTY)
+	else if (p_uartConfig[USART1_IDX]->enable_dma_interrupt == TRUE)	//(enableDmaInterrupt[3] == TRUE)
 	{
-		if(uartMemBuf[3].isinit) //only handle the interrupt if the driver is initialized.
+		if (status & UART_SR_RXBUFF)
 		{
-			uart_process_tx_byte(USART1, &(uartMemBuf[3])); 	
+			uart_process_wrapped_data(p_uartConfig[USART1_IDX]);
 		}
-	}	
+	}
 }
-
 
 //static functions
 static int uart_get_byte(drv_uart_memory_buf_t* memBuf, char* c)
@@ -763,42 +864,128 @@ static void uart_process_tx_byte(Usart *p_usart, drv_uart_memory_buf_t* memBuf)
 	}	
 };
 
+uint8_t drv_uart_getUartIdx(drv_uart_config_t* uartConfig)
+{
+	if (uartConfig->p_usart == UART0)
+	{
+		return UART0_IDX;
+	}
+	else if (uartConfig->p_usart == UART1)
+	{
+		return UART1_IDX;
+	}
+	else if (uartConfig->p_usart == USART0)
+	{
+		return USART0_IDX;
+	}
+	else if (uartConfig->p_usart == USART1)
+	{
+		return USART1_IDX;
+	}
+	return;
+}
+
 /*	DMA Functions	*/
-status_t drv_uart_DMA_getChar(drv_uart_config_t* uartConfig, char* c)
+
+static void uart_process_wrapped_data(drv_uart_config_t *p_uartConfig)
+{	
+	if (toggleDmaBuffers[p_uartConfig->mem_index] == UART_DMA_BUFFER_A)
+	{
+		pdc_rx_init(g_p_uart_pdc[p_uartConfig->mem_index], &g_pdc_uart_rx_packet_next[p_uartConfig->mem_index], NULL);
+		pkt_bufferFull(UART_DMA_BUFFER_A, p_uartConfig->mem_index);
+	}
+	else
+	{
+		pdc_rx_init(g_p_uart_pdc[p_uartConfig->mem_index], &g_pdc_uart_rx_packet[p_uartConfig->mem_index], NULL);
+		pkt_bufferFull(UART_DMA_BUFFER_B, p_uartConfig->mem_index);
+	}
+	toggleDmaBuffers[p_uartConfig->mem_index] = !toggleDmaBuffers[p_uartConfig->mem_index];
+}
+
+status_t drv_uart_DMA_getChar(drv_uart_config_t* uartConfig, char* c, bool bufferIndex)
 {
 	status_t status = STATUS_PASS;
 	
-	*c = uartMemBuf[uartConfig->mem_index].rx_fifo.data_buf[uartMemBuf[uartConfig->mem_index].rx_fifo.i_first]; // grab the oldest element in the buffer
+	if (bufferIndex == UART_DMA_BUFFER_A)
+	{
+		*c = uartMemBuf[uartConfig->mem_index].rx_fifo.data_buf[uartMemBuf[uartConfig->mem_index].rx_fifo.i_first]; // grab the oldest element in the buffer
 	
-	uartMemBuf[uartConfig->mem_index].rx_fifo.i_first++;                        // increment the index of the oldest element
+		uartMemBuf[uartConfig->mem_index].rx_fifo.i_first++;                        // increment the index of the oldest element
 	
-	if(uartMemBuf[uartConfig->mem_index].rx_fifo.i_first >= FIFO_BUFFER_SIZE)
-	{   // if the index has reached the end of the buffer,
-		uartMemBuf[uartConfig->mem_index].rx_fifo.i_first = 0;                      // roll over the index counter
+		if(uartMemBuf[uartConfig->mem_index].rx_fifo.i_first >= uartConfig->dma_bufferDepth)
+		{   // if the index has reached the end of the buffer,
+			uartMemBuf[uartConfig->mem_index].rx_fifo.i_first = 0;                      // roll over the index counter
+		}
 	}
-	
+	else if (bufferIndex == UART_DMA_BUFFER_B)
+	{
+		*c = uartMemBufNext[uartConfig->mem_index].rx_fifo.data_buf[uartMemBufNext[uartConfig->mem_index].rx_fifo.i_first]; // grab the oldest element in the buffer
+		
+		uartMemBufNext[uartConfig->mem_index].rx_fifo.i_first++;                        // increment the index of the oldest element
+		
+		if(uartMemBufNext[uartConfig->mem_index].rx_fifo.i_first >= uartConfig->dma_bufferDepth)
+		{   // if the index has reached the end of the buffer,
+			uartMemBufNext[uartConfig->mem_index].rx_fifo.i_first = 0;                      // roll over the index counter
+		}
+	}
 	return status;
 }
 
-void drv_uart_DMA_reInit(drv_uart_config_t* uartConfig)
+void drv_uart_DMA_reInit(drv_uart_config_t* uartConfig, bool bufferIndex)
 {
 	// clear the buffers and flags	//
 	//memset(uartMemBuf[uartConfig->mem_index].rx_fifo.data_buf, 0,FIFO_BUFFER_SIZE);
-	uartMemBuf[uartConfig->mem_index].rx_fifo.i_first = 0;
-	uartMemBuf[uartConfig->mem_index].rx_fifo.i_last = 0;
-	uartMemBuf[uartConfig->mem_index].rx_fifo.num_bytes = 0;
-	uartMemBuf[uartConfig->mem_index].uart_rx_fifo_full_flag = 0;
-	uartMemBuf[uartConfig->mem_index].uart_rx_fifo_not_empty_flag = 0;
-	uartMemBuf[uartConfig->mem_index].uart_rx_fifo_ovf_flag = 0;
+	if (uartConfig->enable_dma_interrupt == FALSE)
+	{
+		uartMemBuf[uartConfig->mem_index].rx_fifo.i_first = 0;
+		uartMemBuf[uartConfig->mem_index].rx_fifo.i_last = 0;
+		uartMemBuf[uartConfig->mem_index].rx_fifo.num_bytes = 0;
+		uartMemBuf[uartConfig->mem_index].uart_rx_fifo_full_flag = 0;
+		uartMemBuf[uartConfig->mem_index].uart_rx_fifo_not_empty_flag = 0;
+		uartMemBuf[uartConfig->mem_index].uart_rx_fifo_ovf_flag = 0;
+		pdc_rx_clear_cnt(g_p_uart_pdc[uartConfig->mem_index]);	//clear the rx receive count and hence stops the transfer
+		pdc_rx_init(g_p_uart_pdc[uartConfig->mem_index], &g_pdc_uart_rx_packet[uartConfig->mem_index], NULL);
+	}
+	else
+	{
+		if (bufferIndex == UART_DMA_BUFFER_A)
+		{
+			uartMemBuf[uartConfig->mem_index].rx_fifo.i_first = 0;
+			uartMemBuf[uartConfig->mem_index].rx_fifo.i_last = 0;
+			uartMemBuf[uartConfig->mem_index].rx_fifo.num_bytes = 0;
+			uartMemBuf[uartConfig->mem_index].uart_rx_fifo_full_flag = 0;
+			uartMemBuf[uartConfig->mem_index].uart_rx_fifo_not_empty_flag = 0;
+			uartMemBuf[uartConfig->mem_index].uart_rx_fifo_ovf_flag = 0;
+		}
+		else
+		{
+			uartMemBufNext[uartConfig->mem_index].rx_fifo.i_first = 0;
+			uartMemBufNext[uartConfig->mem_index].rx_fifo.i_last = 0;
+			uartMemBufNext[uartConfig->mem_index].rx_fifo.num_bytes = 0;
+			uartMemBufNext[uartConfig->mem_index].uart_rx_fifo_full_flag = 0;
+			uartMemBufNext[uartConfig->mem_index].uart_rx_fifo_not_empty_flag = 0;
+			uartMemBufNext[uartConfig->mem_index].uart_rx_fifo_ovf_flag = 0;
+		}
+	}
+}
+
+status_t drv_uart_DMA_initRx(drv_uart_config_t* uartConfig)
+{
+	status_t status = STATUS_PASS;
 	pdc_rx_init(g_p_uart_pdc[uartConfig->mem_index], &g_pdc_uart_rx_packet[uartConfig->mem_index], NULL);
+	pdc_enable_transfer(g_p_uart_pdc[uartConfig->mem_index], PERIPH_PTCR_RXTEN | PERIPH_PTCR_TXTEN);
+	return status;
 }
 
 status_t drv_uart_deInitRx(drv_uart_config_t* uartConfig)
 {
 	status_t status = STATUS_PASS;
 	/* Disable all the interrupts. */
-	usart_disable_interrupt(uartConfig->p_usart, UART_IER_RXRDY);
-	uartMemBuf[uartConfig->mem_index].isinit = false;
+	//TODO: disable the pdc transfer
+	//usart_disable_interrupt(uartConfig->p_usart, UART_IER_RXRDY);
+	pdc_disable_transfer(g_p_uart_pdc[uartConfig->mem_index], PERIPH_PTCR_RXTDIS);
+	pdc_rx_clear_cnt(g_p_uart_pdc[uartConfig->mem_index]);
+	//uartMemBuf[uartConfig->mem_index].isinit = false;
 	return status;
 }
 
@@ -817,6 +1004,7 @@ void drv_uart_DMA_putData(drv_uart_config_t* uartConfig, char* str, size_t lengt
 	}
 	uartMemBuf[uartConfig->mem_index].uart_tx_fifo_not_empty_flag = TRUE;
 	pdc_tx_init(g_p_uart_pdc[uartConfig->mem_index], &g_pdc_uart_tx_packet[uartConfig->mem_index], NULL);
+	drv_uart_DMA_wait_endTx(uartConfig);
 }
 
 status_t drv_uart_DMA_enable_interrupt(drv_uart_config_t* uartConfig)
@@ -892,5 +1080,5 @@ status_t drv_uart_DMA_wait_endTx(drv_uart_config_t* uartConfig)
 uint32_t drv_uart_DMA_readRxBytes(drv_uart_config_t* uartConfig)
 {
 	//read the number of received bytes by the DMA
-	return (FIFO_BUFFER_SIZE - pdc_read_rx_counter(g_p_uart_pdc[uartConfig->mem_index]));
+	return (uartConfig->dma_bufferDepth - pdc_read_rx_counter(g_p_uart_pdc[uartConfig->mem_index]));
 }

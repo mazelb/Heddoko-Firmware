@@ -11,6 +11,7 @@
 
 #include <string.h>
 #include "common.h"
+#include "drv_uart.h"
 #include "cmd_commandProcessor.h"
 
 #define MAX_BLE_COMMAND_PACKET_SIZE	2
@@ -24,6 +25,8 @@ typedef enum
 	BLE_WIFI_DATA_ALL
 }ble_wifi_data_categories_t;
 
+status_t ble_init(drv_uart_config_t* uartConfig);
+void ble_processPacket(rawPacket_t* packet);
 void ble_send_gpsDataReq ();
 void ble_send_wifiDataReq (ble_wifi_data_categories_t dataCategory);
 void ble_send_rawDataReq ();

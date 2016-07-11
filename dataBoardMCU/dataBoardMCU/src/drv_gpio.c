@@ -25,7 +25,7 @@ static void drv_gpio_int_cd(uint32_t ul_id, uint32_t ul_mask);
 drv_gpio_config_t gpioConfig[] = 
 {
 	/*  PIN ID					PIN MODE				  INITIAL PIN STATE       INTERRUPT MODE				INTERRUPT HANDLER  PULL UP EN  DEBOUNCE EN	setFlag     current State*/
-	//{DRV_GPIO_ID_PIN_PW_SW,		DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_LOW_EDGE, drv_gpio_int_pw,		TRUE,	TRUE,			0,	DRV_GPIO_PIN_STATE_LOW},
+	{DRV_GPIO_ID_PIN_PW_SW,		DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_LOW_EDGE, drv_gpio_int_pw,		TRUE,	TRUE,			0,	DRV_GPIO_PIN_STATE_LOW},
 	//{DRV_GPIO_ID_PIN_AC_SW1,	DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_LOW_EDGE, drv_gpio_int_sw1,	TRUE,	TRUE,			0,	DRV_GPIO_PIN_STATE_LOW},
 	//{DRV_GPIO_ID_PIN_AC_SW2,	DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_LOW_EDGE, drv_gpio_int_sw2,	TRUE,	TRUE,			0,	DRV_GPIO_PIN_STATE_LOW},
 	//{DRV_GPIO_ID_PIN_JC_OC1,	DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_LOW_EDGE, drv_gpio_int_oc1,	TRUE,	TRUE,			0,	DRV_GPIO_PIN_STATE_LOW},
@@ -287,10 +287,6 @@ status_t drv_gpio_setPinState(drv_gpio_pins_t pin, drv_gpio_pin_state_t state)
 		case DRV_GPIO_PIN_STATE_PULLED_LOW:
 		break; 
 	}
-	
-	
-
-
 	return status;
 }
 
@@ -411,6 +407,10 @@ status_t drv_gpio_enable_interrupt(drv_gpio_pins_t pin)
 	{
 		NVIC_EnableIRQ(PIOB_IRQn);
 	}
+	else if (p_pio == PIOC)
+	{
+		NVIC_EnableIRQ(PIOC_IRQn);
+	}
 	return status;
 }
 
@@ -464,7 +464,7 @@ status_t drv_gpio_disable_interrupt_all(void)
  * @param uint32_t ul_id, uint32_t ul_mask
  * @return 
  ***********************************************************************************************/
-#ifdef DRV_GPIO_PIN_PW_SW
+//#ifdef DRV_GPIO_PIN_PW_SW
 static void drv_gpio_int_pw(uint32_t ul_id, uint32_t ul_mask)
 {
 	uint32_t PinMask = pio_get_pin_group_mask(gpioConfig[DRV_GPIO_PIN_PW_SW].pinId);
@@ -476,7 +476,7 @@ static void drv_gpio_int_pw(uint32_t ul_id, uint32_t ul_mask)
 	}
 	pio_enable_interrupt(PIOA, PinMask);
 }
-#endif
+//#endif
 
 /***********************************************************************************************
  * drv_gpio_int_sw1(uint32_t ul_id, uint32_t ul_mask)

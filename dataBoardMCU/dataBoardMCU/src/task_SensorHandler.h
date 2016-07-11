@@ -12,13 +12,15 @@
 
 #include <asf.h>
 #include "common.h"
-//#include "imu.h"
-//#include "pkt_packetParser.h"
-//#include "cmd_commandProcessor.h"
 #include "drv_gpio.h"
 
 #define GPIO_RS485_DATA_DIRECTION_RE	DRV_GPIO_PIN_BLE_RST3
 #define GPIO_RS485_DATA_DIRECTION_DE	DRV_GPIO_PIN_BLE_RST3
+
+#define PACKET_PADDING_LENGTH			UART_DMA_IMMEDIATE_PROCESSING_LENGTH
+#define SENSOR_BUS_SPEED_HIGH			2000000
+#define SENSOR_BUS_SPEED_LOW			460800
+//#define ENABLE_SENSOR_PACKET_TEST		//enable this define to switch to the debug packet and check the integrity of data
 
 typedef enum
 {
@@ -42,6 +44,7 @@ void sendUpdateCommandFake();
 void sendResetCommandFake();
 void sendEnableHPR(uint8_t enable);
 void sendChangeBaud(uint32_t baud);
+void sendChangePadding(bool paddingEnable, uint8_t paddingLength);
 
 void task_SensorHandler(void *pvParameters); 
 void task_protoPacketHandler(void *pvParameters); 

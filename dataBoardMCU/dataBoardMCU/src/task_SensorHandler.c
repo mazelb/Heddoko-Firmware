@@ -11,22 +11,33 @@
 #include "drv_uart.h"
 #include "imu.h"
 #include "msg_messenger.h"
+#include "sys_systemManager.h"
 
-//extern functions
-extern void reInitAllUarts();
+//#define SENSOR_PORT		USART1_IDX		//assign a default comm bus to the module
 
-//local functions
+/*	Extern functions	*/
+extern void configureBusSpeed(drv_uart_config_t* uartConfig, uint32_t newBaud);
+
+/*	Extern variables	*/
+extern system_port_config_t sys_comPorts;
+extern drv_uart_config_t usart1Config;
+extern drv_uart_config_t uart0Config;
+extern bool enableStreaming;
+extern struct
+{
+	rawPacket_t *p_packet;
+	packetCallback_t callBackFunction;
+}localPackets[4];
+
+/*	Local functions	*/
 static void processEvent(msg_message_t message);	//process the received event
 static void msgSensorModuleReady();
 static void msgSensorModuleError(sensor_error_code_t errorCode);
 void changeSensorState(sensor_state_t sensorState);
+static void systemStateChangeAction(msg_sys_manager_t* sys_eventData);
 
-//extern variables
-extern drv_uart_config_t usart1Config;
-extern drv_uart_config_t uart0Config;
-extern bool enableStreaming;
-
-//local variables
+/*	Local variables	*/
+//uint8_t sensor_comPort = SENSOR_PORT;
 sensor_state_t sgSensorState;
 xQueueHandle queue_sensorHandler = NULL;
 bool send_proto_packet = FALSE;
@@ -62,17 +73,53 @@ void disableRs485Transmit()
 }
 void changeSensorBaud()
 {
-	sendChangeBaud(2000000);
+	sendChangeBaud(SENSOR_BUS_SPEED_HIGH);
 	delay_ms(2);	//wait for the data to be transmitted
-	reInitAllUarts();
+	configureBusSpeed(sys_comPorts.sensor_port, SENSOR_BUS_SPEED_HIGH);
+	//reInitAllUarts();
 }
 
-pkt_packetParserConfiguration_t packetParserConfig =
+//pkt_packetParserConfiguration_t packetParserConfig =
+//{
+	//.transmitDisable = disableRs485Transmit,
+	//.transmitEnable = enableRs485Transmit,
+	//.packetReceivedCallback = cmd_processPacket,
+	//.packet = 
+	//{
+		//.payload = {NULL},
+		//.payloadSize = NULL,
+		//.bytesReceived = NULL,
+		//.escapeFlag = NULL
+	//}
+//};
+
+drv_uart_config_t usart1Config =
 {
-	.transmitDisable = disableRs485Transmit,
-	.transmitEnable = enableRs485Transmit,
-	.packetReceivedCallback = cmd_processPacket,
-	.uartModule = &usart1Config
+	.p_usart = USART1,
+	.mem_index = 3,
+	.init_as_DMA = TRUE,
+	.enable_dma_interrupt = FALSE,
+	.dma_bufferDepth = FIFO_BUFFER_SIZE,
+	.uart_options =
+	{
+		.baudrate   = SENSOR_BUS_SPEED_LOW,
+		.charlength = CONF_CHARLENGTH,
+		.paritytype = CONF_PARITY,
+		.stopbits   = CONF_STOPBITS
+	},
+	.pktConfig = 
+	{
+		.transmitDisable = disableRs485Transmit,
+		.transmitEnable = enableRs485Transmit,
+		.packetReceivedCallback = cmd_processPacket,
+		.packet =
+		{
+			.payload = {NULL},
+			.payloadSize = NULL,
+			.bytesReceived = NULL,
+			.escapeFlag = NULL
+		}
+	}
 };
 
 void task_SensorHandler(void *pvParameters)
@@ -91,28 +138,31 @@ void task_SensorHandler(void *pvParameters)
 	sgSensorState = SENSOR_NOT_PRESENT;
 	disableRs485Transmit();
 	
+	// initialize the com port
+	drv_uart_init(sys_comPorts.dataOutUart);
+	drv_uart_init(sys_comPorts.sensor_port);
+	
 	queue_sensorHandler = xQueueCreate(10, sizeof(msg_message_t));
 	if (queue_sensorHandler != 0)
 	{
 		msg_registerForMessages(MODULE_SENSOR_HANDLER, 0xff, queue_sensorHandler);
 	}
-	//Enable Bus Matrix arbitration
-	//for (int i=0; i<5; i++)
-	//{
-		//matrix_set_slave_arbitration_type(i, MATRIX_ARBT_ROUND_ROBIN);
-		//matrix_set_slave_default_master_type(i, MATRIX_DEFMSTR_NO_DEFAULT_MASTER);
-	//}
-	
-	//while(brainSettings.isLoaded != 1);
 	
 	/*	Packet Encoding check	*/
-	pkt_packetParserInit(&packetParserConfig);
+	pkt_packetParserInit(&usart1Config.pktConfig, sys_comPorts.sensor_port->mem_index);
+	if (sys_comPorts.sensor_port->enable_dma_interrupt == TRUE)
+	{
+		//pkt_registerPacketAndCallback(&usart1Config.pktConfig, &sensorPacket, cmd_processPacket);
+	}
 	protoPacketInit();
-	//sendResetCommandFake();
-	changeSensorBaud();
- 	vTaskDelay(5);	//wait for the sensor module to reconfigure itself
- 	sendEnableHPR(1);
-	vTaskDelay(5);	//wait for the sensor module to reconfigure itself
+	
+	#ifdef ENABLE_SENSOR_PACKET_TEST
+	sendResetCommandFake();
+	#endif
+	//changeSensorBaud();
+	//vTaskDelay(5);	//wait for the sensor module to reconfigure itself
+ 	//sendEnableHPR(1);
+	//vTaskDelay(5);	//wait for the sensor module to reconfigure itself
 	
 	while(1)
 	{
@@ -121,25 +171,41 @@ void task_SensorHandler(void *pvParameters)
 			if (loopCount >= 9)
 			{
 				send_proto_packet = TRUE;
+				#ifdef ENABLE_SENSOR_PACKET_TEST
+				sendUpdateCommandFake();
+				#else
 				sendUpdateCommand();	
+				#endif
 				sendProtoPacket();
-				clearProtoPacket();	//re-Init the packet
-				vTaskDelay(2);
+				clearProtoPacket();	//re-Init the protoBuff packet
+				vTaskDelay(3);
 				loopCount = 0;
-				if (xQueueReceive(queue_sensorHandler, &eventMessage, 1) == true)
+				if (xQueueReceive(queue_sensorHandler, &eventMessage, 1) == true)	//Process message queues here at every 10-20ms 
 				{
 					processEvent(eventMessage);
 				}
-			}		
-			drv_uart_DMA_reInit(packetParserConfig.uartModule);
-			sendGetFrame(loopCount);
+			}
+			
+			if (sys_comPorts.sensor_port->enable_dma_interrupt != TRUE)
+			{
+				drv_uart_DMA_reInit(&usart1Config, UART_DMA_BUFFER_A);
+			}
+			sendGetFrame(0);
 			//sendGetDebugStatus();
-			delay_ms(1);
-			pkt_getRawPacket(&sensorPacket, 100, 35);
+			vTaskDelay(1);
+			if (sys_comPorts.sensor_port->enable_dma_interrupt != TRUE)
+			{
+				pkt_getRawPacket(100, 35, sys_comPorts.sensor_port->mem_index);
+			}
+			
+			
+			
+			//TODO: add a 1ms delay only when the uart speed is less than 2Mbps.
 			loopCount++;
 		}
 		else
 		{
+			//Just process message queues if the sensor is not enabled
 			if (xQueueReceive(queue_sensorHandler, &eventMessage, 1) == true)
 			{
 				processEvent(eventMessage);
@@ -157,24 +223,30 @@ static void processEvent(msg_message_t message)
 	switch (message.type)
 	{
 		case MSG_TYPE_ENTERING_NEW_STATE:
-			if (sys_eventData->enableSensorStream == true)
-			{
-				if (sgSensorState == SENSOR_READY)
-				{
-					msgSensorModuleReady();
-				}
-				else
-				{
-					enableStreaming = true;
-					enableSensor = true;
-				}
-			}
-			else
-			{
-				enableStreaming = false;
-				enableSensor = false;
-				changeSensorState(SENSOR_STANDBY);
-			}
+			//if (sys_eventData->enableSensorStream == true)
+			//{
+				//if (sgSensorState == SENSOR_READY)
+				//{
+					//msgSensorModuleReady();
+				//}
+				//else
+				//{
+					//enableStreaming = true;
+					//enableSensor = true;
+					//drv_uart_DMA_initRx(&usart1Config);
+					//sendChangePadding(TRUE, PACKET_PADDING_LENGTH);
+					//msgSensorModuleReady();	//for testing, remove it when done
+				//}
+			//}
+			//else
+			//{
+				//enableStreaming = false;
+				//enableSensor = false;
+				//drv_uart_deInitRx(&usart1Config);
+				//changeSensorState(SENSOR_STANDBY);
+				//printf("Total bytes received error: %d\r\n", localPackets[3].p_packet->bytesReceived);
+			//}
+			systemStateChangeAction(message.broadcastData);
 		break;
 		case MSG_TYPE_SDCARD_STATE:
 		case MSG_TYPE_READY:
@@ -198,7 +270,7 @@ void sendGetFrame(int sensorId)
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 	outputDataBuffer[1] = PACKET_COMMAND_ID_GET_FRAME;
 	outputDataBuffer[2] = sensorId;
-	pkt_SendRawPacket(outputDataBuffer, 3);
+	pkt_SendRawPacket(outputDataBuffer, 3, sys_comPorts.sensor_port->mem_index);
 }
 
 void sendUpdateCommand()
@@ -206,7 +278,7 @@ void sendUpdateCommand()
 	uint8_t outputDataBuffer[3] = {0};
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 	outputDataBuffer[1] = PACKET_COMMAND_ID_UPDATE;
-	pkt_SendRawPacket(outputDataBuffer, 2);
+	pkt_SendRawPacket(outputDataBuffer, 2, sys_comPorts.sensor_port->mem_index);
 }
 
 void sendSetupModeEnable()
@@ -215,7 +287,7 @@ void sendSetupModeEnable()
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 	outputDataBuffer[1] = PACKET_COMMAND_ID_SETUP_MODE;
 	outputDataBuffer[2] = 0x01;
-	pkt_SendRawPacket(outputDataBuffer, 3);
+	pkt_SendRawPacket(outputDataBuffer, 3, sys_comPorts.sensor_port->mem_index);
 }
 
 void sendGetDebugStatus()
@@ -224,7 +296,7 @@ void sendGetDebugStatus()
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 	outputDataBuffer[1] = PACKET_COMMAND_ID_GET_STATUS;
 	outputDataBuffer[2] = 0x00;
-	pkt_SendRawPacket(outputDataBuffer, 3);
+	pkt_SendRawPacket(outputDataBuffer, 3, sys_comPorts.sensor_port->mem_index);
 }
 
 void sendUpdateCommandFake()
@@ -232,7 +304,7 @@ void sendUpdateCommandFake()
 	uint8_t outputDataBuffer[3] = {0};
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 	outputDataBuffer[1] = PACKET_COMMAND_ID_UPDATE_FAKE;
-	pkt_SendRawPacket(outputDataBuffer, 2);
+	pkt_SendRawPacket(outputDataBuffer, 2, sys_comPorts.sensor_port->mem_index);
 		
 	imuFrameData.Acceleration_x++;
 	imuFrameData.Acceleration_y++;
@@ -254,7 +326,7 @@ void sendResetCommandFake()
 	uint8_t outputDataBuffer[3] = {0};
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 	outputDataBuffer[1] = PACKET_COMMAND_ID_RESET_FAKE;
-	pkt_SendRawPacket(outputDataBuffer, 2);
+	pkt_SendRawPacket(outputDataBuffer, 2, sys_comPorts.sensor_port->mem_index);
 }
 
 void sendEnableHPR(uint8_t enable)
@@ -263,7 +335,7 @@ void sendEnableHPR(uint8_t enable)
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 	outputDataBuffer[1] = PACKET_COMMAND_ID_ENABLE_HPR;
 	outputDataBuffer[2] = enable;
-	pkt_SendRawPacket(outputDataBuffer, 3);
+	pkt_SendRawPacket(outputDataBuffer, 3, sys_comPorts.sensor_port->mem_index);
 }
 
 void sendChangeBaud(uint32_t baud)
@@ -276,7 +348,27 @@ void sendChangeBaud(uint32_t baud)
 	outputDataBuffer[3] = (uint8_t)((baud & 0x0000ff00) >> 8);
 	outputDataBuffer[4] = (uint8_t)((baud & 0x00ff0000) >> 16);
 	outputDataBuffer[5] = (uint8_t)((baud & 0xff000000) >> 24);
-	pkt_SendRawPacket(outputDataBuffer, 6);
+	pkt_SendRawPacket(outputDataBuffer, 6, sys_comPorts.sensor_port->mem_index);
+}
+
+void sendChangePadding(bool paddingEnable, uint8_t paddingLength)
+{
+	uint8_t outputDataBuffer[4] = {0};
+	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
+	outputDataBuffer[1] = PACKET_COMMAND_ID_CHANGE_PADDING;
+	
+	if (sys_comPorts.sensor_port->enable_dma_interrupt == TRUE)		//padding is only used in interrupt driven DMA mode
+	{
+		outputDataBuffer[2] = paddingEnable;
+		outputDataBuffer[3] = paddingLength;
+	}
+	else
+	{
+		outputDataBuffer[2] = FALSE;
+		outputDataBuffer[3] = NULL;
+	}
+	
+	pkt_SendRawPacket(outputDataBuffer, 4, sys_comPorts.sensor_port->mem_index);
 }
 
 static void msgSensorModuleReady()
@@ -328,5 +420,56 @@ void changeSensorState(sensor_state_t sensorState)
 			default:
 			break;
 		}
+	}
+}
+
+static void systemStateChangeAction(msg_sys_manager_t* sys_eventData)
+{
+	//Entering new state messages are always broadcast messages
+	switch (sys_eventData->systemState)
+	{
+		case SYSTEM_STATE_SLEEP:
+			enableStreaming = false;
+			enableSensor = false;
+			drv_uart_deInitRx(sys_comPorts.sensor_port);
+			changeSensorState(SENSOR_STANDBY);
+			printf("Total bytes received error: %d\r\n", localPackets[3].p_packet->bytesReceived);
+		break;
+		
+		case SYSTEM_STATE_INIT:
+			if (sgSensorState == SENSOR_READY)
+			{
+				msgSensorModuleReady();
+			}
+			else
+			{
+				drv_uart_DMA_initRx(sys_comPorts.sensor_port);
+				sendChangePadding(TRUE, PACKET_PADDING_LENGTH);
+				changeSensorState(SENSOR_READY);
+			}
+		break;
+		
+		case SYSTEM_STATE_IDLE:
+			enableStreaming = false;
+			enableSensor = false;
+			changeSensorState(SENSOR_STANDBY);
+		break;
+		
+		case SYSTEM_STATE_ERROR:
+			enableStreaming = false;
+			enableSensor = false;
+			changeSensorState(SENSOR_STANDBY);
+		break;
+		
+		case SYSTEM_STATE_RECORDING:
+			//if (sgSensorState == SENSOR_READY)
+			//{
+				enableStreaming = true;
+				enableSensor = true;
+			//}
+		break;
+		
+		default:
+		break;
 	}
 }

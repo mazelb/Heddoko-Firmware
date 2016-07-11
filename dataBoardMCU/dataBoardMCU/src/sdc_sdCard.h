@@ -24,7 +24,7 @@ typedef enum
 {
 	SD_FILE_PASS = 0,
 	SD_FILE_FAIL,
-	SD_FILE_ALREADY_OPEN,
+	SD_FILE_ALREADY_OPEN,		//TODO:TBD do we need this
 }sd_file_state_t;
 
 typedef enum
@@ -46,11 +46,6 @@ typedef struct
 	uint16_t bufferSize;
 	uint8_t* activeBuffer;
 }sdc_file_t;
-
-typedef struct  
-{
-	sdc_file_t* openFilesArray[MAX_OPEN_FILES];
-}open_files_t;
 
 typedef enum
 {
@@ -92,5 +87,12 @@ status_t sdc_readFromFile(sdc_file_t* fileObject, void* data, size_t fileOffset,
  * @return void
  ***********************************************************************************************/
 status_t sdc_closeFile(sdc_file_t* fileObject);
+/***********************************************************************************************
+ * sdc_checkFileSize(sdc_file_t* fileObject, size_t *size)
+ * @brief Checks the size of the file specified  
+ * @param fileObject, pointer to the size variable
+ * @return void
+ ***********************************************************************************************/
+status_t sdc_checkFileSize(sdc_file_t* fileObject, size_t *size);
 
 #endif /* SDC_SDCARD_H_ */

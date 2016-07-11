@@ -11,38 +11,40 @@
 #include "sd_mmc_mem.h"
 #include "msg_messenger.h"
 #include "sys_systemManager.h"
+#include "drv_gpio.h"
 
-//Static function forward declarations
-bool sdCardPresent();
-//initializes the SD card, and mounts the drive
-status_t initializeSdCard();
-//uninitializes the SD card, and puts the drive in an uninitialized state. 
-status_t unInitializeSdCard();
-//write calls from the main thread
-status_t write_to_sd_card(sdc_file_t *fileObject);
-//change the active buffer safely
-void changeActiveBuffer(sdc_file_t *fileObject);
-//register newly open file in the array
-void registerOpenFile(sdc_file_t* fileObject);
-//unregister closed file in the array
-void unregisterOpenFile(sdc_file_t* fileObject);
-//close all open files
-void closeAllFiles();
-//re-initialize the SD-card module and pass message
-void cardInsertedCall();
-//unmount the SD-card module and pass message
-void cardRemovedCall();
+/*	Static function forward declarations	*/
+bool sdCardPresent();															//check if the SD-card is present
+static void initSdGpio();																//initialize the GPIO associated with SD-card
+static status_t initializeSdCard();													//initializes the SD card, and mounts the drive
+static status_t unInitializeSdCard();													//uninitializes the SD card, and puts the drive in an uninitialized state. 
+static status_t write_to_sd_card(sdc_file_t *fileObject);								//write calls from the main thread
+static void changeActiveBuffer(sdc_file_t *fileObject);								//change the active buffer safely
+static void registerOpenFile(sdc_file_t* fileObject);									//register newly open file in the array
+static void unregisterOpenFile(sdc_file_t* fileObject);								//unregister closed file in the array
+static void closeAllFiles();															//close all open files
+static void cardInsertedCall();														//re-initialize the SD-card module and pass message
+static void cardRemovedCall();															//unmount the SD-card module and pass message
+static void checkCardDetectInt();														//check and reconfigure the SD-CD interrupt
+static void systemStateChangeAction(msg_sys_manager_t* sys_eventData);			//Take necessary action to the system state change
 
-FIL dataLogFile_obj, debugLogFile_Obj;
+/*	Local Variables	*/
 xSemaphoreHandle semaphore_fatFsAccess = NULL, semaphore_bufferAccess = NULL;
-xQueueHandle queue_sdCard = NULL;
+xQueueHandle msg_queue_sdCard = NULL;
 char debugLogNewFileName[] = "sysHdk", debugLogOldFileName[] = "sysHdk_old";
 char dataLogFileName[SD_CARD_FILENAME_LENGTH] = {0};
-open_files_t openFilesList;
+sdc_file_t *openFilesArray[MAX_OPEN_FILES] = {NULL};
+volatile bool sdInsertWaitTimeoutFlag = FALSE;
+xTimerHandle sdTimeOutTimer = NULL;
 	
-//extern variables
+/*	extern variables	*/
 extern sdc_file_t dataLogFile, debugLogFile;
 extern system_status_t systemStatus;
+
+void vSdTimeOutTimerCallback( xTimerHandle xTimer )
+{
+	sdInsertWaitTimeoutFlag = TRUE;
+}
 
 static void processEvent(msg_message_t message)
 {
@@ -56,14 +58,15 @@ static void processEvent(msg_message_t message)
 			{
 				if ((sys_eventData->mountSD == false) && (sys_eventData->unmountSD == true))
 				{
-					if (systemStatus.sdCardState != SD_CARD_REMOVED)
-						cardRemovedCall();
+					//if (systemStatus.sdCardState != SD_CARD_REMOVED)
+						//cardRemovedCall();
 				}
 				else if ((sys_eventData->mountSD == true) && (sys_eventData->unmountSD == false))
 				{
-					if ((sdCardPresent()) && (systemStatus.sdCardState != SD_CARD_INITIALIZED))	//TODO: make sure these conditions don't pose a problem
-						cardInsertedCall();
+					//if ((sdCardPresent()) && (systemStatus.sdCardState != SD_CARD_INITIALIZED))
+						//cardInsertedCall();
 				}
+				systemStateChangeAction(sys_eventData);
 			}
 		break;
 		case MSG_TYPE_SDCARD_STATE:
@@ -88,26 +91,26 @@ void sdc_sdCardTask(void *pvParameters)
 	UINT numBytesWritten = 0;
 	uint32_t totalBytesWritten = 0, totalBytesToWrite = 0;
 	status_t status = STATUS_PASS;
-	bool sd_val = TRUE, sd_oldVal = FALSE;
 	msg_message_t eventMessage;
+	drv_gpio_pin_state_t sdCd_oldVal, sdCd_newVal;
 	
-	queue_sdCard = xQueueCreate(10, sizeof(msg_message_t));
-	if (queue_sdCard != 0)
+	msg_queue_sdCard = xQueueCreate(10, sizeof(msg_message_t));
+	if (msg_queue_sdCard != 0)
 	{
-		msg_registerForMessages(MODULE_SDCARD, 0xff, queue_sdCard);
+		msg_registerForMessages(MODULE_SDCARD, 0xff, msg_queue_sdCard);
 	}
 	
+	initSdGpio();
 	semaphore_fatFsAccess = xSemaphoreCreateMutex();
 	semaphore_bufferAccess = xSemaphoreCreateMutex();
 	
-	sd_oldVal = ioport_get_pin_level(SD_CD_PIN);
-	
+	drv_gpio_getPinState(DRV_GPIO_PIN_SD_CD, &sdCd_oldVal);
 	while (1)
 	{
-		sd_val = ioport_get_pin_level(SD_CD_PIN);
-		if (sd_val != sd_oldVal)
+		drv_gpio_getPinState(DRV_GPIO_PIN_SD_CD, &sdCd_newVal);
+		if (sdCd_newVal != sdCd_oldVal)
 		{
-			if (sd_val == true)
+			if (sdCd_newVal == true)
 			{
 				cardRemovedCall();
 			}
@@ -116,25 +119,27 @@ void sdc_sdCardTask(void *pvParameters)
 				cardInsertedCall();
 			}
 		}
-		sd_oldVal = sd_val;
+		sdCd_oldVal = sdCd_newVal;
 		
-		if (xSemaphoreTake(semaphore_fatFsAccess, 1) == true)
+		if (xSemaphoreTake(semaphore_fatFsAccess, 100) == true)
 		{
 			for (int i = 0; i < MAX_OPEN_FILES; i++)
 			{
-				write_to_sd_card(openFilesList.openFilesArray[i]);
+				write_to_sd_card(openFilesArray[i]);
 			}
 			xSemaphoreGive(semaphore_fatFsAccess);
 		}
 		else
 		{
-			puts("Failed to get semaphore - SD-card main thread\r");
+			//puts("Failed to get semaphore - SD-card main thread\r");
 		}
 		
-		if (xQueueReceive(queue_sdCard, &eventMessage, 1) == true)
+		if (xQueueReceive(msg_queue_sdCard, &eventMessage, 1) == true)
 		{
 			processEvent(eventMessage);
 		}
+		
+		//checkCardDetectInt();
 		vTaskDelay(100);
 	}
 }
@@ -146,7 +151,12 @@ status_t write_to_sd_card(sdc_file_t *fileObject)
 	uint32_t totalBytesWritten = 0, totalBytesToWrite = 0;
 	status_t status;
 	
-	if (fileObject->fileOpen)
+	if (fileObject == NULL)
+	{
+		return STATUS_FAIL;
+	}
+	
+	if (fileObject->fileOpen == TRUE)
 	{
 		if (xSemaphoreTake(semaphore_bufferAccess, 10) == true)
 		{
@@ -240,6 +250,7 @@ status_t sdc_writeToFile(sdc_file_t* fileObject, void* data, size_t size)
 			}
 			else
 			{	
+				printf("SD-card buffer A overflow\r\n");
 				status = STATUS_FAIL;
 			}
 		}
@@ -252,6 +263,7 @@ status_t sdc_writeToFile(sdc_file_t* fileObject, void* data, size_t size)
 			}
 			else
 			{
+				printf("SD-card buffer B overflow\r\n");
 				status = STATUS_FAIL;
 			}
 		}
@@ -259,6 +271,7 @@ status_t sdc_writeToFile(sdc_file_t* fileObject, void* data, size_t size)
 	}
 	else
 	{
+		printf("SD-card no semaphore available\r\n");
 		status = STATUS_FAIL;
 	}
 	return status;
@@ -313,17 +326,19 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 	}
 	
 	//open a new file
+	/*	DEBUGLOG FILES	*/
 	if (xSemaphoreTake(semaphore_fatFsAccess, 100) == true)
 	{
 		if (mode == SDC_FILE_OPEN_READ_WRITE_DEBUG_LOG)
 		{
 			//this is a debug log file
-			//TODO: add the file swap feature after confirmation
+			//TODO: add the file swap feature
 			snprintf(logFileName, SD_CARD_FILENAME_LENGTH, "0:%s.bin", filename);
 			res = f_open(&fileObject->fileObj, (char const*)logFileName, FA_OPEN_ALWAYS | FA_WRITE | FA_READ);
 			if (res == FR_OK)
 			{
 				puts("DebugLog open\r");
+				puts(logFileName);
 				res = f_lseek(&fileObject->fileObj, fileObject->fileObj.fsize);
 				fileObject->fileOpen = true;
 				status = STATUS_PASS;
@@ -334,6 +349,8 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 				status = STATUS_FAIL;
 			}
 		}
+		
+		/*	DATALOG FILES	*/
 		else if (mode == SDC_FILE_OPEN_READ_WRITE_DATA_LOG)
 		{
 			//this is a dataLog file
@@ -405,7 +422,7 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 					//snprintf(dataLogFileName, SD_CARD_FILENAME_LENGTH, "%s/%s_%s%05d.csv",dirName, brainSettings.suitNumber, brainSettings.fileName, fileIndexNumber);
 				//}
 				
-				res = f_open(&fileObject->fileObj, (char const *)dataLogFileName, FA_OPEN_ALWAYS | FA_WRITE);
+				res = f_open(&fileObject->fileObj, (char const *) dataLogFileName, FA_OPEN_ALWAYS | FA_WRITE);
 				if (res == FR_OK)
 				{
 					puts(dataLogFileName);
@@ -416,11 +433,14 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 				{
 					itoa(res, data_buffer, 10);
 					puts(data_buffer);
+					puts(dataLogFileName);
 					puts("Data log failed to open\r");
 					status = STATUS_FAIL;
 				}
 			}
 		}
+		
+		/*	ALL OTHER FILES	*/
 		else
 		{
 			if (mode == SDC_FILE_OPEN_READ_WRITE_NEW)
@@ -433,7 +453,7 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 			}
 			else
 			{
-				openMode = FA_OPEN_EXISTING | FA_READ; 
+				openMode = FA_OPEN_EXISTING | FA_READ;
 			}
 			snprintf(logFileName, SD_CARD_FILENAME_LENGTH, "0:%s.bin", filename);
 			res = f_open(&fileObject->fileObj, (char const*)logFileName, openMode);
@@ -466,7 +486,7 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 
 status_t sdc_closeFile(sdc_file_t* fileObject)
 {
-	status_t status = STATUS_PASS;
+	status_t status = STATUS_FAIL;
 	FRESULT res;
 	//return if the file is already closed
 	if (fileObject->fileOpen == false)
@@ -479,12 +499,12 @@ status_t sdc_closeFile(sdc_file_t* fileObject)
 	{
 		res = f_sync(&fileObject->fileObj);
 		res = f_close(&fileObject->fileObj);
-		if (res != FR_OK)
+		if (res == FR_OK)
 		{
-			status = STATUS_FAIL;
+			fileObject->fileOpen = false;
+			unregisterOpenFile(fileObject);
+			status = STATUS_PASS;
 		}
-		fileObject->fileOpen = false;
-		unregisterOpenFile(fileObject);
 		xSemaphoreGive(semaphore_fatFsAccess);
 	}
 	else
@@ -496,7 +516,19 @@ status_t sdc_closeFile(sdc_file_t* fileObject)
 	return status;
 }
 
-status_t initializeSdCard()
+void initSdGpio()
+{
+	gpio_configure_pin(SD_MMC_0_CD_GPIO, SD_MMC_0_CD_FLAGS);
+	/* Configure HSMCI pins */
+	gpio_configure_pin(PIN_HSMCI_MCCDA_GPIO, PIN_HSMCI_MCCDA_FLAGS);
+	gpio_configure_pin(PIN_HSMCI_MCCK_GPIO, PIN_HSMCI_MCCK_FLAGS);
+	gpio_configure_pin(PIN_HSMCI_MCDA0_GPIO, PIN_HSMCI_MCDA0_FLAGS);
+	gpio_configure_pin(PIN_HSMCI_MCDA1_GPIO, PIN_HSMCI_MCDA1_FLAGS);
+	gpio_configure_pin(PIN_HSMCI_MCDA2_GPIO, PIN_HSMCI_MCDA2_FLAGS);
+	gpio_configure_pin(PIN_HSMCI_MCDA3_GPIO, PIN_HSMCI_MCDA3_FLAGS);
+}
+
+status_t  __attribute__((optimize("O0"))) initializeSdCard()
 {
 	static FATFS fs;
 	static FATFS* fs1;	//pointer to FATFS structure used to check free space
@@ -507,16 +539,26 @@ status_t initializeSdCard()
 	char test_file_name[] = "0:sd_mmc_test.txt";
 	FIL file_object;
 	
-	gpio_configure_pin(SD_MMC_0_CD_GPIO, SD_MMC_0_CD_FLAGS);
-	/* Configure HSMCI pins */
-	gpio_configure_pin(PIN_HSMCI_MCCDA_GPIO, PIN_HSMCI_MCCDA_FLAGS);
-	gpio_configure_pin(PIN_HSMCI_MCCK_GPIO, PIN_HSMCI_MCCK_FLAGS);
-	gpio_configure_pin(PIN_HSMCI_MCDA0_GPIO, PIN_HSMCI_MCDA0_FLAGS);
-	gpio_configure_pin(PIN_HSMCI_MCDA1_GPIO, PIN_HSMCI_MCDA1_FLAGS);
-	gpio_configure_pin(PIN_HSMCI_MCDA2_GPIO, PIN_HSMCI_MCDA2_FLAGS);
-	gpio_configure_pin(PIN_HSMCI_MCDA3_GPIO, PIN_HSMCI_MCDA3_FLAGS);
+	if (systemStatus.sdCardState == SD_CARD_INITIALIZED)
+	{
+		return STATUS_FAIL;
+	}
+	
+	if (!sdCardPresent())
+	{
+		sdInsertWaitTimeoutFlag = FALSE;
+		return STATUS_FAIL;
+	}
+	drv_gpio_config_interrupt(DRV_GPIO_PIN_SD_CD, DRV_GPIO_INTERRUPT_LOW_EDGE);		//the card is present, reconfigure the interrupt.
 	
 	sd_mmc_init();
+	sdTimeOutTimer = xTimerCreate("SD insert tmr", (SD_INSERT_WAIT_TIMEOUT/portTICK_RATE_MS), pdFALSE, NULL, vSdTimeOutTimerCallback);
+	if (sdTimeOutTimer == NULL)
+	{
+		puts("Failed to create SD card timer\r\n");
+	}
+	xTimerStart(sdTimeOutTimer, 0);
+	
 	do
 	{
 		status = sd_mmc_test_unit_ready(0);
@@ -524,12 +566,16 @@ status_t initializeSdCard()
 		{
 			puts("Card install FAIL\n\r");
 			puts("Please unplug and re-plug the card.\n\r");
-			while (CTRL_NO_PRESENT != sd_mmc_check(0))
+			while ((CTRL_NO_PRESENT != sd_mmc_check(0)) && (sdInsertWaitTimeoutFlag == FALSE))
 			{
-				;
+				vTaskDelay(1);
 			}
 		}
-	} while (CTRL_GOOD != status);
+	} while ((CTRL_GOOD != status) && (sdInsertWaitTimeoutFlag == FALSE));
+	
+	sdInsertWaitTimeoutFlag = FALSE;	//clear the flag for reuse
+	xTimerStop(sdTimeOutTimer, 0);
+	xTimerDelete(sdTimeOutTimer, 0);
 	
 	/*	Mount the SD card	*/
 	if(status == CTRL_GOOD)
@@ -565,7 +611,8 @@ status_t initializeSdCard()
 
 bool sdCardPresent()
 {
-	return !(ioport_get_pin_level(SD_CD_PIN));	//The gpio is pulled low when card is inserted.
+	//NOTE: Change as per the board in use
+	return !(ioport_get_pin_level(SD_CD_PIN));	//The GPIO is pulled low when card is inserted.
 }
 
 void changeActiveBuffer(sdc_file_t *fileObject)
@@ -581,11 +628,11 @@ void changeActiveBuffer(sdc_file_t *fileObject)
 	}
 }
 
-uint8_t checkEmptyLocation(open_files_t fileStruct)
+uint8_t checkEmptyLocation()
 {
 	for (int i = 0; i < MAX_OPEN_FILES; i++)
 	{
-		if (fileStruct.openFilesArray[i] == NULL)
+		if (openFilesArray[i] == NULL)
 		{
 			return i;
 		}
@@ -596,14 +643,14 @@ uint8_t checkEmptyLocation(open_files_t fileStruct)
 void registerOpenFile(sdc_file_t* fileObject)
 {
 	uint8_t arrayIndex = 0;
-	arrayIndex = checkEmptyLocation(openFilesList);	//check where the new pointer can be stored
+	arrayIndex = checkEmptyLocation();	//check where the new pointer can be stored
 	if (arrayIndex < MAX_OPEN_FILES)
 	{
-		openFilesList.openFilesArray[arrayIndex] = fileObject;
+		openFilesArray[arrayIndex] = fileObject;
 	}
 	else
 	{
-		//TODO: add error if necessary
+		//TODO: add error if necessary, no space to open new file
 	}
 }
 
@@ -611,9 +658,9 @@ void unregisterOpenFile(sdc_file_t* fileObject)
 {
 	for (int i = 0; i < MAX_OPEN_FILES; i++)	//find where the pointer was stored and clear it
 	{
-		if (openFilesList.openFilesArray[i] == fileObject)
+		if (openFilesArray[i] == fileObject)
 		{
-			openFilesList.openFilesArray[i] = NULL;
+			openFilesArray[i] = NULL;
 			return;
 		}
 	}
@@ -623,7 +670,7 @@ void closeAllFiles()
 {
 	for (int i = 0; i < MAX_OPEN_FILES; i++)
 	{
-		sdc_closeFile(openFilesList.openFilesArray[i]);
+		sdc_closeFile(openFilesArray[i]);
 	}
 }
 
@@ -671,5 +718,61 @@ void cardRemovedCall()
 		messageData->mounted = false;
 		messageData->errorCode = 0;
 		msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SDCARD, MSG_TYPE_ERROR, (void*)messageData);
+	}
+}
+
+void checkCardDetectInt()
+{	
+	if (drv_gpio_check_Int(DRV_GPIO_PIN_SD_CD) == 1)
+	{
+		drv_gpio_pin_state_t sdCdPinState;
+		drv_gpio_getPinState(DRV_GPIO_PIN_SD_CD, &sdCdPinState);
+		if (sdCdPinState == DRV_GPIO_PIN_STATE_LOW)
+		{
+			debugPrintString("SD-card removed\r\n");
+			//SD card not present, set the respective event
+			cardRemovedCall();
+			//reconfigure the SD-card interrupt to look for insertion of card
+			drv_gpio_config_interrupt(DRV_GPIO_PIN_SD_CD, DRV_GPIO_INTERRUPT_HIGH_EDGE);
+		}
+		else if (sdCdPinState == DRV_GPIO_PIN_STATE_HIGH)
+		{
+			debugPrintString("SD-card inserted\r\n");
+			//SD card present or inserted, set the respective event
+			cardInsertedCall();
+			//drv_gpio_config_interrupt(DRV_GPIO_PIN_SD_CD, DRV_GPIO_INTERRUPT_LOW_EDGE);	//set in initializeSdCard()
+		}
+	}
+}
+
+static void systemStateChangeAction(msg_sys_manager_t* sys_eventData)
+{
+	switch (sys_eventData->systemState)
+	{
+		case SYSTEM_STATE_SLEEP:
+			if (systemStatus.sdCardState != SD_CARD_REMOVED)
+				cardRemovedCall();
+		break;
+		
+		case SYSTEM_STATE_INIT:
+			if ((sdCardPresent()) && (systemStatus.sdCardState != SD_CARD_INITIALIZED))
+				cardInsertedCall();
+		break;
+		
+		case SYSTEM_STATE_IDLE:
+			closeAllFiles();		//TODO: closing of the files should be called by the module who opened them
+		break;
+		
+		case SYSTEM_STATE_ERROR:
+			if (systemStatus.sdCardState != SD_CARD_REMOVED)
+				cardRemovedCall();
+		break;
+		
+		case SYSTEM_STATE_RECORDING:
+			
+		break;
+		
+		default:
+		break;
 	}
 }

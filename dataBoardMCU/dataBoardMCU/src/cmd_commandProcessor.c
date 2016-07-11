@@ -14,9 +14,12 @@
 #include "imu.h"
 #include "pkt_packetParser.h"
 #include "heddokoPacket.pb-c.h"
+#include "task_SensorHandler.h"
+#include "drv_uart.h"
 
 extern bool packetState;
 extern uint8_t loopCount;
+extern drv_uart_config_t uart0Config;
 
 volatile cmd_debugStructure_t debugStructure =
 {
@@ -110,7 +113,7 @@ void sendProtoPacket()
 {
 	packet.fulldataframe->timestamp = xTaskGetTickCount();
 	size_t packetLength = heddoko__packet__pack(&packet, packetBytes);
-	pkt_SendRawPacketProto(packetBytes, packetLength);
+	pkt_SendRawPacketProto(&uart0Config, packetBytes, packetLength);
 	sensorId = 0;
 }	
 
@@ -137,14 +140,16 @@ void cmd_processPacket(rawPacket_t* packet)
 		{
 			case PACKET_COMMAND_ID_GET_FRAME_RESP:
 				imuPacket = (imuFrame_t*) (&packet->payload[3]);
+				#ifdef ENABLE_SENSOR_PACKET_TEST
 				if (packetState == TRUE)
 				{
-					//puts("Good, \r");
+					puts("Good, Cmp\r");	//sensor packet is complete and data is good
 				}
 				else
 				{
-					//puts("Bad, \r");
+					puts("Bad, Cmp \r");	//sensor packet is complete but data is bad
 				}
+				#endif
 				//printf("Err Cnt: %03d,", debugStructure.receiveErrorCount);
 				//printf("%f;%f;%f;%f,", imuPacket->Quaternion_x, imuPacket->Quaternion_y, imuPacket->Quaternion_z, imuPacket->Quaternion_w);
 				//printf("%5d;%5d;%5d,", imuPacket->Magnetic_x, imuPacket->Magnetic_y, imuPacket->Magnetic_z);

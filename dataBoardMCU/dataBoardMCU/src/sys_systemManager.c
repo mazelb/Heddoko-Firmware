@@ -10,6 +10,7 @@
  */
 
 #include <asf.h>
+#include <stdarg.h>
 #include "sys_systemManager.h"
 #include "common.h"
 #include "string.h"
@@ -17,19 +18,25 @@
 #include "drv_gpio.h"
 #include "drv_uart.h"
 #include "task_SensorHandler.h"
-#include <stdarg.h>
+#include "subp_subProcessor.h"
+#include "dat_dataManager.h"
 
 /*	Local static functions	*/
-static void initAllUarts();							//initialize all uarts
-static void deInitAllUarts();						//de-initialize all uarts
-void reInitAllUarts();								//re-initialize all uarts
-static void peripheralInit();						//initialize all peripherals
-static void processEvent(msg_message_t message);	//process the received event
-static void initModule(modules_t module);
-static void deInitModule(modules_t module);
-static void assertError(modules_t module);
-static void assertReady(modules_t module);
-static bool isModuleReady(modules_t module);
+static void initAllTasks();									// initialize all the other tasks
+static void initAllUarts();									// initialize all uarts
+static void deInitAllUarts();								// de-initialize all uarts
+static void peripheralInit();								// initialize all peripherals
+static void processEvent(msg_message_t message);			// process the received event
+static void initModule(modules_t module);					// initialize an individual or all modules
+static void deInitModule(modules_t module);					// de-initialize an individual or all modules
+static void assertError(modules_t module);					// assert Error to a module
+static void assertReady(modules_t module);					// assert Ready to a module
+static bool isModuleReady(modules_t module);				// check if a module is in Ready state
+static void checkGpioInt();									// check for GPIO interrupts
+static void openDebugLog();									// opens debug Log, swaps the log if necessary
+static void sysEnterNewState(sys_manager_systemState_t newState);	// enter new state
+void reInitAllUarts();										// re-initialize all uarts
+void configureBusSpeed(drv_uart_config_t* uartConfig, uint32_t newBaud);		// configure new bus speed for the UART and reinitialize it
 
 /*	Extern functions	*/
 extern bool sdCardPresent();
@@ -43,7 +50,6 @@ system_status_t systemStatus = {0};
 volatile uint8_t dataLogBufferA[DATALOG_MAX_BUFFER_SIZE] = {0} , dataLogBufferB[DATALOG_MAX_BUFFER_SIZE] = {0};
 volatile uint8_t debugLogBufferA[DEBUGLOG_MAX_BUFFER_SIZE] = {0} , debugLogBufferB[DEBUGLOG_MAX_BUFFER_SIZE] = {0};
 xQueueHandle queue_systemManager = NULL;
-drv_uart_config_t *consoleUart = NULL, *dataOutUart = NULL;
 uint32_t expectedReadyMask = 0;
 
 sdc_file_t dataLogFile =
@@ -54,7 +60,7 @@ sdc_file_t dataLogFile =
 	.bufferPointerB = dataLogBufferB,
 	.bufferSize = DATALOG_MAX_BUFFER_SIZE,
 	.fileObj = NULL,
-	.fileName = "datalog",
+	.fileName = "datalog-new",
 	.fileOpen = false,
 	.activeBuffer = 0
 };
@@ -77,6 +83,8 @@ drv_uart_config_t uart0Config =
 	.p_usart = UART0,
 	.mem_index = 0,
 	.init_as_DMA = TRUE,
+	.enable_dma_interrupt = FALSE,
+	.dma_bufferDepth = FIFO_BUFFER_SIZE,
 	.uart_options =
 	{
 		.baudrate   = 921600,
@@ -90,6 +98,8 @@ drv_uart_config_t uart1Config =
 	.p_usart = UART1,
 	.mem_index = 1,
 	.init_as_DMA = TRUE,
+	.enable_dma_interrupt = false,
+	.dma_bufferDepth = FIFO_BUFFER_SIZE,
 	.uart_options =
 	{
 		.baudrate   = 921600,
@@ -103,6 +113,8 @@ drv_uart_config_t usart0Config =
 	.p_usart = USART0,
 	.mem_index = 2,
 	.init_as_DMA = FALSE,
+	.enable_dma_interrupt = false,
+	.dma_bufferDepth = FIFO_BUFFER_SIZE,
 	.uart_options =
 	{
 		.baudrate   = CONF_BAUDRATE,
@@ -111,24 +123,22 @@ drv_uart_config_t usart0Config =
 		.stopbits   = CONF_STOPBITS
 	}
 };
-drv_uart_config_t usart1Config =
+
+// Assign Com ports to each module.
+system_port_config_t sys_comPorts = 
 {
-	.p_usart = USART1,
-	.mem_index = 3,
-	.init_as_DMA = TRUE,
-	.uart_options =
-	{
-		.baudrate   = 460800,
-		.charlength = CONF_CHARLENGTH,
-		.paritytype = CONF_PARITY,
-		.stopbits   = CONF_STOPBITS
-	}
+	.sensor_port = NULL,
+	.ble_port = NULL,
+	.wifi_port = NULL,
+	.consoleUart = &uart1Config,
+	.dataOutUart = &uart0Config
 };
 
 /*	Function definitions	*/
 void configure_console()
 {
-	stdio_serial_init(consoleUart->p_usart, &consoleUart->uart_options);
+	//stdio_serial_init(consoleUart->p_usart, &consoleUart->uart_options);
+	stdio_serial_init(sys_comPorts.consoleUart->p_usart, &sys_comPorts.consoleUart->uart_options);
 	setbuf(stdout, NULL);
 }
 
@@ -149,42 +159,62 @@ void systemManager(void* pvParameters)
 		msg_registerForMessages(MODULE_SYSTEM_MANAGER, 0xff, queue_systemManager);
 	}
 	
-	initModule(MODULE_SDCARD);
+	initAllTasks();
+	
+	vTaskDelay(10);		//wait for all modules to initialize message queues
+	sysEnterNewState(SYSTEM_STATE_INIT);
 	
 	systemStatus.modulesReadyMask |= (TRUE << MODULE_SYSTEM_MANAGER);
+	expectedReadyMask |= (TRUE << MODULE_SYSTEM_MANAGER);
+	
 	while (1)
 	{		
-		if (isModuleReady(MODULE_SDCARD) == FALSE)
+		//if (isModuleReady(MODULE_SDCARD) == FALSE)
+		//{
+			//if (systemStatus.sdCardState == SD_CARD_INITIALIZED)
+			//{
+				//status =  sdc_openFile(&dataLogFile, dataLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DATA_LOG);
+				//status |= sdc_openFile(&debugLogFile, debugLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DEBUG_LOG);
+				//if (status == STATUS_PASS)
+				//{
+					//assertReady(MODULE_SDCARD);
+				//}
+				//else
+				//{
+					//assertError(MODULE_SDCARD);
+				//}
+			//}
+			//else
+			//{
+				//deInitModule(MODULE_SENSOR_HANDLER);
+			//}
+		//}
+		
+		//if (isModuleReady(MODULE_SDCARD) == TRUE)
+		//{
+			//initModule(MODULE_SENSOR_HANDLER);
+		//}
+		
+		if (ioport_get_pin_level(DRV_GPIO_ID_PIN_PW_SW) == FALSE)
 		{
-			if (systemStatus.sdCardState == SD_CARD_INITIALIZED)
+			while(ioport_get_pin_level(DRV_GPIO_ID_PIN_PW_SW) == FALSE){;}
+				sd_val = !sd_val;
+			if (sd_val == TRUE)
 			{
-				status =  sdc_openFile(&dataLogFile, dataLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DATA_LOG);
-				status |= sdc_openFile(&debugLogFile, debugLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DEBUG_LOG);
-				if (status == STATUS_PASS)
-				{
-					assertReady(MODULE_SDCARD);
-				}
-				else
-				{
-					assertError(MODULE_SDCARD);
-				}
+				sysEnterNewState(SYSTEM_STATE_RECORDING);
 			}
 			else
 			{
-				deInitModule(MODULE_SENSOR_HANDLER);
+				sysEnterNewState(SYSTEM_STATE_IDLE);
 			}
-		}
-		
-		if (isModuleReady(MODULE_SDCARD) == TRUE)
-		{
-			initModule(MODULE_SENSOR_HANDLER);
+			
 		}
 		
 		if (enable)
 		{
 			snprintf(data, 21, "Data count: %06d\r\n", count);
-			drv_uart_DMA_putData(consoleUart, data, 21);
-			drv_uart_DMA_wait_endTx(consoleUart);
+			drv_uart_DMA_putData(sys_comPorts.consoleUart, data, 21);
+			drv_uart_DMA_wait_endTx(sys_comPorts.consoleUart);
 			//sdc_writeToFile(&dataLogFile, (void*)data, sizeof(data));
 			count++;
 		}
@@ -193,6 +223,8 @@ void systemManager(void* pvParameters)
 		{
 			processEvent(eventMessage);
 		}
+		
+		//checkGpioInt();
 		vTaskDelay(100);
 	}
 }
@@ -225,21 +257,26 @@ static void processEvent(msg_message_t message)
 					puts("SD-card initialized\r");
 					systemStatus.sdCardState = sd_eventData->message;
 					//open new files
-					status =  sdc_openFile(&dataLogFile, dataLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DATA_LOG);
-					status |= sdc_openFile(&debugLogFile, debugLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DEBUG_LOG);
-					if (status == STATUS_PASS)
-					{
+					//status =  sdc_openFile(&dataLogFile, dataLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DATA_LOG);
+					//status |= sdc_openFile(&debugLogFile, debugLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DEBUG_LOG);
+					//if (status == STATUS_PASS)
+					//{
 						assertReady(MODULE_SDCARD);
-					}
-					else
-					{
-						assertError(MODULE_SDCARD);
-					}
+					//}
+					//else
+					//{
+						//assertError(MODULE_SDCARD);
+					//}
 				}
 			}
 			else if (message.source == MODULE_SENSOR_HANDLER)
 			{
 				assertReady(MODULE_SENSOR_HANDLER);
+			}
+			
+			if (expectedReadyMask == systemStatus.modulesReadyMask)
+			{
+				sysEnterNewState(SYSTEM_STATE_IDLE);
 			}
 		break;
 		case MSG_TYPE_ERROR:
@@ -263,6 +300,7 @@ static void processEvent(msg_message_t message)
 					puts("SD-Card removed\r");
 					systemStatus.sdCardState = sd_eventData->message;
 					assertError(MODULE_SDCARD);
+					sysEnterNewState(SYSTEM_STATE_ERROR);
 				}
 			}
 		break;
@@ -280,108 +318,234 @@ static void processEvent(msg_message_t message)
 	free(message.parameters);
 }
 
-static void initAllUarts()
+static void sysEnterNewState(sys_manager_systemState_t newState)
 {
-	drv_uart_init(&uart0Config);
-	drv_uart_init(&uart1Config);
-	drv_uart_init(&usart0Config);
-	drv_uart_init(&usart1Config);
+	status_t status = STATUS_PASS;
+	msg_sys_manager_t *sys_eventData, *sys_eventData1;
+	msg_message_t broadcastMessage;
+	
+	if (systemStatus.sysState == newState)
+	{
+		return;
+	}
+	
+	systemStatus.sysState = newState;
+	switch (newState)
+	{
+		case SYSTEM_STATE_SLEEP:
+		
+		break;
+		
+		case SYSTEM_STATE_INIT:
+		initModule(MODULE_NUMBER_OF_MODULES);		//pass initialization command to all modules
+		//openDebugLog();		// open the debugLog file
+		break;
+		
+		case SYSTEM_STATE_IDLE:
+		sys_eventData = malloc(sizeof(msg_sys_manager_t));
+		sys_eventData->systemState	= SYSTEM_STATE_IDLE;
+		status |= msg_sendMessage(MODULE_SENSOR_HANDLER, MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, (void*)sys_eventData);
+		sys_eventData1 = malloc(sizeof(msg_sys_manager_t));
+		sys_eventData1->systemState	= SYSTEM_STATE_IDLE;
+		status |= msg_sendMessage(MODULE_SDCARD, MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, (void*)sys_eventData1);
+		//broadcastMessage.broadcastData = (uint32_t) SYSTEM_STATE_IDLE;
+		//broadcastMessage.source = MODULE_SYSTEM_MANAGER;
+		//broadcastMessage.type = MSG_TYPE_ENTERING_NEW_STATE;
+		//status |= msg_sendBroadcastMessage(&broadcastMessage);
+		puts("System State: IDLE\r");
+		break;
+		
+		case SYSTEM_STATE_ERROR:
+		deInitModule(MODULE_SENSOR_HANDLER);
+		deInitModule(MODULE_SDCARD);
+		break;
+		
+		case SYSTEM_STATE_RECORDING:
+		status =  sdc_openFile(&dataLogFile, dataLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DATA_LOG);		// TODO: only for temporary purposes, different module will open this file
+		status |= sdc_openFile(&debugLogFile, debugLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DEBUG_LOG);
+		if (status == STATUS_PASS)
+		{
+			sys_eventData = malloc(sizeof(msg_sys_manager_t));
+			sys_eventData->systemState	= SYSTEM_STATE_RECORDING;
+			status |= msg_sendMessage(MODULE_SENSOR_HANDLER, MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, (void*)sys_eventData);
+		}
+		else
+		{
+			systemStatus.sysState = SYSTEM_STATE_IDLE;
+		}
+		break;
+		
+		default:
+		break;
+		
+	}
 }
 
-static void deInitAllUarts()
+static void checkGpioInt()
 {
-	drv_uart_deInit(&uart0Config);
-	drv_uart_deInit(&uart1Config);
-	drv_uart_deInit(&usart0Config);
-	drv_uart_deInit(&usart1Config);
-}
-
-void reInitAllUarts()
-{
-	deInitAllUarts();
-	usart1Config.uart_options.baudrate = 2000000;
-	initAllUarts();
-}
-
-static void peripheralInit()
-{
-	consoleUart = &uart1Config;
-	dataOutUart = &uart0Config;
-	NVIC_EnableIRQ(SysTick_IRQn);
-	board_init();
-	configure_console();
-	drv_gpio_initializeAll();
-	initAllUarts();
-	puts("System Initialized.\r");
+	//check for the GPIO interrupts here.
 }
 
 void initModule(modules_t module)
 {
 	status_t status = STATUS_PASS;
-	msg_sys_manager_t* sys_eventData;
-	msg_sys_manager_t* sys_eventData1;
+	msg_sys_manager_t* sys_eventData_toSD;
+	msg_sys_manager_t* sys_eventData_toSensor;
 	uint32_t startTime = xTaskGetTickCount();
+	modules_t firstModuleIdx = 0, lastModuleIdx = 0;
 	
-	if (isModuleReady(module) == TRUE)
+	if (module >= MODULE_NUMBER_OF_MODULES)		//initialize all modules
 	{
-		return;
+		firstModuleIdx = 0;
+		lastModuleIdx = MODULE_NUMBER_OF_MODULES;
+	}
+	else										//initialize a particular module.
+	{
+		firstModuleIdx = module;
+		lastModuleIdx = module + 1;
 	}
 	
-	switch (module)
+	for (uint8_t moduleId = firstModuleIdx; moduleId < lastModuleIdx; moduleId++)		//this loop controls the initialization of modules.
 	{
-		case MODULE_SDCARD:
-			do
+		if (isModuleReady(moduleId) == TRUE)
+		{
+			return;
+		}
+		
+		switch (moduleId)
+		{
+			case MODULE_SDCARD:
+			do		//NOTE: this do while is obsolete as the vTaskDelay() is called before initModule.
 			{
-				sys_eventData = malloc(sizeof(msg_sys_manager_t));
-				sys_eventData->mountSD = true;
-				sys_eventData->unmountSD = false;
-				sys_eventData->enableSensorStream = false;
-				status = msg_sendMessage(MODULE_SDCARD, MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, (void*)sys_eventData);
+				sys_eventData_toSD = malloc(sizeof(msg_sys_manager_t));
+				sys_eventData_toSD->systemState = SYSTEM_STATE_INIT;
+				status = msg_sendMessage(MODULE_SDCARD, MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, (void*)sys_eventData_toSD);
 				expectedReadyMask |= (TRUE << MODULE_SDCARD);
 				vTaskDelay(10);
-			}while ((status != STATUS_PASS) && (xTaskGetTickCount() - startTime < 200));	//wait for the queue to initialize
-		break;
-		
-		case MODULE_SENSOR_HANDLER:
-			sys_eventData1 = malloc(sizeof(msg_sys_manager_t));
-			sys_eventData1->mountSD = false;
-			sys_eventData1->unmountSD = false;
-			sys_eventData1->enableSensorStream = true;
-			status |= msg_sendMessage(MODULE_SENSOR_HANDLER, MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, (void*)sys_eventData1);
+			}while ((status != STATUS_PASS) && (xTaskGetTickCount() - startTime < 200));	//wait for the queue to initialize, keep passing command until initialized.
+			break;
+			
+			case MODULE_SENSOR_HANDLER:
+			sys_eventData_toSensor = malloc(sizeof(msg_sys_manager_t));
+			sys_eventData_toSensor->systemState = SYSTEM_STATE_INIT;
+			status |= msg_sendMessage(MODULE_SENSOR_HANDLER, MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, (void*)sys_eventData_toSensor);
 			expectedReadyMask |= (TRUE << MODULE_SENSOR_HANDLER);
-		break;
-		
-		default:
-		break;
+			break;
+			
+			default:
+			break;
+		}
 	}
 }
 
 static void deInitModule(modules_t module)
 {
 	status_t status = STATUS_PASS;
-	msg_sys_manager_t* sys_eventData;
-	msg_sys_manager_t* sys_eventData1;
+	msg_sys_manager_t* sys_eventData_toSD;
+	msg_sys_manager_t* sys_eventData_toSensor;
 	uint32_t startTime = xTaskGetTickCount();
+	modules_t firstModuleIdx = 0, lastModuleIdx = 0;
 	
-	if (isModuleReady(module) == FALSE)
+	if (module >= MODULE_NUMBER_OF_MODULES)		//de-initialize all modules
 	{
-		return;
+		firstModuleIdx = 0;
+		lastModuleIdx = MODULE_NUMBER_OF_MODULES;
+	}
+	else										//de-initialize a particular module.
+	{
+		firstModuleIdx = module;
+		lastModuleIdx = module + 1;
 	}
 	
-	switch (module)
+	for (uint8_t moduleId = firstModuleIdx; moduleId < lastModuleIdx; moduleId++)		//this loop controls the de-initialization of modules.
 	{
-		case MODULE_SENSOR_HANDLER:
-			sys_eventData1 = malloc(sizeof(msg_sys_manager_t));
-			sys_eventData1->mountSD = false;
-			sys_eventData1->unmountSD = false;
-			sys_eventData1->enableSensorStream = false;
-			status |= msg_sendMessage(MODULE_SENSOR_HANDLER, MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, (void*)sys_eventData1);
+		if (isModuleReady(moduleId) == FALSE)
+		{
+			return;
+		}
+		
+		switch (moduleId)
+		{
+			case MODULE_SDCARD:
+			sys_eventData_toSD = malloc(sizeof(msg_sys_manager_t));
+			sys_eventData_toSD->systemState	= SYSTEM_STATE_SLEEP;
+			status = msg_sendMessage(MODULE_SDCARD, MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, (void*)sys_eventData_toSD);
+			expectedReadyMask |= (TRUE << MODULE_SDCARD);
+			break;
+			case MODULE_SENSOR_HANDLER:
+			sys_eventData_toSensor = malloc(sizeof(msg_sys_manager_t));
+			sys_eventData_toSensor->systemState	= SYSTEM_STATE_SLEEP;
+			status |= msg_sendMessage(MODULE_SENSOR_HANDLER, MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, (void*)sys_eventData_toSensor);
 			expectedReadyMask &= ~(TRUE << MODULE_SENSOR_HANDLER);
 			systemStatus.modulesReadyMask &= ~(TRUE << MODULE_SENSOR_HANDLER);
-		break;
-		default:
-		break;
+			break;
+			default:
+			break;
+		}
 	}
+}
+
+static void initAllTasks()
+{
+	if (xTaskCreate(sdc_sdCardTask, "SD", TASK_SD_CARD_STACK_SIZE, NULL, TASK_SD_CARD_PRIORITY, NULL) != pdPASS)
+	{
+		puts("Failed to create SD-card task\r");
+	}
+	//if (xTaskCreate(task_SensorHandler, "SH", TASK_SENSOR_HANDLER_STACK_SIZE, NULL, TASK_SENSOR_HANDLER_PRIORITY, NULL) != pdPASS)
+	//{
+		//puts("Failed to create sensor handler task\r");
+	//}
+	//if (xTaskCreate(pkt_ParserTask, "PS", (1024/sizeof(portSTACK_TYPE)), NULL, (tskIDLE_PRIORITY + 3), NULL) != pdPASS)
+	//{
+	//puts("Failed to create packet parser task\r");
+	//}
+	if (xTaskCreate(subp_subProcessorTask, "SP", TASK_SUB_PROCESS_MANAGER_STACK_SIZE, NULL, TASK_SUB_PROCESS_MANAGER_PRIORITY, NULL) != pdPASS)
+	{
+		puts("Failed to create sub process handler task\r");
+	}
+	if (xTaskCreate(dat_dataManagerTask, "DM", TASK_DATA_MANAGER_STACK_SIZE, NULL, TASK_DATA_MANAGER_PRIORITY, NULL) != pdPASS)
+	{
+		puts("Failed to create data manager handler task\r");
+	}
+}
+
+static void peripheralInit()
+{
+	NVIC_EnableIRQ(SysTick_IRQn);
+	board_init();
+	configure_console();
+	drv_gpio_initializeAll();
+	//initAllUarts();		// the modules will initialize their respective UARTs
+	drv_uart_init(sys_comPorts.consoleUart);
+	puts("System Initialized.\r");
+}
+
+static void initAllUarts()
+{
+	//drv_uart_init(&uart0Config);
+	//drv_uart_init(&uart1Config);
+	//drv_uart_init(&usart0Config);
+	//drv_uart_init(&usart1Config);
+}
+
+static void deInitAllUarts()
+{
+	//drv_uart_deInit(&uart0Config);
+	//drv_uart_deInit(&uart1Config);
+	//drv_uart_deInit(&usart0Config);
+	//drv_uart_deInit(&usart1Config);
+}
+
+void reInitAllUarts()
+{
+	deInitAllUarts();
+	initAllUarts();
+}
+
+void configureBusSpeed(drv_uart_config_t* uartConfig, uint32_t newBaud)
+{
+	uartConfig->uart_options.baudrate = newBaud;
+	reInitAllUarts();
 }
 
 static void assertReady(modules_t module)
@@ -408,6 +572,17 @@ static bool isModuleReady(modules_t module)
 	}
 }
 
+static void openDebugLog()
+{
+	status_t status = STATUS_PASS;
+	
+	// check default file's size
+	
+	// decide if the file size exceeds, delete old file if exists and change the new file name to old file
+	
+	// open debugLog file.
+}
+
 void __attribute__((optimize("O0"))) debugPrintStringInt(char* str, int number)
 {
 	size_t length = 0;
@@ -425,9 +600,9 @@ void __attribute__((optimize("O0"))) debugPrintStringInt(char* str, int number)
 	{
 		if(systemStatus.debugPrintsEnabled)
 		{
-			if(consoleUart != NULL)
+			if(sys_comPorts.consoleUart != NULL)
 			{
-				drv_uart_putData(consoleUart, timeStampedStr, length);
+				drv_uart_putData(sys_comPorts.consoleUart, timeStampedStr, length);
 			}
 		}
 		sdc_writeToFile(&debugLogFile, timeStampedStr, length);
@@ -446,9 +621,9 @@ void __attribute__((optimize("O0"))) debugPrintString(char* str)
 	{
 		if(systemStatus.debugPrintsEnabled)
 		{
-			if(consoleUart != NULL)
+			if(sys_comPorts.consoleUart != NULL)
 			{
-				drv_uart_putData(consoleUart, timeStampedStr, length);
+				drv_uart_putData(sys_comPorts.consoleUart, timeStampedStr, length);
 			}
 		}
 		sdc_writeToFile(&debugLogFile, timeStampedStr, length);

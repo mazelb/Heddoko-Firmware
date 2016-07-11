@@ -32,6 +32,8 @@
 
 #define MAX_DEBUG_STRING_LENGTH	200
 
+#define SD_INSERT_WAIT_TIMEOUT	(5 * SECONDS)	
+
 typedef enum 
 {
 	MODULE_SYSTEM_MANAGER=0,
@@ -40,6 +42,8 @@ typedef enum
 	MODULE_WIFI,
 	MODULE_COMMAND,
 	MODULE_DEBUG,
+	MODULE_SUB_PROCESSOR,
+	MODULE_DATA_MANAGER,
 	MODULE_NUMBER_OF_MODULES
 }modules_t;
 
@@ -57,7 +61,15 @@ typedef enum
 #define TASK_SD_CARD_PRIORITY					(tskIDLE_PRIORITY + 3)
 #define TASK_SENSOR_HANDLER_STACK_SIZE			(3072/sizeof(portSTACK_TYPE))
 #define TASK_SENSOR_HANDLER_PRIORITY			(tskIDLE_PRIORITY + 3)
+#define TASK_SUB_PROCESS_MANAGER_STACK_SIZE		(3072/sizeof(portSTACK_TYPE))
+#define	TASK_SUB_PROCESS_MANAGER_PRIORITY		(tskIDLE_PRIORITY + 3)
+#define TASK_DATA_MANAGER_STACK_SIZE			(3072/sizeof(portSTACK_TYPE))
+#define TASK_DATA_MANAGER_PRIORITY				(tskIDLE_PRIORITY + 3)
 
 //static void _EXFUN (putStr, (char * str)) __attribute__((weakref ("puts")));
+
+//Time conversions defines
+#define SECONDS									1000		//converts seconds to milliseconds
+#define MINS									60 * 1000	//converts minutes to milliseconds
 
 #endif /* COMMON_H_ */

@@ -11,7 +11,7 @@
 
 #include <asf.h>
 #include "common.h"
-#include "sdc_sdCard.h"
+#include "sys_systemManager.h"
 
 typedef enum
 {
@@ -24,14 +24,15 @@ typedef enum
 	MSG_TYPE_WIFI_SETTINGS,
 	MSG_TYPE_USB_CONNECTED,
 	MSG_TYPE_CHARGER_EVENT,
-	MSG_TYPE_COMMAND_PACKET_RECEIVED	
+	MSG_TYPE_COMMAND_PACKET_RECEIVED			//TODO: should we have a seperate type for the commands to the power board
 }msg_messageType_t;
 
 typedef struct 
 {
 	msg_messageType_t type;
 	modules_t source;
-	void* parameters;	
+	void* parameters;
+	uint32_t broadcastData;	
 }msg_message_t;
 
 typedef struct  
@@ -47,20 +48,21 @@ typedef struct
 	bool mounted;
 	sd_message_type_t message;
 	uint8_t errorCode;
-}msg_sd_card_state_t;
+}msg_sd_card_state_t;		//sd card module response to system manager
 
 typedef struct
 {
 	bool unmountSD;
 	bool mountSD;
 	bool enableSensorStream;
-}msg_sys_manager_t;
+	sys_manager_systemState_t systemState;
+}msg_sys_manager_t;			//system manager command struct common to all modules
 
 typedef struct
 {
 	bool sensorInitialized;
 	uint8_t errorCode;
-}msg_sensor_state_t;
+}msg_sensor_state_t;		//sensor module response to system manager
 
 /***********************************************************************************************
  * msg_registerForMessages(modules_t module, uint32_t messageMask,xQueueHandle messageQueue)

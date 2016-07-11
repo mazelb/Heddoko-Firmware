@@ -45,7 +45,7 @@
 
 typedef enum
 {	
-	//DRV_GPIO_PIN_PW_SW,		
+	DRV_GPIO_PIN_PW_SW,		
 	//DRV_GPIO_PIN_AC_SW1,		
 	//DRV_GPIO_PIN_AC_SW2,		
 	//DRV_GPIO_PIN_JC_OC1,		

@@ -94,9 +94,6 @@
 // From module: Interrupt management - SAM implementation
 #include <interrupt.h>
 
-// From module: MEMBAG Memory Bag Allocator
-#include <membag.h>
-
 // From module: Memory Control Access Interface
 #include <ctrl_access.h>
 
@@ -121,9 +118,6 @@
 
 // From module: SAM4S Xplained Pro LED support enabled
 #include <led.h>
-
-// From module: SD/MMC Memory Control Access - Enable
-#include <sd_mmc_mem.h>
 
 // From module: SD/MMC stack on Multimedia Card interface
 #include <sd_mmc.h>

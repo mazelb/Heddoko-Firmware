@@ -15,12 +15,23 @@
  *
  * Copyright Heddoko(TM) 2015, all rights reserved
  */
-#include "common.h"
+//#include "common.h"
 #include "asf.h"
+#include "pkt_packetParser.h"
 
 #ifndef DRV_UART_H_
 #define DRV_UART_H_
-#define FIFO_BUFFER_SIZE 3072
+#define FIFO_BUFFER_SIZE 1536
+
+#define UART0_IDX			0
+#define UART1_IDX			1
+#define USART0_IDX			2
+#define USART1_IDX			3
+#define MAX_NUM_OF_UARTS	4
+
+#define UART_DMA_IMMEDIATE_PROCESSING_LENGTH	10	//NOTE: changing this to some random value can result in erroneous data.
+#define UART_DMA_BUFFER_A	0
+#define UART_DMA_BUFFER_B	1
 
 typedef struct
 {
@@ -36,6 +47,10 @@ typedef struct
 	usart_serial_options_t uart_options; 
 	int mem_index;
 	bool init_as_DMA;
+	uint16_t dma_bufferDepth;	// determines the how many bytes are processed at a time, leave it at FIFO_BUFFER_SIZE if not interrupt driven
+	bool enable_dma_interrupt;	// switches between interrupt driven and polling based methods (on RX side only)
+	pkt_packetParserConfiguration_t pktConfig;
+	//rawPacket_t packet;
 }drv_uart_config_t;
 
 status_t drv_uart_init(drv_uart_config_t* uartConfig);
@@ -51,11 +66,12 @@ void drv_uart_putString(drv_uart_config_t* uartConfig, char* str);
 void drv_uart_putData(drv_uart_config_t* uartConfig, char* str, size_t length); 
 void drv_uart_flushRx(drv_uart_config_t* uartConfig);
 uint32_t drv_uart_getDroppedBytes(drv_uart_config_t* uartConfig); 
+uint8_t drv_uart_getUartIdx(drv_uart_config_t* uartConfig);
 
 /*	DMA functions	*/
-//void drv_uart_init_as_DMA(drv_uart_config_t* uartConfig);	//obsolete function
-status_t drv_uart_DMA_getChar(drv_uart_config_t* uartConfig, char* c);
-void drv_uart_DMA_reInit(drv_uart_config_t* uartConfig);
+status_t drv_uart_DMA_initRx(drv_uart_config_t* uartConfig);
+status_t drv_uart_DMA_getChar(drv_uart_config_t* uartConfig, char* c, bool bufferIndex);
+void drv_uart_DMA_reInit(drv_uart_config_t* uartConfig, bool bufferIndex);
 status_t drv_uart_deInitRx(drv_uart_config_t* uartConfig);
 void drv_uart_DMA_putData(drv_uart_config_t* uartConfig, char* str, size_t length);
 status_t drv_uart_DMA_enable_interrupt(drv_uart_config_t* uartConfig);

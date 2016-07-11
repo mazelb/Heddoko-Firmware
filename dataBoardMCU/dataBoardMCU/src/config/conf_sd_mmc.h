@@ -51,7 +51,7 @@
 //#define SD_MMC_SPI_MODE
 
 // Define to enable the SDIO support
-//#define SDIO_SUPPORT_ENABLE
+#define SDIO_SUPPORT_ENABLE
 
 // Define it to enable the debug trace to the current standard output (stdio)
 //#define SD_MMC_DEBUG
@@ -65,33 +65,33 @@
  */
 //! @{
 #if UC3
-//#  ifndef SD_MMC_MCI_MEM_CNT
-//#    warning The GPIO and MCI connections of the SD/MMC connector must\
-     //be added in the board.h file.
-	//// Example from EVK1104
-//#    define SD_MMC_MCI_MEM_CNT            1
-///* Optional card detect pin and write protection pin
-//#    define SD_MMC_0_CD_GPIO              AVR32_PIN_PB08
-//#    define SD_MMC_0_CD_DETECT_VALUE      0
-//#    define SD_MMC_0_WP_GPIO              AVR32_PIN_PB06
-//#    define SD_MMC_0_WP_DETECT_VALUE      1
-//*/
-//#    define SD_MMC_MCI_SLOT_0_SIZE        4 // 4-bits connector pin
-//#    define SD_MMC_MCI_SLOT_0_DATA0_PIN   SD_SLOT_4BITS_DATA0_PIN
-//#    define SD_SLOT_4BITS                 1
-//#    define SD_SLOT_4BITS_CLK_PIN         AVR32_MCI_CLK_0_PIN
-//#    define SD_SLOT_4BITS_CLK_FUNCTION    AVR32_MCI_CLK_0_FUNCTION
-//#    define SD_SLOT_4BITS_CMD_PIN         AVR32_MCI_CMD_1_0_PIN
-//#    define SD_SLOT_4BITS_CMD_FUNCTION    AVR32_MCI_CMD_1_0_FUNCTION
-//#    define SD_SLOT_4BITS_DATA0_PIN       AVR32_MCI_DATA_8_0_PIN
-//#    define SD_SLOT_4BITS_DATA0_FUNCTION  AVR32_MCI_DATA_8_0_FUNCTION
-//#    define SD_SLOT_4BITS_DATA1_PIN       AVR32_MCI_DATA_9_0_PIN
-//#    define SD_SLOT_4BITS_DATA1_FUNCTION  AVR32_MCI_DATA_9_0_FUNCTION
-//#    define SD_SLOT_4BITS_DATA2_PIN       AVR32_MCI_DATA_10_0_PIN
-//#    define SD_SLOT_4BITS_DATA2_FUNCTION  AVR32_MCI_DATA_10_0_FUNCTION
-//#    define SD_SLOT_4BITS_DATA3_PIN       AVR32_MCI_DATA_11_0_PIN
-//#    define SD_SLOT_4BITS_DATA3_FUNCTION  AVR32_MCI_DATA_11_0_FUNCTION
-//#  endif
+#  ifndef SD_MMC_MCI_MEM_CNT
+#    warning The GPIO and MCI connections of the SD/MMC connector must\
+     be added in the board.h file.
+	// Example from EVK1104
+#    define SD_MMC_MCI_MEM_CNT            1
+/* Optional card detect pin and write protection pin
+#    define SD_MMC_0_CD_GPIO              AVR32_PIN_PB08
+#    define SD_MMC_0_CD_DETECT_VALUE      0
+#    define SD_MMC_0_WP_GPIO              AVR32_PIN_PB06
+#    define SD_MMC_0_WP_DETECT_VALUE      1
+*/
+#    define SD_MMC_MCI_SLOT_0_SIZE        4 // 4-bits connector pin
+#    define SD_MMC_MCI_SLOT_0_DATA0_PIN   SD_SLOT_4BITS_DATA0_PIN
+#    define SD_SLOT_4BITS                 1
+#    define SD_SLOT_4BITS_CLK_PIN         AVR32_MCI_CLK_0_PIN
+#    define SD_SLOT_4BITS_CLK_FUNCTION    AVR32_MCI_CLK_0_FUNCTION
+#    define SD_SLOT_4BITS_CMD_PIN         AVR32_MCI_CMD_1_0_PIN
+#    define SD_SLOT_4BITS_CMD_FUNCTION    AVR32_MCI_CMD_1_0_FUNCTION
+#    define SD_SLOT_4BITS_DATA0_PIN       AVR32_MCI_DATA_8_0_PIN
+#    define SD_SLOT_4BITS_DATA0_FUNCTION  AVR32_MCI_DATA_8_0_FUNCTION
+#    define SD_SLOT_4BITS_DATA1_PIN       AVR32_MCI_DATA_9_0_PIN
+#    define SD_SLOT_4BITS_DATA1_FUNCTION  AVR32_MCI_DATA_9_0_FUNCTION
+#    define SD_SLOT_4BITS_DATA2_PIN       AVR32_MCI_DATA_10_0_PIN
+#    define SD_SLOT_4BITS_DATA2_FUNCTION  AVR32_MCI_DATA_10_0_FUNCTION
+#    define SD_SLOT_4BITS_DATA3_PIN       AVR32_MCI_DATA_11_0_PIN
+#    define SD_SLOT_4BITS_DATA3_FUNCTION  AVR32_MCI_DATA_11_0_FUNCTION
+#  endif
 #endif
 #if SAM
 #  ifndef SD_MMC_HSMCI_MEM_CNT
@@ -118,7 +118,6 @@
 #    define PIN_HSMCI_MCDA2_FLAGS         (PIO_PERIPH_C | PIO_DEFAULT)
 #    define PIN_HSMCI_MCDA3_GPIO          (PIO_PA27_IDX)
 #    define PIN_HSMCI_MCDA3_FLAGS         (PIO_PERIPH_C | PIO_DEFAULT)
-#	 define PIN_HSMCI_CD				  {PIO_PC12, PIOC, ID_PIOC, PIO_INPUT, PIO_PULLUP}
 #  endif
 #endif
 //! @}

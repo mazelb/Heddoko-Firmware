@@ -36,17 +36,51 @@
 
 #include <asf.h>
 #include "common.h"
-#include "string.h"
-#include "sdc_sdCard.h"
-#include "msg_messenger.h"
-#include "drv_gpio.h"
-#include "drv_uart.h"
-#include "task_SensorHandler.h"
 #include "sys_systemManager.h"
+
+void  prvGetRegistersFromStack( uint32_t *pulFaultStackAddress )
+{
+/* These are volatile to try and prevent the compiler/linker optimising them
+away as the variables never actually get used.  If the debugger won't show the
+values of the variables, make them global my moving their declaration outside
+of this function. */
+volatile uint32_t r0;
+volatile uint32_t r1;
+volatile uint32_t r2;
+volatile uint32_t r3;
+volatile uint32_t r12;
+volatile uint32_t lr; /* Link register. */
+volatile uint32_t pc; /* Program counter. */
+volatile uint32_t psr;/* Program status register. */
+
+    r0 = pulFaultStackAddress[ 0 ];
+    r1 = pulFaultStackAddress[ 1 ];
+    r2 = pulFaultStackAddress[ 2 ];
+    r3 = pulFaultStackAddress[ 3 ];
+
+    r12 = pulFaultStackAddress[ 4 ];
+    lr = pulFaultStackAddress[ 5 ];
+    pc = pulFaultStackAddress[ 6 ];
+    psr = pulFaultStackAddress[ 7 ];
+
+    /* When the following line is hit, the variables contain the register values. */
+    for( ;; );
+}
 
 void HardFault_Handler()
 {
-	while (1);
+	__asm volatile
+    (
+        " tst lr, #4                                                \n"
+        " ite eq                                                    \n"
+        " mrseq r0, msp                                             \n"
+        " mrsne r0, psp                                             \n"
+        " ldr r1, [r0, #24]                                         \n"
+        " ldr r2, handler2_address_const                            \n"
+        " bx r2                                                     \n"
+        " handler2_address_const: .word prvGetRegistersFromStack    \n"
+    );
+	//while (1);
 }
 void BusFault_Handler()
 {
@@ -73,14 +107,8 @@ int main (void)
 	{
 		puts("Failed to create main task\r");
 	}
-	if (xTaskCreate(sdc_sdCardTask, "SD", TASK_SD_CARD_STACK_SIZE, NULL, TASK_SD_CARD_PRIORITY, NULL) != pdPASS)
-	{
-		puts("Failed to create SD-card task\r");
-	}
-	if (xTaskCreate(task_SensorHandler, "SH", TASK_SENSOR_HANDLER_STACK_SIZE, NULL, TASK_SENSOR_HANDLER_PRIORITY, NULL) != pdPASS)
-	{
-		puts("Failed to create sensor handler task\r");
-	}
+	
+	// NOTE: All other tasks are initialized from the System Manager.
 	
 	vTaskStartScheduler();
 	
