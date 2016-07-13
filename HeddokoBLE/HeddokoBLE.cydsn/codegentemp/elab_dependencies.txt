@@ -1,4 +1,4 @@
-C:\Users\Hriday Mehta\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\TopDesign\TopDesign.cysch
+D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\TopDesign\TopDesign.cysch
 C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\SCB_P4_v3_20\SCB_P4_v3_20.cysym
 C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\SCB_P4_v3_20\SCB_P4_v3_20.pdf
 C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\SCB_P4_v3_20\SCB_P4_v3_20.cycdx
@@ -435,7 +435,7 @@ C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cyprim
 C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\cy_constant_v1_0\cy_constant_v1_0.pdf
 C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\cy_constant_v1_0
 C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\cy_constant_v1_0\Custom\custom.cs
-C:\Users\Hriday Mehta\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\HeddokoBLE.cydwr
+D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\HeddokoBLE.cydwr
 C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\cy_boot_v5_40\PSoC4\API\cm0gcc.ld
 C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\cy_boot_v5_40\PSoC4\API\Cm0RealView.scat
 C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\cy_boot_v5_40\PSoC4\API\Cm0Start.c

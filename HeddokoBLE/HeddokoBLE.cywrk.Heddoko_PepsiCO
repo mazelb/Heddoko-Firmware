@@ -13,7 +13,7 @@
 <v>Output</v>
 </TreeKeys>
 <TreeStates>
-<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="HeddokoBLE\HeddokoBLE\Source Files\main.c">
+<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="HeddokoBLE\HeddokoBLE\Header Files\app_Ble.h">
 <ExpandedNodeIds>
 <v>HeddokoBLE</v>
 <v>HeddokoBLE\HeddokoBLE</v>
@@ -188,6 +188,9 @@
 <v>HeddokoBLE\HeddokoBLE\Generated_Source\PSoC4\BLE\BLE_StackGattServer.h</v>
 <v>HeddokoBLE\HeddokoBLE\Generated_Source\PSoC4\BLE\BLE_StackHostMain.h</v>
 <v>HeddokoBLE\HeddokoBLE\Generated_Source\PSoC4\BLE\BLE_StackL2cap.h</v>
+<v>HeddokoBLE\HeddokoBLE\Generated_Source\PSoC4\BLE_bless_isr</v>
+<v>HeddokoBLE\HeddokoBLE\Generated_Source\PSoC4\BLE_bless_isr\BLE_bless_isr.c</v>
+<v>HeddokoBLE\HeddokoBLE\Generated_Source\PSoC4\BLE_bless_isr\BLE_bless_isr.h</v>
 </VisibleNodeIds>
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 <CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="">
@@ -254,49 +257,6 @@
 <VisibleNodeIds>
 <v>HeddokoBLE</v>
 <v>HeddokoBLE\HeddokoBLE</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\Adv_led.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\Adv_led_PM.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\app_Ble.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\app_LED.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\app_UART.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\BLE.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\BLE_bless_isr.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\BLE_custom.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\BLE_eventHandler.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\BLE_gatt.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\BLE_HAL_INT.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\BLE_HAL_PVT.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\Cm0Start.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\Conn_Led.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\Conn_Led_PM.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\CyBootAsmGnu.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\cyfitter_cfg.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\CyFlash.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\CyLFClk.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\CyLib.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\cymetadata.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\cyPm.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\cyutils.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\main.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\pkt_packetParser.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_BOOT.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_PM.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_rx.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_rx_PM.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_SCB_IRQ.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_SCBCLK.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_SPI_UART.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_SPI_UART_INT.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_tx.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_tx_PM.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_UART.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_UART_BOOT.lst</v>
-<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\HeddokoBLE.elf</v>
 </VisibleNodeIds>
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 </TreeStates>
@@ -357,15 +317,11 @@
 </CyGuid_fdba8dfd-b15b-4469-9bbb-9e40c3e70997>
 <Unloaded />
 <OpenDocs>
-<name v=".\HeddokoBLE.cydsn\app_Ble.c" />
-<name v=".\HeddokoBLE.cydsn\app_LED.c" />
-<name v=".\HeddokoBLE.cydsn\app_UART.c" />
-<name v=".\HeddokoBLE.cydsn\pkt_packetParser.c" />
-<name v=".\HeddokoBLE.cydsn\main.c" />
-<name v=".\HeddokoBLE.cydsn\TopDesign\TopDesign.cysch" />
 <name v=".\HeddokoBLE.cydsn\main.h" />
-<name v=".\HeddokoBLE.cydsn\pkt_packetParser.h" />
-<name v=".\HeddokoBLE.cydsn\HeddokoBLE.cydwr" />
+<name v=".\HeddokoBLE.cydsn\Generated_Source\PSoC4\BLE_StackGatt.h" />
+<name v=".\HeddokoBLE.cydsn\TopDesign\TopDesign.cysch" />
+<name v=".\HeddokoBLE.cydsn\app_UART.c" />
+<name v=".\HeddokoBLE.cydsn\main.c" />
 </OpenDocs>
 <config v="" />
 <AutoUpdate v="true" />

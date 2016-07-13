@@ -190,11 +190,15 @@ status_t pkt_getRawPacket(rawPacket_t* packet, uint32_t maxTime, uint8_t minSize
 	{
 		if (numBytesRead == 0)
 		{
+            #ifdef PRINT_MESSAGE_LOG
 			UART_UartPutString("No data received\r\n");
+            #endif
 		}
 		else
 		{
+            #ifdef PRINT_MESSAGE_LOG
 			UART_UartPutString("Incomplete data received\r\n");
+            #endif
 		}
 		result = STATUS_FAIL;
 	}

@@ -15,6 +15,11 @@
 #include "pkt_packetParser.h"
 #include "main.h"
 
+#define WIFI_SSID_AVAILABLE_MASK            0x00
+#define WIFI_PASSPHRASE_AVAILABLE_MASK      0x01
+#define WIFI_SECURITY_TYPE_AVAILABLE_MASK   0x02
+#define WIFI_ALL_DATA_AVAILABLE_MASK        0x07
+static uint8 sendWiFiData = 0;
 
 /*****************************************************************************************
 * Function Name: HandleUartTxTraffic
@@ -121,48 +126,66 @@ void HandleUartRxTraffic(CYBLE_GATTS_WRITE_REQ_PARAM_T * uartRxDataWrReq)
 {
     if(uartRxDataWrReq->handleValPair.attrHandle == CYBLE_SERVER_UART_SERVER_UART_RX_DATA_CHAR_HANDLE)
     {
+        #ifdef PRINT_MESSAGE_LOG
         UART_SpiUartPutArray(uartRxDataWrReq->handleValPair.value.val, \
                                     (uint32) uartRxDataWrReq->handleValPair.value.len);
+        #endif
     }
     else if (uartRxDataWrReq->handleValPair.attrHandle == CYBLE_HEDDOKO_GPS_GPS_DATA_CHAR_HANDLE)
     {
+        #ifdef PRINT_MESSAGE_LOG
         UART_UartPutString("Received GPS data: \r\n");
-        UART_UartPutChar(uartRxDataWrReq->handleValPair.value.len);
-//        UART_SpiUartPutArray(uartRxDataWrReq->handleValPair.value.val, \
-//                                    (uint32) uartRxDataWrReq->handleValPair.value.len);
+        #endif
         makeSendPacket(PACKET_COMMAND_ID_GPS_DATA_RESP, uartRxDataWrReq->handleValPair.value.val,\
                         (uint16_t) uartRxDataWrReq->handleValPair.value.len);
     }
     else if (uartRxDataWrReq->handleValPair.attrHandle == CYBLE_HEDDOKO_WIFI_SSID_CHAR_HANDLE)
     {
+        #ifdef PRINT_MESSAGE_LOG
         UART_UartPutString("Received SSID data: \r\n");
-//        UART_SpiUartPutArray(uartRxDataWrReq->handleValPair.value.val, \
-//                                    (uint32) uartRxDataWrReq->handleValPair.value.len);
-        makeSendPacket(PACKET_COMMAND_ID_SSID_DATA_RESP, uartRxDataWrReq->handleValPair.value.val,\
-                        (uint16_t) uartRxDataWrReq->handleValPair.value.len);
+        #endif
+        sendWiFiData |= (true << WIFI_SSID_AVAILABLE_MASK);
+//            makeSendPacket(PACKET_COMMAND_ID_SSID_DATA_RESP, uartRxDataWrReq->handleValPair.value.val,\
+//                            (uint16_t) uartRxDataWrReq->handleValPair.value.len);
+//        getSendWiFiDataAll();
     }
     else if (uartRxDataWrReq->handleValPair.attrHandle == CYBLE_HEDDOKO_WIFI_PASSPHRASE_CHAR_HANDLE)
     {
+        #ifdef PRINT_MESSAGE_LOG
         UART_UartPutString("Received Passphrase data: \r\n");
-//        UART_SpiUartPutArray(uartRxDataWrReq->handleValPair.value.val, \
-//                                    (uint32) uartRxDataWrReq->handleValPair.value.len);
-        makeSendPacket(PACKET_COMMAND_ID_PASSPHRASE_DATA_RESP, uartRxDataWrReq->handleValPair.value.val,\
-                        (uint16_t) uartRxDataWrReq->handleValPair.value.len);
+        #endif
+        sendWiFiData |= (true << WIFI_PASSPHRASE_AVAILABLE_MASK);
+//            makeSendPacket(PACKET_COMMAND_ID_PASSPHRASE_DATA_RESP, uartRxDataWrReq->handleValPair.value.val,\
+//                            (uint16_t) uartRxDataWrReq->handleValPair.value.len);
+//            getSendWiFiDataAll();
     }
     else if (uartRxDataWrReq->handleValPair.attrHandle == CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_CHAR_HANDLE)
     {
+        #ifdef PRINT_MESSAGE_LOG
         UART_UartPutString("Received Security type data: \r\n");
-//        UART_SpiUartPutArray(uartRxDataWrReq->handleValPair.value.val, \
-//                                    (uint32) uartRxDataWrReq->handleValPair.value.len);
-        makeSendPacket(PACKET_COMMAND_ID_SECURITY_TYPE_DATA_RESP, uartRxDataWrReq->handleValPair.value.val,\
-                        (uint16_t) uartRxDataWrReq->handleValPair.value.len);
+        #endif
+        sendWiFiData |= (true << WIFI_SECURITY_TYPE_AVAILABLE_MASK);
+//            makeSendPacket(PACKET_COMMAND_ID_SECURITY_TYPE_DATA_RESP, uartRxDataWrReq->handleValPair.value.val,\
+//                            (uint16_t) uartRxDataWrReq->handleValPair.value.len);
+//            getSendWiFiDataAll();
+    }
+    else if (uartRxDataWrReq->handleValPair.attrHandle == CYBLE_HEDDOKO_WIFI_WIFI_ENABLE_CHAR_HANDLE)
+    {
+        #ifdef PRINT_MESSAGE_LOG
+        UART_UartPutString("Received wifi enable command\r\n");
+        #endif
+        if (sendWiFiData == WIFI_ALL_DATA_AVAILABLE_MASK)   // NOTE: this makes sure that everytime data needs to be written to the three parameters
+        {                                                   //       before enable command is sent or else no data will be sent to data board
+            getSendWiFiDataAll();   //send the wifi data
+            sendWiFiData = 0;
+        }
     }
     else if (uartRxDataWrReq->handleValPair.attrHandle == CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CHAR_HANDLE)
     {
+        #ifdef PRINT_MESSAGE_LOG
         UART_UartPutString("Received raw data: \r\n");
-//        UART_SpiUartPutArray(uartRxDataWrReq->handleValPair.value.val, \
-//                                    (uint32) uartRxDataWrReq->handleValPair.value.len);
-        makeSendPacket(PACKET_COMMAND_ID_SEND_RAW_DATA_RESP, uartRxDataWrReq->handleValPair.value.val,\
+        #endif
+        makeSendPacket(PACKET_COMMAND_ID_SEND_RAW_DATA_TO_MASTER, uartRxDataWrReq->handleValPair.value.val,\
                         (uint16_t) uartRxDataWrReq->handleValPair.value.len);
     }
 }

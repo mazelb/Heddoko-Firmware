@@ -24,16 +24,19 @@
     
     #define PACKET_COMMAND_ID_GPS_DATA_REQ              0x41
     #define PACKET_COMMAND_ID_GPS_DATA_RESP             0x42
-    #define PACKET_COMMAND_ID_SSID_DATA_REQ             0x43
-    #define PACKET_COMMAND_ID_SSID_DATA_RESP            0x44
-    #define PACKET_COMMAND_ID_PASSPHRASE_DATA_REQ       0x45
-    #define PACKET_COMMAND_ID_PASSPHRASE_DATA_RESP      0x46
-    #define PACKET_COMMAND_ID_SECURITY_TYPE_DATA_REQ    0x47
-    #define PACKET_COMMAND_ID_SECURITY_TYPE_DATA_RESP   0x48
-    #define PACKET_COMMAND_ID_SEND_RAW_DATA_REQ         0x49
-    #define PACKET_COMMAND_ID_SEND_RAW_DATA_RESP        0x4a
-    #define PACKET_COMMAND_ID_GET_RAW_DATA_REQ          0x4b
-    #define PACKET_COMMAND_ID_GET_RAW_DATA_RESP         0x4c
+//    #define PACKET_COMMAND_ID_SSID_DATA_REQ             0x43
+//    #define PACKET_COMMAND_ID_SSID_DATA_RESP            0x44
+//    #define PACKET_COMMAND_ID_PASSPHRASE_DATA_REQ       0x45
+//    #define PACKET_COMMAND_ID_PASSPHRASE_DATA_RESP      0x46
+//    #define PACKET_COMMAND_ID_SECURITY_TYPE_DATA_REQ    0x47
+//    #define PACKET_COMMAND_ID_SECURITY_TYPE_DATA_RESP   0x48
+    #define PACKET_COMMAND_ID_DEFAULT_WIFI_DATA         0x48
+    #define PACKET_COMMAND_ID_ALL_WIFI_DATA_REQ			0x49
+    #define PACKET_COMMAND_ID_ALL_WIFI_DATA_RESP		0x4a
+    #define PACKET_COMMAND_ID_SEND_RAW_DATA_TO_BLE      0x4b
+    #define PACKET_COMMAND_ID_SEND_RAW_DATA_TO_MASTER   0x4c
+    #define PACKET_COMMAND_ID_GET_RAW_DATA_REQ          0x4d
+    #define PACKET_COMMAND_ID_GET_RAW_DATA_RESP         0x4e
     #define PACKET_COMMAND_ID_START_FAST_ADV            0x4f
     
     typedef enum
@@ -57,7 +60,10 @@
     ***************************************/
     void AppCallBack(uint32 , void *);
     void makeSendPacket(uint8 dataType, uint8_t* payload, uint16_t payloadSize);
-    void getSendAttrData(CYBLE_GATT_DB_ATTR_HANDLE_T attrHandle, uint8 outDataType, uint32 size);
+    void getSendAttrData(CYBLE_GATT_DB_ATTR_HANDLE_T attrHandle, uint8 outDataType, uint32 size);   // get data from the Database and send it to data board
+    void getSendWiFiDataAll(void);      // get all WIFI parameters from the Database and send it to data board
+    void sendUnsentData();
+    
 #endif
 
 /* [] END OF FILE */

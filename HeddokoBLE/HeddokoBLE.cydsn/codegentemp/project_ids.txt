@@ -1,5 +1,5 @@
-C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|4e4d3219-f936-4a1b-b758-20d358db89d9
-C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|0d5a2aef-f2ad-48bd-92ae-388e85337121
-C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|ddb02532-cd0a-4e87-bc2a-6a38e5bbbaae
-C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|9476bfbf-2b1d-4e4d-af86-58cb914b0427
-C:\Users\Hriday Mehta\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\HeddokoBLE.cyprj|2d85785f-0dfe-43c8-b018-c51d92fd9d0b
+D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\HeddokoBLE.cyprj|d274d435-7f57-4dc6-9fdc-68724c0ccee3
+C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|b861a922-f22e-49be-93a2-459ffb45ef94
+C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|6fe4a990-d38b-4d28-8031-7be0581cc891
+C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|0c776a9e-9eb4-4574-8a81-44194de16234
+C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|a66df949-824b-4772-99be-c27b6c8c1dfa

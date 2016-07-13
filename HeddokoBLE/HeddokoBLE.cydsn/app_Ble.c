@@ -54,7 +54,8 @@ void HandleBleProcessing(void)
             /* if stack is free, handle UART traffic */
             if(CyBle_GattGetBusStatus() != CYBLE_STACK_STATE_BUSY)
             {
-                sendUnsentRawData();
+                sendUnsentData();
+                //sendUnsentRawData();
             }
             break;
                 
