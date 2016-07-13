@@ -11,11 +11,10 @@
 
 /*	Static function forward declarations	*/
 static void processMessage(msg_message_t message);
+static void systemStateChangeAction(uint32_t broadcastData);			//Take necessary action to the system state change
 
 /*	Local variables	*/
 xQueueHandle msg_queue_dataHandler = NULL;
-xQueueHandle pkt_dataHandler = NULL;
-
 /*	Extern functions	*/
 
 /*	Extern variables	*/
@@ -28,20 +27,14 @@ void dat_dataManagerTask(void *pvParameters)
 	msg_queue_dataHandler = xQueueCreate(10, sizeof(msg_message_t));
 	if (msg_queue_dataHandler != NULL)
 	{
-		msg_registerForMessages(MODULE_DATA_MANAGER, 0xff, msg_queue_dataHandler);
-	}
-	
-	pkt_dataHandler = xQueueCreate(10, sizeof(rawPacket_t));
-	if (pkt_dataHandler == 0)
-	{
-		puts("Failed to create packet queue\r");
+		msg_registerForMessages(MODULE_DATA_MANAGER, 0xff, msg_queue_dataHandler);		// We will receive packets in the message queue itself.
 	}
 	
 	while (1)
 	{
-		// receive from message queue and data queue, take necessay actions
+		// receive from message queue and data queue, take necessary actions
 		
-		if (xQueueReceive(pkt_dataHandler, &receivedMessage, 1) == TRUE)
+		if (xQueueReceive(msg_queue_dataHandler, &receivedMessage, 1) == TRUE)
 		{
 			processMessage(receivedMessage);
 		}
@@ -55,7 +48,7 @@ static void processMessage(msg_message_t message)
 	switch(message.type)
 	{
 		case MSG_TYPE_ENTERING_NEW_STATE:
-			
+			systemStateChangeAction(message.broadcastData);
 		break;
 		case MSG_TYPE_READY:
 		break;
@@ -81,3 +74,11 @@ static void processMessage(msg_message_t message)
 	}
 }
 
+static void systemStateChangeAction(uint32_t broadcastData)
+{
+	switch (broadcastData)
+	{
+		case SYSTEM_STATE_IDLE:
+		break;
+	}
+}

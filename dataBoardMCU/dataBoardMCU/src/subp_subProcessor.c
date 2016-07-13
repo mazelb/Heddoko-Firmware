@@ -13,29 +13,21 @@
 #include "task_SensorHandler.h"
 #include "cmd_commandProcessor.h"
 
+/*	Extern functions	*/
+
+/*	Extern variables	*/
+extern system_status_t systemStatus;
+
 /*	Static function forward declarations	*/
 static void processMessage(msg_message_t message);
 static void pkt_callBack(rawPacket_t* packet);
+static void systemStateChangeAction(msg_sys_manager_t* sys_eventData);			//Take necessary action to the system state change
+static void sendPacket(rawPacket_t *p_packet);
 
 /*	Local variables	*/
-xQueueHandle queue_subp = NULL;
-xQueueHandle queue_pkt = NULL;		// queues to store the packets
-static rawPacket_t localPacket = {NULL};
-//static system_states_t currentState = SYSTEM_STATE_INITIALIZATION;
-
-//pkt_packetParserConfiguration_t packetParserConfig =
-//{
-	//.transmitDisable = NULL,		// no direct interfacing with the sensor
-	//.transmitEnable = NULL,			
-	//.packetReceivedCallback = pkt_callBack,		// call back function from the interrupt handlers
-	//.packet =
-	//{
-		//.payload = {NULL},
-		//.payloadSize = NULL,
-		//.bytesReceived = NULL,
-		//.escapeFlag = NULL
-	//}
-//};
+static xQueueHandle msg_queue_subp = NULL;			// queue to receive interprocessor messages
+static xQueueHandle queue_localPkt = NULL;			// queues to store the packets from the packet callback
+static rawPacket_t localPacket = {NULL};			// structure to hold the local packets
 
 drv_uart_config_t usart1Config =
 {
@@ -66,25 +58,19 @@ drv_uart_config_t usart1Config =
 	}
 };
 
-/*	Extern functions	*/
-
-/*	Extern variables	*/
-extern system_status_t systemStatus;
-extern xQueueHandle pkt_dataHandler;
-
 /*	Function Definitions	*/
 void subp_subProcessorTask(void *pvParameters)
 {
 	msg_message_t receivedMessage;
 	
-	queue_subp = xQueueCreate(10, sizeof(msg_message_t));
-	if (queue_subp != 0)
+	msg_queue_subp = xQueueCreate(10, sizeof(msg_message_t));
+	if (msg_queue_subp != 0)
 	{
-		msg_registerForMessages(MODULE_SUB_PROCESSOR, 0xff, queue_subp);
+		msg_registerForMessages(MODULE_SUB_PROCESSOR, 0xff, msg_queue_subp);
 	}
 	
-	queue_pkt = xQueueCreate(PACKET_QUEUE_LENGTH, sizeof(rawPacket_t));
-	if (queue_pkt == NULL)
+	queue_localPkt = xQueueCreate(PACKET_QUEUE_LENGTH, sizeof(rawPacket_t));
+	if (queue_localPkt == NULL)
 	{
 		puts("Failed to create the queue to fetch packets\r");
 	}
@@ -96,9 +82,15 @@ void subp_subProcessorTask(void *pvParameters)
 	//start the main thread where we listen for packets and messages	
 	while (1)
 	{
-		if (xQueueReceive(queue_subp, &receivedMessage, 1) == true)
+		if (xQueueReceive(msg_queue_subp, &receivedMessage, 1) == true)
 		{
 			processMessage(receivedMessage);
+		}
+
+		// categorize the enqueued packets and send them to respective modules
+		if (xQueueReceive(queue_localPkt, &localPacket, 1) == TRUE)
+		{
+			sendPacket(&localPacket);
 		}
 					
 		vTaskDelay(1);		// carefully assign the delay as one packet can be as fast as 1.85ms
@@ -144,16 +136,29 @@ static void pkt_callBack(rawPacket_t* packet)
 		return;
 	}
 	
-	//scrutinize packets here and direct them to particular module
-	if (packet->payload[0] == PACKET_TYPE_IMU_SENSOR)
+	// don't scrutinize packet, just send it to the local queue.
+	if (xQueueSendToBack(queue_localPkt, packet, 1) != TRUE)
 	{
-		// Do the processing according to the types of messages and enqueue them
-		if (packet->payload[1] == PACKET_COMMAND_ID_GET_FRAME_RESP)
+		// The packet will be lost.
+		puts("Failed to enqueue the packet\r");
+	}
+}
+
+static void sendPacket(rawPacket_t *p_packet)
+{
+	
+	if (p_packet->payload[0] == PACKET_TYPE_IMU_SENSOR)
+	{
+		if (p_packet->payload[1] == PACKET_COMMAND_ID_GET_FRAME_RESP)
 		{
-			if (xQueueSendToBack(pkt_dataHandler, packet, 1) != TRUE)		// send the packet to the data handler
-			{
-				puts("Failed to queue the packet\r");
-			}
+			//this is a data packet, send it to data handler queue
+			
+			//msg_sendMessage(MODULE_DATA_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_COMMAND_PACKET_RECEIVED, );
 		}
+	}
+	else if (p_packet->payload[0] == PACKET_TYPE_POWER_BOARD)
+	{
+		// this is a power board message, route it to the System manager
+		
 	}
 }

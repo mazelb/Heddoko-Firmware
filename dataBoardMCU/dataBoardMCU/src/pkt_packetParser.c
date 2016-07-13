@@ -417,7 +417,7 @@ status_t pkt_getRawPacket(uint32_t maxTime, uint8_t minSize, uint8_t comPortInde
 	return result;
 }
 
-void pkt_packetParserInit(pkt_packetParserConfiguration_t* config, uint8_t comPortIndex)
+void pkt_packetParserInit(pkt_packetParserConfiguration_t* config, uint8_t comPortIndex)	// This function is obsolete now.
 {
 	// NOTE: the packerParser config can be overwritten, no check for null
 	pktConfig[comPortIndex] = config;

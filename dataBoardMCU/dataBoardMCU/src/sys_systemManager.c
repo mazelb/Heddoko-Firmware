@@ -108,21 +108,6 @@ drv_uart_config_t uart1Config =
 		.stopbits   = CONF_STOPBITS
 	}
 };
-drv_uart_config_t usart0Config =
-{
-	.p_usart = USART0,
-	.mem_index = 2,
-	.init_as_DMA = FALSE,
-	.enable_dma_interrupt = false,
-	.dma_bufferDepth = FIFO_BUFFER_SIZE,
-	.uart_options =
-	{
-		.baudrate   = CONF_BAUDRATE,
-		.charlength = CONF_CHARLENGTH,
-		.paritytype = CONF_PARITY,
-		.stopbits   = CONF_STOPBITS
-	}
-};
 
 // Assign Com ports to each module.
 system_port_config_t sys_comPorts = 
@@ -337,42 +322,42 @@ static void sysEnterNewState(sys_manager_systemState_t newState)
 		break;
 		
 		case SYSTEM_STATE_INIT:
-		initModule(MODULE_NUMBER_OF_MODULES);		//pass initialization command to all modules
-		//openDebugLog();		// open the debugLog file
+			initModule(MODULE_NUMBER_OF_MODULES);		//pass initialization command to all modules
+			//openDebugLog();		// open the debugLog file
 		break;
 		
 		case SYSTEM_STATE_IDLE:
-		sys_eventData = malloc(sizeof(msg_sys_manager_t));
-		sys_eventData->systemState	= SYSTEM_STATE_IDLE;
-		status |= msg_sendMessage(MODULE_SENSOR_HANDLER, MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, (void*)sys_eventData);
-		sys_eventData1 = malloc(sizeof(msg_sys_manager_t));
-		sys_eventData1->systemState	= SYSTEM_STATE_IDLE;
-		status |= msg_sendMessage(MODULE_SDCARD, MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, (void*)sys_eventData1);
-		//broadcastMessage.broadcastData = (uint32_t) SYSTEM_STATE_IDLE;
-		//broadcastMessage.source = MODULE_SYSTEM_MANAGER;
-		//broadcastMessage.type = MSG_TYPE_ENTERING_NEW_STATE;
-		//status |= msg_sendBroadcastMessage(&broadcastMessage);
-		puts("System State: IDLE\r");
+			//sys_eventData = malloc(sizeof(msg_sys_manager_t));
+			//sys_eventData->systemState	= SYSTEM_STATE_IDLE;
+			//status |= msg_sendMessage(MODULE_SENSOR_HANDLER, MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, (void*)sys_eventData);
+			//sys_eventData1 = malloc(sizeof(msg_sys_manager_t));
+			//sys_eventData1->systemState	= SYSTEM_STATE_IDLE;
+			//status |= msg_sendMessage(MODULE_SDCARD, MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, (void*)sys_eventData1);
+			broadcastMessage.broadcastData = (uint32_t) SYSTEM_STATE_IDLE;
+			broadcastMessage.source = MODULE_SYSTEM_MANAGER;
+			broadcastMessage.type = MSG_TYPE_ENTERING_NEW_STATE;
+			status |= msg_sendBroadcastMessage(&broadcastMessage);
+			puts("System State: IDLE\r");
 		break;
 		
 		case SYSTEM_STATE_ERROR:
-		deInitModule(MODULE_SENSOR_HANDLER);
-		deInitModule(MODULE_SDCARD);
+			deInitModule(MODULE_SENSOR_HANDLER);
+			deInitModule(MODULE_SDCARD);
 		break;
 		
 		case SYSTEM_STATE_RECORDING:
-		status =  sdc_openFile(&dataLogFile, dataLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DATA_LOG);		// TODO: only for temporary purposes, different module will open this file
-		status |= sdc_openFile(&debugLogFile, debugLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DEBUG_LOG);
-		if (status == STATUS_PASS)
-		{
-			sys_eventData = malloc(sizeof(msg_sys_manager_t));
-			sys_eventData->systemState	= SYSTEM_STATE_RECORDING;
-			status |= msg_sendMessage(MODULE_SENSOR_HANDLER, MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, (void*)sys_eventData);
-		}
-		else
-		{
-			systemStatus.sysState = SYSTEM_STATE_IDLE;
-		}
+			status =  sdc_openFile(&dataLogFile, dataLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DATA_LOG);		// TODO: only for temporary purposes, different module will open this file
+			status |= sdc_openFile(&debugLogFile, debugLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DEBUG_LOG);
+			if (status == STATUS_PASS)
+			{
+				sys_eventData = malloc(sizeof(msg_sys_manager_t));
+				sys_eventData->systemState	= SYSTEM_STATE_RECORDING;
+				status |= msg_sendMessage(MODULE_SENSOR_HANDLER, MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, (void*)sys_eventData);
+			}
+			else
+			{
+				systemStatus.sysState = SYSTEM_STATE_IDLE;
+			}
 		break;
 		
 		default:

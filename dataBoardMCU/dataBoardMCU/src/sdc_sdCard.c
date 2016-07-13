@@ -26,7 +26,7 @@ static void closeAllFiles();															//close all open files
 static void cardInsertedCall();														//re-initialize the SD-card module and pass message
 static void cardRemovedCall();															//unmount the SD-card module and pass message
 static void checkCardDetectInt();														//check and reconfigure the SD-CD interrupt
-static void systemStateChangeAction(msg_sys_manager_t* sys_eventData);			//Take necessary action to the system state change
+static void systemStateChangeAction(uint32_t broadcastData);			//Take necessary action to the system state change
 
 /*	Local Variables	*/
 xSemaphoreHandle semaphore_fatFsAccess = NULL, semaphore_bufferAccess = NULL;
@@ -66,7 +66,7 @@ static void processEvent(msg_message_t message)
 					//if ((sdCardPresent()) && (systemStatus.sdCardState != SD_CARD_INITIALIZED))
 						//cardInsertedCall();
 				}
-				systemStateChangeAction(sys_eventData);
+				systemStateChangeAction(message.broadcastData);
 			}
 		break;
 		case MSG_TYPE_SDCARD_STATE:
@@ -745,9 +745,9 @@ void checkCardDetectInt()
 	}
 }
 
-static void systemStateChangeAction(msg_sys_manager_t* sys_eventData)
+static void systemStateChangeAction(uint32_t broadcastData)		//State change events are always broadcast messages
 {
-	switch (sys_eventData->systemState)
+	switch (broadcastData)
 	{
 		case SYSTEM_STATE_SLEEP:
 			if (systemStatus.sdCardState != SD_CARD_REMOVED)
