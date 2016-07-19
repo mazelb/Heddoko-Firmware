@@ -10,91 +10,195 @@
 #include "common.h"
 #include "msg_messenger.h"
 #include "drv_uart.h"
-#include "task_SensorHandler.h"
-#include "cmd_commandProcessor.h"
-
-/*	Extern functions	*/
-
-/*	Extern variables	*/
-extern system_status_t systemStatus;
+#include "dbg_debugManager.h"
+#include "heddokoPacket.pb-c.h"
 
 /*	Static function forward declarations	*/
 static void processMessage(msg_message_t message);
-static void pkt_callBack(rawPacket_t* packet);
-static void systemStateChangeAction(msg_sys_manager_t* sys_eventData);			//Take necessary action to the system state change
-static void sendPacket(rawPacket_t *p_packet);
+static void processRawPacket(drv_uart_rawPacket_t packet);
 
 /*	Local variables	*/
-static xQueueHandle msg_queue_subp = NULL;			// queue to receive interprocessor messages
-static xQueueHandle queue_localPkt = NULL;			// queues to store the packets from the packet callback
-static rawPacket_t localPacket = {NULL};			// structure to hold the local packets
-
-drv_uart_config_t usart1Config =
+xQueueHandle queue_subp = NULL;
+drv_uart_config_t uart0Config =
 {
-	.p_usart = USART1,
-	.mem_index = USART1_IDX,
-	.init_as_DMA = TRUE,
-	.enable_dma_interrupt = FALSE,
-	.dma_bufferDepth = FIFO_BUFFER_SIZE,
+	.p_usart = UART0,
+	.mem_index = 0,
+	.uartMode = DRV_UART_MODE_PACKET_PARSER,
+	.packetCallback = NULL, //no callback right now
 	.uart_options =
 	{
-		.baudrate   = SENSOR_BUS_SPEED_LOW,
+		.baudrate   = 460800,
 		.charlength = CONF_CHARLENGTH,
 		.paritytype = CONF_PARITY,
 		.stopbits   = CONF_STOPBITS
-	},
-	.pktConfig = 
-	{
-		.transmitDisable = NULL,		// no direct interfacing with the sensor
-		.transmitEnable = NULL,
-		.packetReceivedCallback = pkt_callBack,
-		.packet =
-		{
-			.payload = {NULL},
-			.payloadSize = NULL,
-			.bytesReceived = NULL,
-			.escapeFlag = NULL
-		}
 	}
 };
+Heddoko__Packet dataFrameProtoPacket;
+Heddoko__FullDataFrame dataFrame;
+Heddoko__ImuDataFrame* frameArrayPtr[MAX_NUMBER_OF_IMU_SENSORS];
+Heddoko__ImuDataFrame frameArray[MAX_NUMBER_OF_IMU_SENSORS];
+uint8_t serializedDataBuffer[2000]; //storage buffer for the largest serialized packet. 
+
+
+volatile uint8_t dataLogBufferA[DATALOG_MAX_BUFFER_SIZE] = {0} , dataLogBufferB[DATALOG_MAX_BUFFER_SIZE] = {0};
+
+sdc_file_t dataLogFile =
+{
+	.bufferIndexA = 0,
+	.bufferIndexB = 0,
+	.bufferPointerA = dataLogBufferA,
+	.bufferPointerB = dataLogBufferB,
+	.bufferSize = DATALOG_MAX_BUFFER_SIZE,
+	.fileObj = NULL,
+	.fileName = "datalog",
+	.fileOpen = false,
+	.activeBuffer = 0,
+	.sem_bufferAccess = NULL
+};
+/*	Extern functions	*/
+
+/*	Extern variables	*/
+
 
 /*	Function Definitions	*/
 void subp_subProcessorTask(void *pvParameters)
 {
-	msg_message_t receivedMessage;
-	
-	msg_queue_subp = xQueueCreate(10, sizeof(msg_message_t));
-	if (msg_queue_subp != 0)
+	msg_message_t receivedMessage;	
+	drv_uart_rawPacket_t rawPacket = 
 	{
-		msg_registerForMessages(MODULE_SUB_PROCESSOR, 0xff, msg_queue_subp);
+		.bytesReceived = 0,
+		.escapeFlag = 0,
+		.payloadSize = 0
 	}
 	
-	queue_localPkt = xQueueCreate(PACKET_QUEUE_LENGTH, sizeof(rawPacket_t));
-	if (queue_localPkt == NULL)
+	queue_subp = xQueueCreate(10, sizeof(msg_message_t));
+	if (queue_subp != 0)
 	{
-		puts("Failed to create the queue to fetch packets\r");
+		msg_registerForMessages(MODULE_SUB_PROCESSOR, 0xff, queue_subp);
 	}
-	//setup the uart used for communication. 
-	drv_uart_init(&usart1Config);
+	//initialize the uart packet receiver
+	if(drv_uart_init(&uart0Config) != STATUS_PASS)
+	{
+		dbg_printString("failed to open UART0 for subc\r\n"); 
+	}
+
 	
 	//send the get time command to the power board
 	
 	//start the main thread where we listen for packets and messages	
 	while (1)
 	{
-		if (xQueueReceive(msg_queue_subp, &receivedMessage, 1) == true)
+		if (xQueueReceive(queue_subp, &receivedMessage, 1) == true)
 		{
 			processMessage(receivedMessage);
 		}
-
-		// categorize the enqueued packets and send them to respective modules
-		if (xQueueReceive(queue_localPkt, &localPacket, 1) == TRUE)
+		if(drv_uart_getPacketTimed(&uart0Config,&rawPacket,10) == STATUS_PASS)
 		{
-			sendPacket(&localPacket);
-		}
-					
+			//we have a full packet	
+			processRawPacket(&rawPacket);
+
+		}					
 		vTaskDelay(1);		// carefully assign the delay as one packet can be as fast as 1.85ms
 	}
+}
+
+static void processRawPacket(drv_uart_rawPacket_t* packet)
+{
+	subp_fullImuFrameSet_t* rawFullFrame; //pointer to raw packet type
+	size_t serializedLength = 0;
+	//check which type of packet it is.
+	//All the packets should be of this type... we're not on a 485 bus. 
+		
+	if(packet->payload[0] == PACKET_TYPE_SUB_PROCESSOR)
+	{
+		
+		switch(packet->payload[1])
+		{
+			case PACKET_COMMAND_ID_SUBP_GET_STATUS_RESP:
+			
+			
+			
+			
+			break;
+			case PACKET_COMMAND_ID_SUBP_FULL_FRAME:
+				//this is a frame, cast the payload to the rawFrame type. 
+				rawFullFrame = (subp_fullImuFrameSet_t*) (&packet->payload[3]);
+				convertFullFrameToProtoBuff(rawFullFrame,&dataFrameProtoPacket);	
+				//Serialize protobuf packet
+				serializedLength = heddoko__packet__pack(&packet,serializedDataBuffer);			
+				
+				
+			break;
+			default:
+			break;
+		}
+	}	
+}
+
+
+//Initialize the protopacket, should only need to be done once
+void protoPacketInit()
+{
+	int i =0;
+	heddoko__packet__init(dataFrameProtoPacket);
+	heddoko__full_data_frame__init(&dataFrame);
+	dataFrameProtoPacket.type = HEDDOKO__PACKET_TYPE__DataFrame;
+	dataFrameProtoPacket.fulldataframe = &dataFrame;
+	dataFrameProtoPacket.fulldataframe->imudataframe = frameArrayPtr;
+	heddoko__full_data_frame__init(dataFrameProtoPacket.fulldataframe);
+	for(i=0;i<MAX_NUMBER_OF_IMU_SENSORS;i++)
+	{
+		heddoko__imu_data_frame__init(&frameArray[i]);
+		frameArrayPtr[i] = &frameArray[i];	
+	}
+}
+status_t convertFullFrameToProtoBuff(subp_fullImuFrameSet_t* rawFullFrame, Heddoko__Packet* protoPacket)
+{
+	int i = 0;
+	protoPacket->fulldataframe->timestamp = rawFullFrame->timeStamp;	
+	protoPacket->fulldataframe->n_imudataframe = rawFullFrame->sensorCount;
+	for(i=0;i<MAX_NUMBER_OF_IMU_SENSORS;i++)
+	{	
+		//initialize all the frames
+		heddoko__imu_data_frame__init(&protoPacket->fulldataframe->imudataframe[i]);
+		//only copy over the data if it's there		
+		if(i<rawFullFrame->sensorCount)
+		{		
+			protoPacket->fulldataframe->imudataframe[i]->imuid = rawFullFrame->frames[i].sensorId;
+			protoPacket->fulldataframe->imudataframe[i]->sensormask = 0x1fff;	//as it has all the values from the sensor
+			protoPacket->fulldataframe->imudataframe[i]->has_sensormask = true;
+			
+			protoPacket->fulldataframe->imudataframe[i]->accel_x = rawFullFrame->frames[i].Acceleration_x;
+			protoPacket->fulldataframe->imudataframe[i]->accel_y = rawFullFrame->frames[i].Acceleration_y;
+			protoPacket->fulldataframe->imudataframe[i]->accel_z = rawFullFrame->frames[i].Acceleration_z;
+			protoPacket->fulldataframe->imudataframe[i]->has_accel_x = true;
+			protoPacket->fulldataframe->imudataframe[i]->has_accel_y = true;
+			protoPacket->fulldataframe->imudataframe[i]->has_accel_z = true;
+
+			protoPacket->fulldataframe->imudataframe[i]->quat_x_yaw = rawFullFrame->frames[i].Quaternion_x;
+			protoPacket->fulldataframe->imudataframe[i]->quat_y_pitch = rawFullFrame->frames[i].Quaternion_y;
+			protoPacket->fulldataframe->imudataframe[i]->quat_z_roll = rawFullFrame->frames[i].Quaternion_z;
+			protoPacket->fulldataframe->imudataframe[i]->quat_w = rawFullFrame->frames[i].Quaternion_w;
+			protoPacket->fulldataframe->imudataframe[i]->has_quat_x_yaw = true;
+			protoPacket->fulldataframe->imudataframe[i]->has_quat_y_pitch = true;
+			protoPacket->fulldataframe->imudataframe[i]->has_quat_z_roll = true;
+			protoPacket->fulldataframe->imudataframe[i]->has_quat_w = true;
+
+			protoPacket->fulldataframe->imudataframe[i]->mag_x = rawFullFrame->frames[i].Magnetic_x;
+			protoPacket->fulldataframe->imudataframe[i]->mag_y = rawFullFrame->frames[i].Magnetic_y;
+			protoPacket->fulldataframe->imudataframe[i]->mag_z = rawFullFrame->frames[i].Magnetic_z;
+			protoPacket->fulldataframe->imudataframe[i]->has_mag_x = true;
+			protoPacket->fulldataframe->imudataframe[i]->has_mag_y = true;
+			protoPacket->fulldataframe->imudataframe[i]->has_mag_z = true;
+
+			protoPacket->fulldataframe->imudataframe[i]->rot_x = rawFullFrame->frames[i].Rotation_x;
+			protoPacket->fulldataframe->imudataframe[i]->rot_y = rawFullFrame->frames[i].Rotation_y;
+			protoPacket->fulldataframe->imudataframe[i]->rot_z = rawFullFrame->frames[i].Rotation_z;
+			protoPacket->fulldataframe->imudataframe[i]->has_rot_x = true;
+			protoPacket->fulldataframe->imudataframe[i]->has_rot_y = true;
+			protoPacket->fulldataframe->imudataframe[i]->has_rot_z = true;
+		}
+	}	
 }
 
 static void processMessage(msg_message_t message)
@@ -107,58 +211,9 @@ static void processMessage(msg_message_t message)
 		break;
 		case MSG_TYPE_ERROR:
 		break;
-		case MSG_TYPE_SDCARD_STATE:
-		break;
-		case MSG_TYPE_SDCARD_SETTINGS:
-		break;
-		case MSG_TYPE_WIFI_STATE:
-		break;
-		case MSG_TYPE_WIFI_SETTINGS:
-		break;
-		case MSG_TYPE_USB_CONNECTED:
-		break;
-		case MSG_TYPE_CHARGER_EVENT:
-		break;
-		case MSG_TYPE_COMMAND_PACKET_RECEIVED:
-		break;
 		default:
 		break;
 		 
 	}
 }
 
-static void pkt_callBack(rawPacket_t* packet)
-{
-	//make sure the packet has enough bytes in it
-	if(packet->payloadSize < 2)
-	{
-		//if there's less than two bytes... its not a valid packet
-		return;
-	}
-	
-	// don't scrutinize packet, just send it to the local queue.
-	if (xQueueSendToBack(queue_localPkt, packet, 1) != TRUE)
-	{
-		// The packet will be lost.
-		puts("Failed to enqueue the packet\r");
-	}
-}
-
-static void sendPacket(rawPacket_t *p_packet)
-{
-	
-	if (p_packet->payload[0] == PACKET_TYPE_IMU_SENSOR)
-	{
-		if (p_packet->payload[1] == PACKET_COMMAND_ID_GET_FRAME_RESP)
-		{
-			//this is a data packet, send it to data handler queue
-			
-			//msg_sendMessage(MODULE_DATA_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_COMMAND_PACKET_RECEIVED, );
-		}
-	}
-	else if (p_packet->payload[0] == PACKET_TYPE_POWER_BOARD)
-	{
-		// this is a power board message, route it to the System manager
-		
-	}
-}

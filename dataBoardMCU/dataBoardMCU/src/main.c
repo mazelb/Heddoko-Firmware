@@ -103,7 +103,7 @@ int main (void)
 	sysclk_init();
 	
 	/* Insert application code here, after the board has been initialized. */
-	if (xTaskCreate(systemManager, "SM", TASK_SYSTEM_MANAGER_STACK_SIZE, NULL, TASK_SYSTEM_MANAGER_PRIORITY, NULL) != pdPASS)
+	if (xTaskCreate(sys_systemManagerTask, "SM", TASK_SYSTEM_MANAGER_STACK_SIZE, NULL, TASK_SYSTEM_MANAGER_PRIORITY, NULL) != pdPASS)
 	{
 		puts("Failed to create main task\r");
 	}

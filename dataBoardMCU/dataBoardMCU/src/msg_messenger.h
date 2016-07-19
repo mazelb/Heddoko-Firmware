@@ -24,8 +24,8 @@ typedef enum
 	MSG_TYPE_WIFI_SETTINGS,
 	MSG_TYPE_USB_CONNECTED,
 	MSG_TYPE_CHARGER_EVENT,
-	MSG_TYPE_COMMAND_PACKET_RECEIVED			//TODO: should we have a separate type for the commands to the power board
-}msg_messageType_t;								// Whether or not is a message a broadcast message is defined by the type of message
+	MSG_TYPE_COMMAND_PACKET_RECEIVED			//TODO: should we have a seperate type for the commands to the power board
+}msg_messageType_t;
 
 typedef struct 
 {
@@ -46,7 +46,7 @@ typedef struct
 typedef struct  
 {
 	bool mounted;
-	sd_message_type_t message;
+	sd_card_status_t message;
 	uint8_t errorCode;
 }msg_sd_card_state_t;		//sd card module response to system manager
 
@@ -63,11 +63,6 @@ typedef struct
 	bool sensorInitialized;
 	uint8_t errorCode;
 }msg_sensor_state_t;		//sensor module response to system manager
-
-typedef struct
-{
-	
-}msg_subp_t;
 
 /***********************************************************************************************
  * msg_registerForMessages(modules_t module, uint32_t messageMask,xQueueHandle messageQueue)

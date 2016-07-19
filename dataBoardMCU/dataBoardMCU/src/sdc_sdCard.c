@@ -12,6 +12,7 @@
 #include "msg_messenger.h"
 #include "sys_systemManager.h"
 #include "drv_gpio.h"
+#include "dbg_debugManager.h"
 
 /*	Static function forward declarations	*/
 bool sdCardPresent();															//check if the SD-card is present
@@ -26,20 +27,20 @@ static void closeAllFiles();															//close all open files
 static void cardInsertedCall();														//re-initialize the SD-card module and pass message
 static void cardRemovedCall();															//unmount the SD-card module and pass message
 static void checkCardDetectInt();														//check and reconfigure the SD-CD interrupt
-static void systemStateChangeAction(uint32_t broadcastData);			//Take necessary action to the system state change
+static void systemStateChangeAction(msg_sys_manager_t* sys_eventData);			//Take necessary action to the system state change
 
 /*	Local Variables	*/
-xSemaphoreHandle semaphore_fatFsAccess = NULL, semaphore_bufferAccess = NULL;
+xSemaphoreHandle semaphore_fatFsAccess = NULL;
 xQueueHandle msg_queue_sdCard = NULL;
 char debugLogNewFileName[] = "sysHdk", debugLogOldFileName[] = "sysHdk_old";
 char dataLogFileName[SD_CARD_FILENAME_LENGTH] = {0};
 sdc_file_t *openFilesArray[MAX_OPEN_FILES] = {NULL};
 volatile bool sdInsertWaitTimeoutFlag = FALSE;
 xTimerHandle sdTimeOutTimer = NULL;
+volatile char serialNumber[] = "S00001";
 	
 /*	extern variables	*/
-extern sdc_file_t dataLogFile, debugLogFile;
-extern system_status_t systemStatus;
+
 
 void vSdTimeOutTimerCallback( xTimerHandle xTimer )
 {
@@ -66,7 +67,7 @@ static void processEvent(msg_message_t message)
 					//if ((sdCardPresent()) && (systemStatus.sdCardState != SD_CARD_INITIALIZED))
 						//cardInsertedCall();
 				}
-				systemStateChangeAction(message.broadcastData);
+				systemStateChangeAction(sys_eventData);
 			}
 		break;
 		case MSG_TYPE_SDCARD_STATE:
@@ -326,9 +327,10 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 	}
 	
 	//open a new file
-	/*	DEBUGLOG FILES	*/
+	
 	if (xSemaphoreTake(semaphore_fatFsAccess, 100) == true)
 	{
+		/*	DEBUGLOG FILES	*/
 		if (mode == SDC_FILE_OPEN_READ_WRITE_DEBUG_LOG)
 		{
 			//this is a debug log file
@@ -413,15 +415,7 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 			if(status == STATUS_PASS)
 			{
 				//create the filename
-				//if(nvmSettings.enableCsvFormat == 0)
-				//{
-					snprintf(dataLogFileName, SD_CARD_FILENAME_LENGTH, "%s/%s_%s%05d.dat",dirName, "S00001", filename, fileIndexNumber);
-				//}
-				//else
-				//{
-					//snprintf(dataLogFileName, SD_CARD_FILENAME_LENGTH, "%s/%s_%s%05d.csv",dirName, brainSettings.suitNumber, brainSettings.fileName, fileIndexNumber);
-				//}
-				
+				snprintf(dataLogFileName, SD_CARD_FILENAME_LENGTH, "%s/%s_%s%05d.dat",dirName, serialNumber, filename, fileIndexNumber);				
 				res = f_open(&fileObject->fileObj, (char const *) dataLogFileName, FA_OPEN_ALWAYS | FA_WRITE);
 				if (res == FR_OK)
 				{
@@ -431,10 +425,6 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 				}
 				else
 				{
-					itoa(res, data_buffer, 10);
-					puts(data_buffer);
-					puts(dataLogFileName);
-					puts("Data log failed to open\r");
 					status = STATUS_FAIL;
 				}
 			}
@@ -539,10 +529,10 @@ status_t  __attribute__((optimize("O0"))) initializeSdCard()
 	char test_file_name[] = "0:sd_mmc_test.txt";
 	FIL file_object;
 	
-	if (systemStatus.sdCardState == SD_CARD_INITIALIZED)
-	{
-		return STATUS_FAIL;
-	}
+	//if (systemStatus.sdCardState == SD_CARD_INITIALIZED)
+	//{
+		//return STATUS_FAIL;
+	//}
 	
 	if (!sdCardPresent())
 	{
@@ -729,7 +719,7 @@ void checkCardDetectInt()
 		drv_gpio_getPinState(DRV_GPIO_PIN_SD_CD, &sdCdPinState);
 		if (sdCdPinState == DRV_GPIO_PIN_STATE_LOW)
 		{
-			debugPrintString("SD-card removed\r\n");
+			dbg_printString("SD-card removed\r\n");
 			//SD card not present, set the respective event
 			cardRemovedCall();
 			//reconfigure the SD-card interrupt to look for insertion of card
@@ -737,7 +727,7 @@ void checkCardDetectInt()
 		}
 		else if (sdCdPinState == DRV_GPIO_PIN_STATE_HIGH)
 		{
-			debugPrintString("SD-card inserted\r\n");
+			dbg_printString("SD-card inserted\r\n");
 			//SD card present or inserted, set the respective event
 			cardInsertedCall();
 			//drv_gpio_config_interrupt(DRV_GPIO_PIN_SD_CD, DRV_GPIO_INTERRUPT_LOW_EDGE);	//set in initializeSdCard()
@@ -745,18 +735,18 @@ void checkCardDetectInt()
 	}
 }
 
-static void systemStateChangeAction(uint32_t broadcastData)		//State change events are always broadcast messages
+static void systemStateChangeAction(msg_sys_manager_t* sys_eventData)
 {
-	switch (broadcastData)
+	switch (sys_eventData->systemState)
 	{
 		case SYSTEM_STATE_SLEEP:
-			if (systemStatus.sdCardState != SD_CARD_REMOVED)
-				cardRemovedCall();
+			//if (systemStatus.sdCardState != SD_CARD_REMOVED)
+				//cardRemovedCall();
 		break;
 		
 		case SYSTEM_STATE_INIT:
-			if ((sdCardPresent()) && (systemStatus.sdCardState != SD_CARD_INITIALIZED))
-				cardInsertedCall();
+			//if ((sdCardPresent()) && (systemStatus.sdCardState != SD_CARD_INITIALIZED))
+				//cardInsertedCall();
 		break;
 		
 		case SYSTEM_STATE_IDLE:
@@ -764,8 +754,8 @@ static void systemStateChangeAction(uint32_t broadcastData)		//State change even
 		break;
 		
 		case SYSTEM_STATE_ERROR:
-			if (systemStatus.sdCardState != SD_CARD_REMOVED)
-				cardRemovedCall();
+			//if (systemStatus.sdCardState != SD_CARD_REMOVED)
+				//cardRemovedCall();
 		break;
 		
 		case SYSTEM_STATE_RECORDING:

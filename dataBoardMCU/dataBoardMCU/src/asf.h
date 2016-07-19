@@ -59,17 +59,11 @@
 // From module: Delay routines
 #include <delay.h>
 
-// From module: EEFC - Enhanced Embedded Flash Controller
-#include <efc.h>
-
 // From module: FatFS file system
 #include <diskio.h>
 #include <ff.h>
 #include <ffconf.h>
 #include <integer.h>
-
-// From module: Flash - SAM Flash Service API
-#include <flash_efc.h>
 
 // From module: FreeRTOS mini Real-Time Kernel
 #include <FreeRTOS.h>
@@ -127,6 +121,9 @@
 
 // From module: SD/MMC stack on Multimedia Card interface
 #include <sd_mmc.h>
+
+// From module: SPI - Serial Peripheral Interface
+#include <spi.h>
 
 // From module: Standard serial I/O (stdio) - SAM implementation
 #include <stdio_serial.h>

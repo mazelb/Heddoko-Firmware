@@ -67,25 +67,7 @@
 #define EM_PACKET_DATA_SIZE				8
 
 
-/*	IMU packet from EM7180	*/
-#pragma pack(push, 1)
-typedef struct
-{
-	float32_t Quaternion_x;
-	float32_t Quaternion_y;
-	float32_t Quaternion_z;
-	float32_t Quaternion_w;
-	uint16_t Magnetic_x;
-	uint16_t Magnetic_y;
-	uint16_t Magnetic_z;
-	uint16_t Acceleration_x;
-	uint16_t Acceleration_y;
-	uint16_t Acceleration_z;
-	uint16_t Rotation_x;
-	uint16_t Rotation_y;
-	uint16_t Rotation_z;
-}imuFrame_t;
-#pragma	pack(pop)
+
 
 
 #endif /* IMU_H_ */

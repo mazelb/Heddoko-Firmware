@@ -24,7 +24,7 @@ typedef enum
 {
 	SD_FILE_PASS = 0,
 	SD_FILE_FAIL,
-	SD_FILE_ALREADY_OPEN,		//TODO:TBD do we need this
+	SD_FILE_ALREADY_OPEN		//TODO:TBD do we need this
 }sd_file_state_t;
 
 typedef enum
@@ -32,7 +32,7 @@ typedef enum
 	SD_CARD_REMOVED=0x01,
 	SD_CARD_INSERTED,
 	SD_CARD_INITIALIZED
-}sd_message_type_t;
+}sd_card_status_t;
 
 typedef struct 
 {
@@ -45,6 +45,7 @@ typedef struct
 	uint32_t bufferIndexB;
 	uint16_t bufferSize;
 	uint8_t* activeBuffer;
+	xSemaphoreHandle sem_bufferAccess;
 }sdc_file_t;
 
 typedef enum
