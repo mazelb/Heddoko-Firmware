@@ -48,6 +48,16 @@ build/
 [Bb]in/
 [Oo]bj/
 
+#Atmel Studio Build Results
+*.bin
+*.eep
+*.elf
+*.hex
+*.lss
+*.map
+*.srec
+*.mk
+
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
