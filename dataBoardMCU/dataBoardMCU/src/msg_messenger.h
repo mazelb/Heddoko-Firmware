@@ -32,7 +32,7 @@ typedef struct
 	msg_messageType_t type;
 	modules_t source;
 	void* parameters;
-	uint32_t broadcastData;	
+	uint32_t data;	
 }msg_message_t;
 
 typedef struct  

@@ -56,7 +56,7 @@ status_t msg_sendMessage(modules_t destModule, modules_t sourceModule, msg_messa
 	message->parameters = data;
 	message->source = sourceModule;
 	message->type = type;
-	message->broadcastData = NULL;
+	message->data = NULL;
 	if(messageBoxes[destModule].queue != NULL)
 	{
 		if(xQueueSendToBack( messageBoxes[destModule].queue,( void * ) message,10 ) != true)

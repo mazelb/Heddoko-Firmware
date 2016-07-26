@@ -231,6 +231,8 @@
 /* To enable file shareing feature, set _FS_SHARE to 1 or greater. The value
    defines how many files can be opened simultaneously. */
 
+//SMC added this in, TODO make sure it doesn't break anything
+#define FREERTOS_USED
 
 #endif /* _FFCONFIG */
 

@@ -1046,6 +1046,12 @@
     <Compile Include="src\imu.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\pkt_packetParser.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\pkt_packetParser.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\protobuf-c.c">
       <SubType>compile</SubType>
     </Compile>

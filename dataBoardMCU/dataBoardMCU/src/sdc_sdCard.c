@@ -54,28 +54,10 @@ static void processEvent(msg_message_t message)
 	
 	switch (message.type)
 	{
-		case MSG_TYPE_ENTERING_NEW_STATE:
-			if (message.source == MODULE_SYSTEM_MANAGER)
-			{
-				if ((sys_eventData->mountSD == false) && (sys_eventData->unmountSD == true))
-				{
-					//if (systemStatus.sdCardState != SD_CARD_REMOVED)
-						//cardRemovedCall();
-				}
-				else if ((sys_eventData->mountSD == true) && (sys_eventData->unmountSD == false))
-				{
-					//if ((sdCardPresent()) && (systemStatus.sdCardState != SD_CARD_INITIALIZED))
-						//cardInsertedCall();
-				}
-				systemStateChangeAction(sys_eventData);
-			}
-		break;
-		case MSG_TYPE_SDCARD_STATE:
 		case MSG_TYPE_READY:
 		case MSG_TYPE_ERROR:
 		case MSG_TYPE_SDCARD_SETTINGS:
 		case MSG_TYPE_WIFI_STATE:
-		case MSG_TYPE_WIFI_SETTINGS:
 		case MSG_TYPE_USB_CONNECTED:
 		case MSG_TYPE_CHARGER_EVENT:
 		case MSG_TYPE_COMMAND_PACKET_RECEIVED:
@@ -103,7 +85,6 @@ void sdc_sdCardTask(void *pvParameters)
 	
 	initSdGpio();
 	semaphore_fatFsAccess = xSemaphoreCreateMutex();
-	semaphore_bufferAccess = xSemaphoreCreateMutex();
 	
 	drv_gpio_getPinState(DRV_GPIO_PIN_SD_CD, &sdCd_oldVal);
 	while (1)
@@ -159,16 +140,17 @@ status_t write_to_sd_card(sdc_file_t *fileObject)
 	
 	if (fileObject->fileOpen == TRUE)
 	{
-		if (xSemaphoreTake(semaphore_bufferAccess, 10) == true)
+		if (xSemaphoreTake(fileObject->sem_bufferAccess, 10) == true)
 		{
 			changeActiveBuffer(fileObject);
-			xSemaphoreGive(semaphore_bufferAccess);
+			xSemaphoreGive(fileObject->sem_bufferAccess);
 		}
 		else
 		{
 			puts("Failed to get semaphore - Buffer read\r");
 		}
 		
+		/// wow this isn't confusing at all. 
 		if (fileObject->activeBuffer == fileObject->bufferPointerA)
 		{
 			//use buffer B as we just toggled the buffer
@@ -240,7 +222,7 @@ status_t sdc_writeToFile(sdc_file_t* fileObject, void* data, size_t size)
 		return status;
 	}
 	
-	if (xSemaphoreTake(semaphore_bufferAccess, 1) ==  true)
+	if (xSemaphoreTake(fileObject->sem_bufferAccess, 1) ==  true)
 	{
 		if (fileObject->activeBuffer == fileObject->bufferPointerA)
 		{
@@ -268,7 +250,7 @@ status_t sdc_writeToFile(sdc_file_t* fileObject, void* data, size_t size)
 				status = STATUS_FAIL;
 			}
 		}
-		xSemaphoreGive(semaphore_bufferAccess);
+		xSemaphoreGive(fileObject->sem_bufferAccess);
 	}
 	else
 	{

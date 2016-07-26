@@ -11,6 +11,8 @@
 #ifndef COMMON_H_
 #define COMMON_H_
 
+#include "arm_math.h"
+
 #define VERSION "V0.1"
 /*
 * Changes from previous version:

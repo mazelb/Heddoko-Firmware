@@ -12,19 +12,18 @@
 #include "drv_uart.h"
 #include "dbg_debugManager.h"
 #include "heddokoPacket.pb-c.h"
+#include "pkt_packetParser.h"
 
 /*	Static function forward declarations	*/
 static void processMessage(msg_message_t message);
-static void processRawPacket(drv_uart_rawPacket_t packet);
-
+static void processRawPacket(pkt_rawPacket_t* packet);
+status_t convertFullFrameToProtoBuff(subp_fullImuFrameSet_t* rawFullFrame, Heddoko__Packet* protoPacket);
 /*	Local variables	*/
 xQueueHandle queue_subp = NULL;
 drv_uart_config_t uart0Config =
 {
 	.p_usart = UART0,
 	.mem_index = 0,
-	.uartMode = DRV_UART_MODE_PACKET_PARSER,
-	.packetCallback = NULL, //no callback right now
 	.uart_options =
 	{
 		.baudrate   = 460800,
@@ -37,8 +36,9 @@ Heddoko__Packet dataFrameProtoPacket;
 Heddoko__FullDataFrame dataFrame;
 Heddoko__ImuDataFrame* frameArrayPtr[MAX_NUMBER_OF_IMU_SENSORS];
 Heddoko__ImuDataFrame frameArray[MAX_NUMBER_OF_IMU_SENSORS];
-uint8_t serializedDataBuffer[2000]; //storage buffer for the largest serialized packet. 
-
+uint8_t serializedProtoBuf[2000]; //storage buffer for the largest serialized proto packet. 
+#define MAX_SERIALIZED_DATA_LENGTH 2000
+uint8_t serializedDataBuffer[MAX_SERIALIZED_DATA_LENGTH]; //storage buffer for the encoded data. 
 
 volatile uint8_t dataLogBufferA[DATALOG_MAX_BUFFER_SIZE] = {0} , dataLogBufferB[DATALOG_MAX_BUFFER_SIZE] = {0};
 
@@ -64,12 +64,12 @@ sdc_file_t dataLogFile =
 void subp_subProcessorTask(void *pvParameters)
 {
 	msg_message_t receivedMessage;	
-	drv_uart_rawPacket_t rawPacket = 
+	pkt_rawPacket_t rawPacket = 
 	{
 		.bytesReceived = 0,
 		.escapeFlag = 0,
 		.payloadSize = 0
-	}
+	};
 	
 	queue_subp = xQueueCreate(10, sizeof(msg_message_t));
 	if (queue_subp != 0)
@@ -102,10 +102,11 @@ void subp_subProcessorTask(void *pvParameters)
 	}
 }
 
-static void processRawPacket(drv_uart_rawPacket_t* packet)
+static void processRawPacket(pkt_rawPacket_t* packet)
 {
 	subp_fullImuFrameSet_t* rawFullFrame; //pointer to raw packet type
-	size_t serializedLength = 0;
+	size_t serializedProtoPacketLength = 0;
+	uint16_t serializedLength = 0;
 	//check which type of packet it is.
 	//All the packets should be of this type... we're not on a 485 bus. 
 		
@@ -125,8 +126,13 @@ static void processRawPacket(drv_uart_rawPacket_t* packet)
 				rawFullFrame = (subp_fullImuFrameSet_t*) (&packet->payload[3]);
 				convertFullFrameToProtoBuff(rawFullFrame,&dataFrameProtoPacket);	
 				//Serialize protobuf packet
-				serializedLength = heddoko__packet__pack(&packet,serializedDataBuffer);			
-				
+				serializedProtoPacketLength = heddoko__packet__pack(&packet,serializedProtoBuf);		
+				//now encode the packet for saving/transmission	
+				if(pkt_serializeRawPacket(serializedDataBuffer, MAX_SERIALIZED_DATA_LENGTH,&serializedLength,
+					serializedProtoBuf,serializedProtoPacketLength) == STATUS_PASS)
+				{
+					
+				}
 				
 			break;
 			default:
@@ -140,7 +146,7 @@ static void processRawPacket(drv_uart_rawPacket_t* packet)
 void protoPacketInit()
 {
 	int i =0;
-	heddoko__packet__init(dataFrameProtoPacket);
+	heddoko__packet__init(&dataFrameProtoPacket);
 	heddoko__full_data_frame__init(&dataFrame);
 	dataFrameProtoPacket.type = HEDDOKO__PACKET_TYPE__DataFrame;
 	dataFrameProtoPacket.fulldataframe = &dataFrame;
@@ -206,6 +212,7 @@ static void processMessage(msg_message_t message)
 	switch(message.type)
 	{
 		case MSG_TYPE_ENTERING_NEW_STATE:
+			
 		break;
 		case MSG_TYPE_READY:
 		break;

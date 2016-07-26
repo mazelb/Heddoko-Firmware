@@ -8,7 +8,7 @@
 
 #ifndef SUBP_SUBPROCESSOR_H_
 #define SUBP_SUBPROCESSOR_H_
-
+#include "asf.h"
 #include "common.h"
 
 #define PACKET_QUEUE_LENGTH 10
