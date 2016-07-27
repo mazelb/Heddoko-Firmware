@@ -24,6 +24,7 @@
 #include "bootloader.h"
 #include "drv_i2c.h"
 
+extern brainSettings_t brainSettings;
 extern xQueueHandle queue_dataHandler;
 extern uint32_t totalBytesWritten; 
 extern uint32_t totalFramesWritten;
@@ -409,102 +410,105 @@ static void checkInputGpio(void)
  ***********************************************************************************************/
 static void checkRtosStack(int loopCount)
 {
-	unsigned portBASE_TYPE vHighWaterMark;
- 	switch (loopCount)
- 	{
-	 	case 0:
-	 		vHighWaterMark = uxTaskGetStackHighWaterMark(quinticConfig[0].taskHandle);
-	 		//if (vHighWaterMark < 100)
-	 		//{
-				 if (vHighWaterMark < vTaskStackSize[0])
-				 {
-					 debugPrintStringInt("Quintic task Q0 stack new high water mark\r\n", vHighWaterMark);
-					 vTaskStackSize[0] = vHighWaterMark;
-				 }
-	 		//}
-	 	break;
-	 	case 1:
-		 #ifdef USE_ALL_QUINTICS
-		 	vHighWaterMark = uxTaskGetStackHighWaterMark(quinticConfig[1].taskHandle);
-		 	//if (vHighWaterMark < 100)
-		 	//{
-			 	 if (vHighWaterMark < vTaskStackSize[1])
-			 	 {
-				 	 debugPrintStringInt("Quintic task Q1 stack new high water mark\r\n", vHighWaterMark);
-				 	 vTaskStackSize[1] = vHighWaterMark;
-			 	 }
-		 	//}
-		#endif
-	 	break;
-		case 2:
-			vHighWaterMark = uxTaskGetStackHighWaterMark(quinticConfig[2].taskHandle);
-			//if (vHighWaterMark < 100)
-			//{
-				if (vHighWaterMark < vTaskStackSize[2])
-				{
-					debugPrintStringInt("Quintic task Q2 stack new high water mark\r\n", vHighWaterMark);
-					vTaskStackSize[2] = vHighWaterMark;
-				}
-			//}
-		break;
-		case 3:
-		 	vHighWaterMark = uxTaskGetStackHighWaterMark(fabSenseTaskHandle);
-		 	//if (vHighWaterMark < 100)
-		 	//{
-				if (vHighWaterMark < vTaskStackSize[3])
-				{
-			 		debugPrintStringInt("Fabric Sense task stack new high water mark\r\n", vHighWaterMark);
-					vTaskStackSize[3] = vHighWaterMark;
-				}
-		 	//}
-	 	break;
-		case 4:
-			vHighWaterMark = uxTaskGetStackHighWaterMark(cmdHandlerTaskHandle);
-			//if (vHighWaterMark < 100)
-			//{
-				if (vHighWaterMark < vTaskStackSize[4])
-				{
-					debugPrintStringInt("Command-Handler task stack new high water mark\r\n", vHighWaterMark);
-					vTaskStackSize[4] = vHighWaterMark;
-				}
-			//}
-		break;
-		case 5:
-			vHighWaterMark = uxTaskGetStackHighWaterMark(dataHandlerTaskHandle);
-			//if (vHighWaterMark < 100)
-			//{
-				if (vHighWaterMark < vTaskStackSize[5])
-				{
-					debugPrintStringInt("Data-Handler task stack new high water mark\r\n", vHighWaterMark);
-					vTaskStackSize[5] = vHighWaterMark;
-				}
-			//}
-		break;
-		case 6:
-			vHighWaterMark = uxTaskGetStackHighWaterMark(sdCardTaskHandle);
-			//if (vHighWaterMark < 100)
-			//{
-				if (vHighWaterMark < vTaskStackSize[6])
-				{
-					debugPrintStringInt("SD-card task stack new high water mark\r\n", vHighWaterMark);
-					vTaskStackSize[6] = vHighWaterMark;
-				}
-			//}
-		break;
-		case 7:
-			vHighWaterMark = uxTaskGetStackHighWaterMark(stateMachineTaskHandle);
-			//if (vHighWaterMark < 100)
-			//{
-				if (vHighWaterMark < vTaskStackSize[7])
-				{
-					debugPrintStringInt("State-Machine task stack new high water mark\r\n", vHighWaterMark);
-					vTaskStackSize[7] = vHighWaterMark;
-				}
-			//}
-		break;
-		default:
-		break;
- 	}
+	if (brainSettings.debugPrintsEnabled)
+	{
+		unsigned portBASE_TYPE vHighWaterMark;
+ 		switch (loopCount)
+ 		{
+	 		case 0:
+	 			vHighWaterMark = uxTaskGetStackHighWaterMark(quinticConfig[0].taskHandle);
+	 			//if (vHighWaterMark < 100)
+	 			//{
+					 if (vHighWaterMark < vTaskStackSize[0])
+					 {
+						 debugPrintStringInt("Quintic task Q0 stack new high water mark\r\n", vHighWaterMark);
+						 vTaskStackSize[0] = vHighWaterMark;
+					 }
+	 			//}
+	 		break;
+	 		case 1:
+			 #ifdef USE_ALL_QUINTICS
+		 		vHighWaterMark = uxTaskGetStackHighWaterMark(quinticConfig[1].taskHandle);
+		 		//if (vHighWaterMark < 100)
+		 		//{
+			 		 if (vHighWaterMark < vTaskStackSize[1])
+			 		 {
+				 		 debugPrintStringInt("Quintic task Q1 stack new high water mark\r\n", vHighWaterMark);
+				 		 vTaskStackSize[1] = vHighWaterMark;
+			 		 }
+		 		//}
+			#endif
+	 		break;
+			case 2:
+				vHighWaterMark = uxTaskGetStackHighWaterMark(quinticConfig[2].taskHandle);
+				//if (vHighWaterMark < 100)
+				//{
+					if (vHighWaterMark < vTaskStackSize[2])
+					{
+						debugPrintStringInt("Quintic task Q2 stack new high water mark\r\n", vHighWaterMark);
+						vTaskStackSize[2] = vHighWaterMark;
+					}
+				//}
+			break;
+			case 3:
+		 		vHighWaterMark = uxTaskGetStackHighWaterMark(fabSenseTaskHandle);
+		 		//if (vHighWaterMark < 100)
+		 		//{
+					if (vHighWaterMark < vTaskStackSize[3])
+					{
+			 			debugPrintStringInt("Fabric Sense task stack new high water mark\r\n", vHighWaterMark);
+						vTaskStackSize[3] = vHighWaterMark;
+					}
+		 		//}
+	 		break;
+			case 4:
+				vHighWaterMark = uxTaskGetStackHighWaterMark(cmdHandlerTaskHandle);
+				//if (vHighWaterMark < 100)
+				//{
+					if (vHighWaterMark < vTaskStackSize[4])
+					{
+						debugPrintStringInt("Command-Handler task stack new high water mark\r\n", vHighWaterMark);
+						vTaskStackSize[4] = vHighWaterMark;
+					}
+				//}
+			break;
+			case 5:
+				vHighWaterMark = uxTaskGetStackHighWaterMark(dataHandlerTaskHandle);
+				//if (vHighWaterMark < 100)
+				//{
+					if (vHighWaterMark < vTaskStackSize[5])
+					{
+						debugPrintStringInt("Data-Handler task stack new high water mark\r\n", vHighWaterMark);
+						vTaskStackSize[5] = vHighWaterMark;
+					}
+				//}
+			break;
+			case 6:
+				vHighWaterMark = uxTaskGetStackHighWaterMark(sdCardTaskHandle);
+				//if (vHighWaterMark < 100)
+				//{
+					if (vHighWaterMark < vTaskStackSize[6])
+					{
+						debugPrintStringInt("SD-card task stack new high water mark\r\n", vHighWaterMark);
+						vTaskStackSize[6] = vHighWaterMark;
+					}
+				//}
+			break;
+			case 7:
+				vHighWaterMark = uxTaskGetStackHighWaterMark(stateMachineTaskHandle);
+				//if (vHighWaterMark < 100)
+				//{
+					if (vHighWaterMark < vTaskStackSize[7])
+					{
+						debugPrintStringInt("State-Machine task stack new high water mark\r\n", vHighWaterMark);
+						vTaskStackSize[7] = vHighWaterMark;
+					}
+				//}
+			break;
+			default:
+			break;
+ 		}
+	}
 }
 
 /***********************************************************************************************

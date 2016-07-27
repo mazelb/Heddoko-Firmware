@@ -53,8 +53,8 @@
  1. Added critical regions for the putChar function calls. 
  2. Added sending of command character to Brain Pack to indicate that the Jacks must be toggled 
 
-  VERSION 0.4g (for great!) 
-  1. Changed debug log filename to sysHdk.bin 
+ VERSION 0.4g (for great!) 
+ 1. Changed debug log filename to sysHdk.bin 
 
  VERSION 0.4h (for Heddoko! INDEED)
  1. Added in a 500ms delay in the EnterReset() function before spawning the Quintic init task to get rid of miss on responses.
@@ -69,3 +69,9 @@
 
  VERSION 0.4k (for king!)
  1. Added semaphore for writting data to command UART, to solve issue with corrupt stream. 
+
+ VERSION 0.4l (for lookup!)
+ 2. Changed the semaphore wait time in debugLogWriteEntry from 5 to 10
+ 3. CheckRtosStack is only done when debug prints are enabled.
+ 4. Introduced a check on debug log buffer copy, Concatenates if the previous data was not written to Sd card.
+ 5. Changed the printf to debugPrint for the line "debug sync failed with code %d\r\n" .

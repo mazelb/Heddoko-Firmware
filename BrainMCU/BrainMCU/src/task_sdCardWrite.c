@@ -58,9 +58,25 @@ void task_sdCardHandler(void *pvParameters)
 			
 			if (debugLogBufferPointer > 0 && debugLogBufferPointer <= DEBUG_LOG_BUFFER_SIZE)
 			{
-				memcpy(debugLogTempBuf, debugLogBuffer, debugLogBufferPointer);
-				debugNumBytesToWrite = debugLogBufferPointer;
-				debugLogBufferPointer = 0;
+				if (debugNumBytesToWrite == 0)		// check if the previous data was written
+				{
+					memcpy(debugLogTempBuf, debugLogBuffer, debugLogBufferPointer);
+					debugNumBytesToWrite = debugLogBufferPointer;
+					debugLogBufferPointer = 0;
+				}
+				else
+				{
+					if (debugLogBufferPointer + debugNumBytesToWrite < DEBUG_LOG_BUFFER_SIZE)
+					{
+						memcpy(debugLogTempBuf + debugNumBytesToWrite, debugLogBuffer, debugLogBufferPointer);
+						debugNumBytesToWrite += debugLogBufferPointer;
+						debugLogBufferPointer = 0;
+					}
+					else
+					{
+						//puts("Saving the data to debug buffer failed\r\n");
+					}
+				}				
 			}
 			xSemaphoreGive(semaphore_sdCardWrite);
 		}
@@ -156,7 +172,7 @@ void task_sdCardHandler(void *pvParameters)
 					res = f_sync(&debugLogFile_Obj); //sync the file
 					if(res != FR_OK)
 					{
-						printf("debug sync failed with code %d\r\n", res);
+						debugPrintString("debug sync failed with code %d\r\n");
 					}
 					vTaskDelay(1);
 				}
@@ -236,7 +252,7 @@ status_t task_debugLogWriteEntry(char* entry, size_t length)
 	{
 		return STATUS_FAIL; 
 	}	
-	if(xSemaphoreTake(semaphore_sdCardWrite,5) == true)
+	if(xSemaphoreTake(semaphore_sdCardWrite,10) == true)
 	{
 		//copy data to sdCard buffer, make sure we have room first
 		if(debugLogBufferPointer + length < DEBUG_LOG_BUFFER_SIZE)
