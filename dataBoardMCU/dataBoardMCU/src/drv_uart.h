@@ -21,12 +21,20 @@
 
 #ifndef DRV_UART_H_
 #define DRV_UART_H_
-#define FIFO_BUFFER_SIZE 512
+#define FIFO_BUFFER_SIZE 1024
+#define DMA_BLOCK_SIZE 512
+#define NUMBER_OF_BLOCKS 4
 #define UART0_IDX			0
 #define UART1_IDX			1
 #define USART0_IDX			2
 #define USART1_IDX			3
 
+#define DMA_BUFFER_SIZE 512
+typedef enum
+{
+	DRV_UART_MODE_INTERRUPT = 0,
+	DRV_UART_MODE_DMA = 1
+}drv_uart_mode_t;
 typedef struct
 {
 	uint8_t data_buf[FIFO_BUFFER_SIZE];
@@ -35,11 +43,31 @@ typedef struct
 	uint16_t num_bytes;
 }sw_fifo_typedef;
 
+typedef struct  
+{
+	uint16_t validByteCount;
+	uint16_t readIndex;
+	uint8_t buffer[DMA_BLOCK_SIZE];	
+}mem_block_t;
+
+typedef struct
+{
+	mem_block_t memoryBlocks[NUMBER_OF_BLOCKS];
+	uint16_t writeBlock;
+	uint16_t readBlock; 
+	uint16_t numValidBlocks;
+	pdc_packet_t uart_dma_rx_currentbuffer;
+	pdc_packet_t uart_dma_rx_nextbuffer;
+	Pdc* dmaController; //assigned during initialization
+}fifo_mem_block_t;
+
+
 typedef struct
 {
 	Usart *p_usart;
 	usart_serial_options_t uart_options; 
-	int mem_index; 		
+	int mem_index; 	
+	drv_uart_mode_t mode; 
 }drv_uart_config_t;
 
 status_t drv_uart_init(drv_uart_config_t* uartConfig);

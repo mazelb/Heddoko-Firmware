@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stdio.h>
 
+
 typedef struct
 {
 	sw_fifo_typedef rx_fifo; 
@@ -32,17 +33,20 @@ typedef struct
 	uint8_t uart_tx_fifo_full_flag;      // this flag is automatically set and cleared by the software buffer
 	uint8_t uart_tx_fifo_ovf_flag;       // this flag is not automatically cleared by the software buffer	
 	uint32_t uart_tx_fifo_dropped_bytes; 
-	uint8_t uart_rx_dma_bufferIndexA;
-		
+	
 }drv_uart_memory_buf_t;
 
 
 //global variables
 volatile drv_uart_memory_buf_t uartMemBuf[4]; //4 UARTS, 4 buffers
+volatile fifo_mem_block_t fifo_mem_block;
 //static function declarations
 static int uart_get_byte(drv_uart_memory_buf_t* memBuf, char* c); 
 static void uart_process_byte(Usart *p_usart, drv_uart_memory_buf_t* memBuf);
 static void uart_process_tx_byte(Usart *p_usart, drv_uart_memory_buf_t* memBuf);
+static void uart_initMemBlock(fifo_mem_block_t* memBlock);
+static void uart_process_receivedBuffer(Usart *p_usart, fifo_mem_block_t* memBlocks);
+static status_t uart_dma_getByte(Usart *p_usart, fifo_mem_block_t* memBlocks, uint8_t* val);
 /***********************************************************************************************
  * drv_uart_init(drv_uart_config_t* uartConfig)
  * @brief initialize uart driver and circular buffer
@@ -157,25 +161,43 @@ status_t drv_uart_init(drv_uart_config_t* uartConfig)
 		return STATUS_FAIL;
 	}
 	uartMemBuf[uartConfig->mem_index].isinit = true;
-	usart_enable_interrupt(uartConfig->p_usart, UART_IER_RXRDY | UART_SR_TXEMPTY); //enable RXRDY interrupt	
+	if(uartConfig->mode == DRV_UART_MODE_INTERRUPT)
+	{	
+		usart_enable_interrupt(uartConfig->p_usart, UART_IER_RXRDY | UART_SR_TXEMPTY); //enable RXRDY interrupt	
 	
-	//clear the buffer
-	memset(uartMemBuf[uartConfig->mem_index].rx_fifo.data_buf, 0,FIFO_BUFFER_SIZE);
-	uartMemBuf[uartConfig->mem_index].rx_fifo.i_first = 0;
-	uartMemBuf[uartConfig->mem_index].rx_fifo.i_last = 0;
-	uartMemBuf[uartConfig->mem_index].uart_rx_fifo_full_flag = 0;
-	uartMemBuf[uartConfig->mem_index].uart_rx_fifo_not_empty_flag = 0;
-	uartMemBuf[uartConfig->mem_index].uart_rx_fifo_ovf_flag = 0;
-	uartMemBuf[uartConfig->mem_index].rx_fifo.num_bytes = 0;
+		//clear the buffer
+		memset(uartMemBuf[uartConfig->mem_index].rx_fifo.data_buf, 0,FIFO_BUFFER_SIZE);
+		uartMemBuf[uartConfig->mem_index].rx_fifo.i_first = 0;
+		uartMemBuf[uartConfig->mem_index].rx_fifo.i_last = 0;
+		uartMemBuf[uartConfig->mem_index].uart_rx_fifo_full_flag = 0;
+		uartMemBuf[uartConfig->mem_index].uart_rx_fifo_not_empty_flag = 0;
+		uartMemBuf[uartConfig->mem_index].uart_rx_fifo_ovf_flag = 0;
+		uartMemBuf[uartConfig->mem_index].rx_fifo.num_bytes = 0;
 
-	memset(uartMemBuf[uartConfig->mem_index].tx_fifo.data_buf, 0,FIFO_BUFFER_SIZE);
-	uartMemBuf[uartConfig->mem_index].tx_fifo.i_first = 0;
-	uartMemBuf[uartConfig->mem_index].tx_fifo.i_last = 0;
-	uartMemBuf[uartConfig->mem_index].uart_tx_fifo_full_flag = 0;
-	uartMemBuf[uartConfig->mem_index].uart_tx_fifo_not_empty_flag = 0;
-	uartMemBuf[uartConfig->mem_index].uart_tx_fifo_ovf_flag = 0;
-	uartMemBuf[uartConfig->mem_index].tx_fifo.num_bytes = 0;
-	
+		memset(uartMemBuf[uartConfig->mem_index].tx_fifo.data_buf, 0,FIFO_BUFFER_SIZE);
+		uartMemBuf[uartConfig->mem_index].tx_fifo.i_first = 0;
+		uartMemBuf[uartConfig->mem_index].tx_fifo.i_last = 0;
+		uartMemBuf[uartConfig->mem_index].uart_tx_fifo_full_flag = 0;
+		uartMemBuf[uartConfig->mem_index].uart_tx_fifo_not_empty_flag = 0;
+		uartMemBuf[uartConfig->mem_index].uart_tx_fifo_ovf_flag = 0;
+		uartMemBuf[uartConfig->mem_index].tx_fifo.num_bytes = 0;
+	}
+	else if(uartConfig->mode == DRV_UART_MODE_DMA)
+	{
+		uart_initMemBlock(&fifo_mem_block);
+		fifo_mem_block.dmaController = uart_get_pdc_base(uartConfig->p_usart);
+		pdc_packet_t currentPacket, nextPacket;
+		//set the transfer to start at the first block
+		currentPacket.ul_addr = fifo_mem_block.memoryBlocks[fifo_mem_block.writeBlock].buffer;
+		currentPacket.ul_size = DMA_BUFFER_SIZE;
+		//set the next transfer pointer to start at the following block. 
+		nextPacket.ul_addr = fifo_mem_block.memoryBlocks[fifo_mem_block.writeBlock+1].buffer; 
+		nextPacket.ul_size = DMA_BUFFER_SIZE;
+		//initialize the current and next pointers in the DMA controller
+		pdc_rx_init(fifo_mem_block.dmaController, &currentPacket, &nextPacket);
+		usart_enable_interrupt(uartConfig->p_usart, UART_IER_ENDRX | UART_IER_RXBUFF);
+		pdc_enable_transfer(fifo_mem_block.dmaController, PERIPH_PTCR_RXTEN);	//enable transfers only for RX
+	}
 	return status; 
 }
 /***********************************************************************************************
@@ -336,7 +358,7 @@ status_t drv_uart_getline(drv_uart_config_t* uartConfig, char* str, size_t strSi
 }
 /***********************************************************************************************
  * drv_uart_getlineTimed(drv_uart_config_t* uartConfig, char* str, size_t strSize, uint32_t maxTime)
- * @brief returns a string that is terminated with a \n (waits indefinetly) 
+ * @brief returns a string that is terminated with a \n 
  * @param uartConfig the configuration structure for the uart
  * @param str the pointer to the buffer where the string will be stored
  * @param strSize the size of the buffer that can be used to store the string
@@ -405,8 +427,15 @@ status_t drv_uart_getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t*
 	uint32_t startTime = xTaskGetTickCount();
 	while(1) 
 	{
-		result = drv_uart_getChar(uartConfig,&val);
-		if(result != STATUS_EOF)
+		if(uartConfig->mode == DRV_UART_MODE_DMA)
+		{		
+			result = uart_dma_getByte(uartConfig,&fifo_mem_block,&val);
+		}
+		else
+		{
+			result = drv_uart_getChar(uartConfig,&val);
+		}
+		if(result == STATUS_PASS)
 		{
 			//process the byte as it comes in
 			if(pkt_processIncomingByte(packet,val) == STATUS_PASS)
@@ -518,7 +547,7 @@ void drv_uart_putData(drv_uart_config_t* uartConfig, char* str, size_t length)
 }
 uint32_t drv_uart_getNumBytes(drv_uart_config_t* uartConfig)
 {
-	//clear the buffer
+	
 	if(drv_uart_isInit(uartConfig) == STATUS_PASS)
 	{
 		return uartMemBuf[uartConfig->mem_index].rx_fifo.num_bytes;
@@ -576,6 +605,7 @@ void UART0_Handler()
 	if(status & UART_SR_ENDRX)
 	{
 		//the buffer has been filled
+		uart_process_receivedBuffer(UART0, &fifo_mem_block);
 	}
 	
 	
@@ -737,11 +767,94 @@ static void uart_process_tx_byte(Usart *p_usart, drv_uart_memory_buf_t* memBuf)
 	}	
 };
 
-static void uart_process_receivedBuffer(Usart *p_usart, drv_uart_memory_buf_t* memBuf)
+static status_t uart_dma_getByte(Usart *p_usart, fifo_mem_block_t* memBlocks, uint8_t* val)
 {
-	//update the end of valid data pointer to be the last
+	status_t status = STATUS_EOF;
+	bool validBytes = false; 
+	uint16_t rxBufferTransferBytes = 0;
+	//check the current read block to see if there are bytes to read
+	if(memBlocks->memoryBlocks[memBlocks->readBlock].readIndex == memBlocks->memoryBlocks[memBlocks->readBlock].validByteCount)
+	{		
+		//if we're in the same block as the write block, update the valid byte count
+		if(memBlocks->readBlock == memBlocks->writeBlock)
+		{
+			//try to update the counts. 
+			//TODO check this out to make sure its ok
+			taskENTER_CRITICAL();
+			memBlocks->memoryBlocks[memBlocks->writeBlock].validByteCount = DMA_BUFFER_SIZE - pdc_read_rx_counter(memBlocks->dmaController);
+			taskEXIT_CRITICAL();
+			if(memBlocks->memoryBlocks[memBlocks->readBlock].readIndex < memBlocks->memoryBlocks[memBlocks->readBlock].validByteCount)
+			{
+				validBytes = true; 
+			}	
+		}
+		//if the valid byte count is equal to the DMA buffer size, 
+		else if(memBlocks->memoryBlocks[memBlocks->readBlock].validByteCount == DMA_BUFFER_SIZE)
+		{
+			//reset the byte indexes. 
+			memBlocks->memoryBlocks[memBlocks->readBlock].readIndex = 0;				
+			memBlocks->memoryBlocks[memBlocks->readBlock].validByteCount = 0;
+			//increment the read block to the next one. 
+			memBlocks->readBlock++;
+			if(memBlocks->readBlock >= NUMBER_OF_BLOCKS)
+			{
+				memBlocks->readBlock = 0;
+			}
+			//set the status to EAGAIN, so the function gets called again without delay. 	
+			status = STATUS_EAGAIN;		
+		}
+	}
+	else
+	{
+		//read the byte from the buffer and increment the pointer
+		validBytes = true; 
+	}
 	
-	//also increment the size of the packet
-	pdc_read_rx_ptr()
+	if(validBytes == true)
+	{
+		status = STATUS_PASS;
+		*val = memBlocks->memoryBlocks[memBlocks->readBlock].buffer[memBlocks->memoryBlocks[memBlocks->readBlock].readIndex++];
+	}	
+	return status;
+}
+static void uart_process_receivedBuffer(Usart *p_usart, fifo_mem_block_t* memBlocks)
+{
+	pdc_packet_t nextBuffer;
+	int nextBlockIndex = 0;
+	//update the end of valid data pointer to be the last
+	memBlocks->memoryBlocks[memBlocks->writeBlock].validByteCount = DMA_BUFFER_SIZE;
+	memBlocks->writeBlock += 1; //increment write block
+	memBlocks->numValidBlocks++;
+	//check the index to make sure it's less than the number of blocks. 
+	if(memBlocks->writeBlock >= NUMBER_OF_BLOCKS)
+	{
+		memBlocks->writeBlock = 0;
+	}
+	//set the new next pointer
+	nextBlockIndex = memBlocks->writeBlock + 1;
+	//check that the next pointer, size setting is valid
+	if(nextBlockIndex >= NUMBER_OF_BLOCKS)
+	{
+		nextBlockIndex = 0;
+	}
+	//TODO possibly add check for valid data in the next buffer pointer.
+	nextBuffer.ul_addr = memBlocks->memoryBlocks[nextBlockIndex].buffer;
+	nextBuffer.ul_size = DMA_BUFFER_SIZE;
+	pdc_rx_init(memBlocks->dmaController,NULL,&nextBuffer);	
 	
 }
+
+
+static void uart_initMemBlock(fifo_mem_block_t* memBlock)
+{
+	int i = 0;
+	memBlock->readBlock = 0;
+	memBlock->writeBlock = 0;
+	for(i=0;i<NUMBER_OF_BLOCKS;i++)
+	{
+		memBlock->memoryBlocks[i].readIndex = 0;
+		memBlock->memoryBlocks[i].validByteCount = 0;
+		memset(memBlock->memoryBlocks[i].buffer,0,DMA_BUFFER_SIZE);
+	}
+}
+

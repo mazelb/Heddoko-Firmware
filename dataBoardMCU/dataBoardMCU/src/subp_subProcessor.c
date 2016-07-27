@@ -30,7 +30,8 @@ drv_uart_config_t uart0Config =
 		.charlength = CONF_CHARLENGTH,
 		.paritytype = CONF_PARITY,
 		.stopbits   = CONF_STOPBITS
-	}
+	},
+	.mode = DRV_UART_MODE_DMA
 };
 Heddoko__Packet dataFrameProtoPacket;
 Heddoko__FullDataFrame dataFrame;
@@ -136,9 +137,11 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 				
 			break;
 			default:
+			
 			break;
 		}
 	}	
+	dbg_printString("Received a packet!!!!"); 
 }
 
 
