@@ -772,7 +772,19 @@ static status_t uart_dma_getByte(Usart *p_usart, fifo_mem_block_t* memBlocks, ui
 	status_t status = STATUS_EOF;
 	bool validBytes = false; 
 	uint16_t rxBufferTransferBytes = 0;
+	//update the count of bytes. 
+	taskENTER_CRITICAL();
+	rxBufferTransferBytes = pdc_read_rx_counter(memBlocks->dmaController);
+	if(rxBufferTransferBytes == 0)
+	{
+		
+	}
+	taskEXIT_CRITICAL();
+	
 	//check the current read block to see if there are bytes to read
+	
+	
+	
 	if(memBlocks->memoryBlocks[memBlocks->readBlock].readIndex == memBlocks->memoryBlocks[memBlocks->readBlock].validByteCount)
 	{		
 		//if we're in the same block as the write block, update the valid byte count
@@ -819,9 +831,11 @@ static status_t uart_dma_getByte(Usart *p_usart, fifo_mem_block_t* memBlocks, ui
 }
 static void uart_process_receivedBuffer(Usart *p_usart, fifo_mem_block_t* memBlocks)
 {
-	pdc_packet_t nextBuffer;
+	pdc_packet_t buffer;
 	int nextBlockIndex = 0;
+	
 	//update the end of valid data pointer to be the last
+	taskENTER_CRITICAL();
 	memBlocks->memoryBlocks[memBlocks->writeBlock].validByteCount = DMA_BUFFER_SIZE;
 	memBlocks->writeBlock += 1; //increment write block
 	memBlocks->numValidBlocks++;
@@ -830,18 +844,27 @@ static void uart_process_receivedBuffer(Usart *p_usart, fifo_mem_block_t* memBlo
 	{
 		memBlocks->writeBlock = 0;
 	}
-	//set the new next pointer
-	nextBlockIndex = memBlocks->writeBlock + 1;
-	//check that the next pointer, size setting is valid
-	if(nextBlockIndex >= NUMBER_OF_BLOCKS)
+	//make sure we haven't incremented ourselves into the readblock
+	if(memBlocks->writeBlock != memBlocks->readBlock)
 	{
-		nextBlockIndex = 0;
+		buffer.ul_addr = memBlocks->memoryBlocks[memBlocks->writeBlock].buffer;
+		buffer.ul_size = DMA_BUFFER_SIZE;
+		pdc_rx_init(memBlocks->dmaController,&buffer,NULL);	
 	}
-	//TODO possibly add check for valid data in the next buffer pointer.
-	nextBuffer.ul_addr = memBlocks->memoryBlocks[nextBlockIndex].buffer;
-	nextBuffer.ul_size = DMA_BUFFER_SIZE;
-	pdc_rx_init(memBlocks->dmaController,NULL,&nextBuffer);	
-	
+	////set the new next pointer
+	//nextBlockIndex = memBlocks->writeBlock + 1;
+	////check that the next pointer, size setting is valid
+	//if(nextBlockIndex >= NUMBER_OF_BLOCKS)
+	//{
+		//nextBlockIndex = 0;
+	//}
+	////TODO possibly add check for valid data in the next buffer pointer.
+	//
+	//
+	//buffer.ul_addr = memBlocks->memoryBlocks[nextBlockIndex].buffer;
+	//buffer.ul_size = DMA_BUFFER_SIZE;
+	//pdc_rx_init(memBlocks->dmaController,NULL,&buffer);	
+	taskEXIT_CRITICAL();
 }
 
 

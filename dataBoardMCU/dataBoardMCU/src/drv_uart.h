@@ -22,14 +22,14 @@
 #ifndef DRV_UART_H_
 #define DRV_UART_H_
 #define FIFO_BUFFER_SIZE 1024
-#define DMA_BLOCK_SIZE 512
-#define NUMBER_OF_BLOCKS 4
+#define DMA_BLOCK_SIZE 2048
+#define NUMBER_OF_BLOCKS 6
 #define UART0_IDX			0
 #define UART1_IDX			1
 #define USART0_IDX			2
 #define USART1_IDX			3
 
-#define DMA_BUFFER_SIZE 512
+#define DMA_BUFFER_SIZE 2048
 typedef enum
 {
 	DRV_UART_MODE_INTERRUPT = 0,

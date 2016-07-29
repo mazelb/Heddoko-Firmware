@@ -59,7 +59,7 @@ sdc_file_t dataLogFile =
 /*	Extern functions	*/
 
 /*	Extern variables	*/
-
+extern uint32_t errorCount;
 
 /*	Function Definitions	*/
 void subp_subProcessorTask(void *pvParameters)
@@ -97,12 +97,13 @@ void subp_subProcessorTask(void *pvParameters)
 		{
 			//we have a full packet	
 			processRawPacket(&rawPacket);
-
 		}					
-		vTaskDelay(1);		// carefully assign the delay as one packet can be as fast as 1.85ms
+		vTaskDelay(5);		// carefully assign the delay as one packet can be as fast as 1.85ms
 	}
 }
-
+char tempString[200] = {0};
+uint32_t packetReceivedCount = 0;
+uint32_t lastTimeStamp = 0;	
 static void processRawPacket(pkt_rawPacket_t* packet)
 {
 	subp_fullImuFrameSet_t* rawFullFrame; //pointer to raw packet type
@@ -110,7 +111,8 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 	uint16_t serializedLength = 0;
 	//check which type of packet it is.
 	//All the packets should be of this type... we're not on a 485 bus. 
-		
+	int i =0;	
+	int result = 0;
 	if(packet->payload[0] == PACKET_TYPE_SUB_PROCESSOR)
 	{
 		
@@ -124,16 +126,36 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 			break;
 			case PACKET_COMMAND_ID_SUBP_FULL_FRAME:
 				//this is a frame, cast the payload to the rawFrame type. 
-				rawFullFrame = (subp_fullImuFrameSet_t*) (&packet->payload[3]);
-				convertFullFrameToProtoBuff(rawFullFrame,&dataFrameProtoPacket);	
-				//Serialize protobuf packet
-				serializedProtoPacketLength = heddoko__packet__pack(&packet,serializedProtoBuf);		
+				rawFullFrame = (subp_fullImuFrameSet_t*) (&packet->payload[2]);
+				//convertFullFrameToProtoBuff(rawFullFrame,&dataFrameProtoPacket);	
+				//Serialize protobuf packet				
+				//serializedProtoPacketLength = heddoko__packet__pack(&dataFrameProtoPacket,serializedProtoBuf);		
 				//now encode the packet for saving/transmission	
-				if(pkt_serializeRawPacket(serializedDataBuffer, MAX_SERIALIZED_DATA_LENGTH,&serializedLength,
-					serializedProtoBuf,serializedProtoPacketLength) == STATUS_PASS)
+				//if(pkt_serializeRawPacket(serializedDataBuffer, MAX_SERIALIZED_DATA_LENGTH,&serializedLength,
+					//serializedProtoBuf,serializedProtoPacketLength) == STATUS_PASS)
+				//{
+					////
+				//}
+				if(rawFullFrame->timeStamp > lastTimeStamp)
 				{
 					
+					if(rawFullFrame->frames[8].Rotation_z == 13)
+					{
+						result = 1;	//everything is good
+					}
+					else
+					{
+						result = 2; 	//corrupt frame
+					}
+					 
 				}
+				else
+				{
+					result = 0; //out of sequence frame
+				}
+				lastTimeStamp = rawFullFrame->timeStamp;
+				snprintf(tempString,200,"%d,%d,%d,%d\r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount);
+				dbg_printString(tempString); 
 				
 			break;
 			default:
@@ -141,7 +163,7 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 			break;
 		}
 	}	
-	dbg_printString("Received a packet!!!!"); 
+	//dbg_printString("Received a packet!!!!"); 
 }
 
 

@@ -55,6 +55,7 @@ status_t pkt_processIncomingByte(pkt_rawPacket_t* rawPacket, uint8_t byte)
 		rawPacket->bytesReceived = 0;
 		rawPacket->escapeFlag = false;
 		rawPacket->payloadSize = 0;
+		rawPacket->inError = false;
 		return STATUS_EAGAIN;
 	}
 	//if byte is escape byte
@@ -89,22 +90,34 @@ status_t pkt_processIncomingByte(pkt_rawPacket_t* rawPacket, uint8_t byte)
 		rawPacket->payloadSize |= (uint16_t)(byte<<8);
 		//increment received count
 		rawPacket->bytesReceived++;
+		if(rawPacket->payloadSize > RAW_PACKET_MAX_SIZE)
+		{
+			//set the error flag, something weird is going on...
+			rawPacket->inError = true;			
+			errorCount++;
+			
+		}
 	}
 	else
-	{	//copy byte to payload at point receivedBytes - 2
-		rawPacket->payload[rawPacket->bytesReceived - 2] = byte;
-		//check if we received the whole packet.
-		if(rawPacket->bytesReceived-1 == rawPacket->payloadSize)
-		{
-			//We have the packet!
-			//set the return code to PASS to let the app know we have a packet. 
-			status = STATUS_PASS;
-			//reset everything to zero
-			rawPacket->bytesReceived = 0;
-		}
-		else
-		{
-			rawPacket->bytesReceived++;
+	{			
+		//only process the bytes if not in error
+		if(rawPacket->inError == false)
+		{		
+			//copy byte to payload at point receivedBytes - 2
+			rawPacket->payload[rawPacket->bytesReceived - 2] = byte;
+			//check if we received the whole packet.
+			if(rawPacket->bytesReceived-1 == rawPacket->payloadSize)
+			{
+				//We have the packet!
+				//set the return code to PASS to let the app know we have a packet. 
+				status = STATUS_PASS;
+				//reset everything to zero
+				rawPacket->bytesReceived = 0;
+			}
+			else
+			{
+				rawPacket->bytesReceived++;
+			}
 		}
 	}
 	return status; 
