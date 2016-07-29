@@ -767,24 +767,12 @@ static void uart_process_tx_byte(Usart *p_usart, drv_uart_memory_buf_t* memBuf)
 	}	
 };
 
-static status_t uart_dma_getByte(Usart *p_usart, fifo_mem_block_t* memBlocks, uint8_t* val)
+static status_t uart_dma_getByte_old(Usart *p_usart, fifo_mem_block_t* memBlocks, uint8_t* val)
 {
 	status_t status = STATUS_EOF;
 	bool validBytes = false; 
 	uint16_t rxBufferTransferBytes = 0;
-	//update the count of bytes. 
-	taskENTER_CRITICAL();
-	rxBufferTransferBytes = pdc_read_rx_counter(memBlocks->dmaController);
-	if(rxBufferTransferBytes == 0)
-	{
-		
-	}
-	taskEXIT_CRITICAL();
-	
 	//check the current read block to see if there are bytes to read
-	
-	
-	
 	if(memBlocks->memoryBlocks[memBlocks->readBlock].readIndex == memBlocks->memoryBlocks[memBlocks->readBlock].validByteCount)
 	{		
 		//if we're in the same block as the write block, update the valid byte count
@@ -829,6 +817,64 @@ static status_t uart_dma_getByte(Usart *p_usart, fifo_mem_block_t* memBlocks, ui
 	}	
 	return status;
 }
+static status_t uart_dma_getByte(Usart *p_usart, fifo_mem_block_t* memBlocks, uint8_t* val)
+{
+	status_t status = STATUS_EOF;
+	bool validBytes = false;
+	uint16_t rxBufferTransferBytes = 0;
+	//check the current read block to see if there are bytes to read
+	if(memBlocks->memoryBlocks[memBlocks->readBlock].readIndex == memBlocks->memoryBlocks[memBlocks->readBlock].validByteCount)
+	{
+		//if we're in the same block as the write block, update the valid byte count
+		if(memBlocks->readBlock == memBlocks->writeBlock)
+		{
+			//try to update the counts.
+			//TODO check this out to make sure its ok
+			
+			taskENTER_CRITICAL();
+			rxBufferTransferBytes = pdc_read_rx_counter(memBlocks->dmaController);
+			if(rxBufferTransferBytes == 0 && memBlocks->memoryBlocks[memBlocks->readBlock].validByteCount == DMA_BUFFER_SIZE)
+			{
+				//the transfer has been halted, 
+				
+			}
+			memBlocks->memoryBlocks[memBlocks->writeBlock].validByteCount = DMA_BUFFER_SIZE - pdc_read_rx_counter(memBlocks->dmaController);
+			taskEXIT_CRITICAL();
+			if(memBlocks->memoryBlocks[memBlocks->readBlock].readIndex < memBlocks->memoryBlocks[memBlocks->readBlock].validByteCount)
+			{
+				validBytes = true;
+			}
+		}
+		//if the valid byte count is equal to the DMA buffer size,
+		else if(memBlocks->memoryBlocks[memBlocks->readBlock].validByteCount == DMA_BUFFER_SIZE)
+		{
+			//reset the byte indexes.
+			memBlocks->memoryBlocks[memBlocks->readBlock].readIndex = 0;
+			memBlocks->memoryBlocks[memBlocks->readBlock].validByteCount = 0;
+			//increment the read block to the next one.
+			memBlocks->readBlock++;
+			if(memBlocks->readBlock >= NUMBER_OF_BLOCKS)
+			{
+				memBlocks->readBlock = 0;
+			}
+			//set the status to EAGAIN, so the function gets called again without delay.
+			status = STATUS_EAGAIN;
+		}
+	}
+	else
+	{
+		//read the byte from the buffer and increment the pointer
+		validBytes = true;
+	}
+	
+	if(validBytes == true)
+	{
+		status = STATUS_PASS;
+		*val = memBlocks->memoryBlocks[memBlocks->readBlock].buffer[memBlocks->memoryBlocks[memBlocks->readBlock].readIndex++];
+	}
+	return status;
+}
+
 static void uart_process_receivedBuffer(Usart *p_usart, fifo_mem_block_t* memBlocks)
 {
 	pdc_packet_t buffer;
@@ -844,23 +890,22 @@ static void uart_process_receivedBuffer(Usart *p_usart, fifo_mem_block_t* memBlo
 	{
 		memBlocks->writeBlock = 0;
 	}
-	//make sure we haven't incremented ourselves into the readblock
 	if(memBlocks->writeBlock != memBlocks->readBlock)
 	{
 		buffer.ul_addr = memBlocks->memoryBlocks[memBlocks->writeBlock].buffer;
 		buffer.ul_size = DMA_BUFFER_SIZE;
-		pdc_rx_init(memBlocks->dmaController,&buffer,NULL);	
+		pdc_rx_init(memBlocks->dmaController,&buffer,NULL);
 	}
-	////set the new next pointer
+	//set the new next pointer
 	//nextBlockIndex = memBlocks->writeBlock + 1;
 	////check that the next pointer, size setting is valid
 	//if(nextBlockIndex >= NUMBER_OF_BLOCKS)
 	//{
 		//nextBlockIndex = 0;
 	//}
-	////TODO possibly add check for valid data in the next buffer pointer.
-	//
-	//
+	//TODO possibly add check for valid data in the next buffer pointer.
+	
+	
 	//buffer.ul_addr = memBlocks->memoryBlocks[nextBlockIndex].buffer;
 	//buffer.ul_size = DMA_BUFFER_SIZE;
 	//pdc_rx_init(memBlocks->dmaController,NULL,&buffer);	
