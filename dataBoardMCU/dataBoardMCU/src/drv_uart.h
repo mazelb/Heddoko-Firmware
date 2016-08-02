@@ -17,7 +17,6 @@
  */
 #include "common.h"
 #include "asf.h"
-#include "pkt_packetParser.h"
 
 #ifndef DRV_UART_H_
 #define DRV_UART_H_
@@ -86,12 +85,12 @@ status_t drv_uart_getChar(drv_uart_config_t* uartConfig, char* c);
 status_t drv_uart_deInit(drv_uart_config_t* uartConfig); 
 status_t drv_uart_isInit(drv_uart_config_t* uartConfig);
 status_t drv_uart_getline(drv_uart_config_t* uartConfig, char* str, size_t str_size); 
-status_t drv_uart_getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* packet, uint32_t maxTime);
 status_t drv_uart_getlineTimed(drv_uart_config_t* uartConfig, char* str, size_t strSize, uint32_t maxTime);
 status_t drv_uart_getlineTimedSized(drv_uart_config_t* uartConfig, char* str, size_t strSize, uint32_t maxTime, uint8_t* strLength);
 uint32_t drv_uart_getNumBytes(drv_uart_config_t* uartConfig);
 void drv_uart_putString(drv_uart_config_t* uartConfig, char* str);
 void drv_uart_putData(drv_uart_config_t* uartConfig, char* str, size_t length); 
+void drv_uart_sendPacket(drv_uart_config_t* uartConfig, uint8_t* payload, size_t length);
 void drv_uart_flushRx(drv_uart_config_t* uartConfig);
 uint32_t drv_uart_getDroppedBytes(drv_uart_config_t* uartConfig); 
 #endif /* DRV_UART_H_ */

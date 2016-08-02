@@ -396,7 +396,7 @@ status_t drv_uart_getlineTimed(drv_uart_config_t* uartConfig, char* str, size_t 
 				str[pointer++] = val; //add the result;
 				if(val == '\n')
 				{
-					str[pointer] = NULL; //terminate the string
+					str[pointer] = NULL; //;terminate the string
 					result = STATUS_PASS;
 					pointer = 0; //reset the pointer.
 					break;
@@ -426,56 +426,7 @@ status_t drv_uart_getlineTimed(drv_uart_config_t* uartConfig, char* str, size_t 
 	}
 	return result; 
 }
-/***********************************************************************************************
- * drv_uart_getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* packet, uint32_t maxTime)
- * @brief returns a raw packet that is processed successfully.
- * @param uartConfig the configuration structure for the uart
- * @param packet the pointer to the packet where the bytes will be stored
- * @param maxTime the maximum time in ticks the function should wait for the response. 
- * @return STATUS_PASS if a string is returned,	STATUS_FAIL if the string found is larger than the buffer, or timed out
- ***********************************************************************************************/	
-status_t drv_uart_getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* packet, uint32_t maxTime)
-{
-	status_t result = STATUS_PASS;
-	char val;
-	int pointer = 0;
-	uint32_t startTime = xTaskGetTickCount();
-	while(1) 
-	{
-		if(uartConfig->mode == DRV_UART_MODE_DMA)
-		{		
-			result = uart_dma_getByte(uartConfig,&fifo_mem_block,&val);
-		}
-		else
-		{
-			result = drv_uart_getChar(uartConfig,&val);
-		}
-		if(result == STATUS_PASS)
-		{
-			//process the byte as it comes in
-			if(pkt_processIncomingByte(packet,val) == STATUS_PASS)
-			{
-				//the packet is complete
-				result = STATUS_PASS;
-				break;
-			}
-			
-		}
-		else
-		{
-			//check if we've timed out yet... 
-			if(xTaskGetTickCount() > (startTime + maxTime))
-			{
-				//return fail, we've timed out. 
-				result = STATUS_FAIL; 
-				break;
-			}
-			vTaskDelay(1); //let the other processes do stuff	
-		}
-		
-	}
-	return result; 
-}
+
 
 /***********************************************************************************************
  * drv_uart_getlineTimedSized(drv_uart_config_t* uartConfig, char* str, size_t strSize, uint32_t maxTime)
@@ -560,6 +511,12 @@ void drv_uart_putData(drv_uart_config_t* uartConfig, char* str, size_t length)
 		}
 	}
 }
+
+void drv_uart_sendPacket(drv_uart_config_t* uartConfig, uint8_t* payload, size_t length)
+{
+	pkt_sendRawPacket(uartConfig,payload, length);
+}
+
 uint32_t drv_uart_getNumBytes(drv_uart_config_t* uartConfig)
 {
 	

@@ -18,6 +18,7 @@
 static void processMessage(msg_message_t message);
 static void processRawPacket(pkt_rawPacket_t* packet);
 status_t convertFullFrameToProtoBuff(subp_fullImuFrameSet_t* rawFullFrame, Heddoko__Packet* protoPacket);
+static void sendGetStatusMessage(drv_uart_config_t* uartConfig);
 /*	Local variables	*/
 xQueueHandle queue_subp = NULL;
 drv_uart_config_t uart0Config =
@@ -56,6 +57,9 @@ sdc_file_t dataLogFile =
 	.activeBuffer = 0,
 	.sem_bufferAccess = NULL
 };
+
+
+
 /*	Extern functions	*/
 
 /*	Extern variables	*/
@@ -82,7 +86,8 @@ void subp_subProcessorTask(void *pvParameters)
 	{
 		dbg_printString("failed to open UART0 for subc\r\n"); 
 	}
-
+	//send get status command
+	sendGetStatusMessage(&uart0Config);
 	
 	//send the get time command to the power board
 	
@@ -93,7 +98,7 @@ void subp_subProcessorTask(void *pvParameters)
 		{
 			processMessage(receivedMessage);
 		}
-		if(drv_uart_getPacketTimed(&uart0Config,&rawPacket,10) == STATUS_PASS)
+		if(pkt_getPacketTimed(&uart0Config,&rawPacket,10) == STATUS_PASS)
 		{
 			//we have a full packet	
 			processRawPacket(&rawPacket);
@@ -154,7 +159,7 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 					result = 0; //out of sequence frame
 				}
 				lastTimeStamp = rawFullFrame->timeStamp;
-				snprintf(tempString,200,"%d,%d,%d,%d,%d\r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,fullBufferError);
+				snprintf(tempString,200,"%d,%d,%d,%d,%d\r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,drv_uart_getDroppedBytes(&uart0Config));
 				dbg_printString(tempString); 
 				
 			break;
@@ -236,8 +241,7 @@ static void processMessage(msg_message_t message)
 {
 	switch(message.type)
 	{
-		case MSG_TYPE_ENTERING_NEW_STATE:
-			
+		case MSG_TYPE_ENTERING_NEW_STATE:			
 		break;
 		case MSG_TYPE_READY:
 		break;
@@ -249,3 +253,8 @@ static void processMessage(msg_message_t message)
 	}
 }
 
+static void sendGetStatusMessage(drv_uart_config_t* uartConfig)
+{
+	uint8_t getStatusBytes[2] = {0x01,0x51};
+	drv_uart_sendPacket(uartConfig,getStatusBytes, sizeof(getStatusBytes));	
+}
