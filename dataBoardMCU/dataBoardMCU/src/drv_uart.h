@@ -22,14 +22,13 @@
 #ifndef DRV_UART_H_
 #define DRV_UART_H_
 #define FIFO_BUFFER_SIZE 1024
-#define DMA_BLOCK_SIZE 2048
-#define NUMBER_OF_BLOCKS 6
+
 #define UART0_IDX			0
 #define UART1_IDX			1
 #define USART0_IDX			2
 #define USART1_IDX			3
-
-#define DMA_BUFFER_SIZE 2048
+#define NUMBER_OF_BLOCKS 4
+#define DMA_BLOCK_SIZE 2048
 typedef enum
 {
 	DRV_UART_MODE_INTERRUPT = 0,
@@ -43,12 +42,22 @@ typedef struct
 	uint16_t num_bytes;
 }sw_fifo_typedef;
 
+typedef struct 
+{
+	uint16_t numBytes;
+	uint8_t buffer[DMA_BLOCK_SIZE];	
+}tx_mem_blocks_t;
+
+
 typedef struct  
 {
 	uint16_t validByteCount;
 	uint16_t readIndex;
+	uint16_t writeIndex; 
+	uint8_t transferEnabled; 
 	uint8_t buffer[DMA_BLOCK_SIZE];	
 }mem_block_t;
+
 
 typedef struct
 {
@@ -60,6 +69,7 @@ typedef struct
 	pdc_packet_t uart_dma_rx_nextbuffer;
 	Pdc* dmaController; //assigned during initialization
 }fifo_mem_block_t;
+
 
 
 typedef struct

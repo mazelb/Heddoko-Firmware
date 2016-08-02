@@ -26,12 +26,12 @@ drv_uart_config_t uart0Config =
 	.mem_index = 0,
 	.uart_options =
 	{
-		.baudrate   = 460800,
+		.baudrate   = 921600,
 		.charlength = CONF_CHARLENGTH,
 		.paritytype = CONF_PARITY,
 		.stopbits   = CONF_STOPBITS
 	},
-	.mode = DRV_UART_MODE_DMA
+	.mode = DRV_UART_MODE_INTERRUPT
 };
 Heddoko__Packet dataFrameProtoPacket;
 Heddoko__FullDataFrame dataFrame;
@@ -60,7 +60,7 @@ sdc_file_t dataLogFile =
 
 /*	Extern variables	*/
 extern uint32_t errorCount;
-
+extern volatile uint32_t fullBufferError;
 /*	Function Definitions	*/
 void subp_subProcessorTask(void *pvParameters)
 {
@@ -98,7 +98,7 @@ void subp_subProcessorTask(void *pvParameters)
 			//we have a full packet	
 			processRawPacket(&rawPacket);
 		}					
-		vTaskDelay(5);		// carefully assign the delay as one packet can be as fast as 1.85ms
+		vTaskDelay(3);		// carefully assign the delay as one packet can be as fast as 1.85ms
 	}
 }
 char tempString[200] = {0};
@@ -154,7 +154,7 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 					result = 0; //out of sequence frame
 				}
 				lastTimeStamp = rawFullFrame->timeStamp;
-				snprintf(tempString,200,"%d,%d,%d,%d\r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount);
+				snprintf(tempString,200,"%d,%d,%d,%d,%d\r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,fullBufferError);
 				dbg_printString(tempString); 
 				
 			break;
