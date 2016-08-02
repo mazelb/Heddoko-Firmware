@@ -260,7 +260,7 @@ static void sendFullFrame()
 	// send all sensors data to the data board
 	if (xSemaphoreTake(semaphore_dataBoardUart, 1) == TRUE)
 	{
-		sensorFullFrame.payload[0] = PACKET_TYPE_POWER_BOARD;
+		sensorFullFrame.payload[0] = PACKET_TYPE_SUB_PROCESSOR;
 		sensorFullFrame.payload[1] = PACKET_COMMAND_ID_SUBP_FULL_FRAME;
 		sensorFullFrame.payload[2] = number_FramesReceived;
 		sensorFullFrame.payload[3] = (sysTickCount >> 24) & 0xff;
