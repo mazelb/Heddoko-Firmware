@@ -62,7 +62,7 @@ void sys_systemManagerTask(void* pvParameters)
 		{
 			
 		}
-				
+		wdt_restart(WDT);		
 		vTaskDelay(100);
 	}
 }

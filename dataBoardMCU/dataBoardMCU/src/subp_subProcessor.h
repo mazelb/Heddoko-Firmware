@@ -58,8 +58,11 @@ typedef struct
 typedef struct
 {
 	uint8_t chargeLevel;   //battery percentage 	
-	uint8_t chargerState; //charging, battery full, battery low. 
-	uint16_t sensorMask; //mask of which sensors have been detected.
+	uint8_t chargerState; //BatteryLow = 0;	BatteryNominal = 1;	BatteryFull = 2; Charging = 3;
+	uint8_t usbCommState; //0 = no comm detected, 1 = comm detected
+	uint8_t jackDetectState; //mask indicating which jacks are connected.
+	uint8_t streamState; //0 = Idle, 1 = Streaming, 2 = Error
+	uint32_t sensorMask; //mask of which sensors have been detected.
 }subp_status_t;
 #pragma	pack(pop)
 
