@@ -30,7 +30,9 @@ sensor_state_t sgSensorState;
 drv_uart_rawPacket_t sensorPacket;	// packet to store sensor data
 static uint8_t sensorLoopCount = 0;	// controls the active sensor to fetch from
 bool enableStream = false;	// enables / disables sensor stream
-xQueueHandle queue_sensorData = NULL;
+xQueueHandle queue_sensorHandler = NULL;
+uint32_t reqSensorMask = 0, errSensorMask = 0;
+uint8_t dataRate = 0;
 
 static drv_uart_config_t sensorPortConfig = 
 {
@@ -64,8 +66,8 @@ void sen_sensorHandler(void *pvParameters)
 	drv_uart_init(&sensorPortConfig);
 	
 	// initialize the queue to pass data to task communicating to board
-	queue_sensorData = xQueueCreate(10, sizeof(drv_uart_rawPacket_t));
-	if (queue_sensorData == NULL)
+	queue_sensorHandler = xQueueCreate(10, sizeof(drv_uart_rawPacket_t));
+	if (queue_sensorHandler == NULL)
 	{
 		puts("Failed to create sensor data queue\r\n");
 	}
@@ -90,8 +92,6 @@ void sen_sensorHandler(void *pvParameters)
 			bufferOffset = ((sensorLoopCount-1) * 36) + 5;	// each sensor has 36 bytes + 7 bytes are for main header minus 2 bytes to remove current header
 			drv_uart_getPacketTimed(&sensorPortConfig, sensorFullFrame.payload[bufferOffset], 100);
 			
-			// store the received data to local Full Frame structure
-			//storePacket(&sensorPacket);
 			sensorLoopCount--;
 		}
 		else
@@ -176,7 +176,7 @@ void sendChangeBaud(uint32_t baud)
 	uint8_t outputDataBuffer[6] = {0};
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 	outputDataBuffer[1] = PACKET_COMMAND_ID_CHANGE_BAUD;
-	//send out the baud rate in 8bits, LSB first
+	//send out the baud rate in 8bits, LSB first (Little endian)
 	outputDataBuffer[2] = (uint8_t)(baud & 0x000000ff);
 	outputDataBuffer[3] = (uint8_t)((baud & 0x0000ff00) >> 8);
 	outputDataBuffer[4] = (uint8_t)((baud & 0x00ff0000) >> 16);
@@ -263,10 +263,11 @@ static void sendFullFrame()
 		sensorFullFrame.payload[0] = PACKET_TYPE_SUB_PROCESSOR;
 		sensorFullFrame.payload[1] = PACKET_COMMAND_ID_SUBP_FULL_FRAME;
 		sensorFullFrame.payload[2] = number_FramesReceived;
-		sensorFullFrame.payload[3] = (sysTickCount >> 24) & 0xff;
-		sensorFullFrame.payload[4] = (sysTickCount >> 16) & 0xff;
-		sensorFullFrame.payload[5] = (sysTickCount >> 8) & 0xff;
-		sensorFullFrame.payload[6] = (sysTickCount >> 0) & 0xff;
+		// assign the sys tick, little endian
+		sensorFullFrame.payload[3] = (sysTickCount >> 0) & 0xff;
+		sensorFullFrame.payload[4] = (sysTickCount >> 8) & 0xff;
+		sensorFullFrame.payload[5] = (sysTickCount >> 16) & 0xff;
+		sensorFullFrame.payload[6] = (sysTickCount >> 24) & 0xff;
 		// drv_uart_sendPacket();		// function call to send the packet.
 		xSemaphoreGive(semaphore_dataBoardUart);
 	}

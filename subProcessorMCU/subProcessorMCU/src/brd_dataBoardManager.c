@@ -11,6 +11,7 @@
 #include "pkt_packetCommandsList.h"
 #include "drv_gpio.h"
 #include "drv_uart.h"
+#include "LTC2941-1.h"
 
 #define DATA_BOARD_TERMINAL_MSG_LENGTH	200
 #define DATA_BOARD_TERMINAL_MSG_FREQ	2	// this controls the size of queue to data router
@@ -19,8 +20,11 @@
 static void processPacket(drv_uart_rawPacket_t *packet);
 
 /*	Extern variables	*/
-extern xQueueHandle queue_sensorData;
+extern xQueueHandle queue_sensorHandler;
 extern bool enableStream;
+extern uint32_t reqSensorMask;
+extern uint8_t dataRate;
+extern slave_twi_config_t ltc2941Config;
 
 /*	Local variables	*/
 drv_uart_rawPacket_t dataBoardPacket;
@@ -73,6 +77,8 @@ void dat_dataBoardManager(void *pvParameters)
 
 void processPacket(drv_uart_rawPacket_t *packet)
 {
+	uint16_t chargeLevel;
+	
 	if (packet->payloadSize < 2)
 	{
 		return;	// a packet should have minimum of two bytes
@@ -85,10 +91,14 @@ void processPacket(drv_uart_rawPacket_t *packet)
 		{
 			case PACKET_COMMAND_ID_SUBP_GET_STATUS:
 				// return current status of Power board
-				// use semaphore to access the uart
+				// use semaphore to access the UART
+				chargeLevel = getCalculatedPercentage(&ltc2941Config);
+				
 			break;
 			case PACKET_COMMAND_ID_SUBP_CONFIG:
 				// set the received sub processor configuration
+				dataRate = packet->payload[3];
+				reqSensorMask = packet->payload[4] | (packet->payload[5] << 8);	// we ignore the rest of the packet as the total number of sensors is only 9
 			break;
 			case PACKET_COMMAND_ID_SUBP_STREAMING:
 				// enable / disable sensor streaming

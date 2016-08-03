@@ -14,8 +14,6 @@
 #include "dat_dataRouter.h"
 #include "chrg_chargeMonitor.h"
 
-
-
 xQueueHandle mgr_eventQueue = NULL;
 xTimerHandle pwrButtonTimer = NULL;
 volatile mgr_systemStates_t currentSystemState = SYS_STATE_POWER_OFF; 
@@ -188,9 +186,7 @@ void mgr_managerTask(void *pvParameters)
 			//rstc_start_software_reset(RSTC);
 		//}
 	}
-	
 }
-
 
 //static functions
 void powerButtonTimerCallback()

@@ -28,7 +28,6 @@
 0x07 Shutdown_VBAT
  */ 
 
-
 #include "chrg_chargeMonitor.h"
 #include "dat_dataRouter.h"
 #include "drv_led.h"
@@ -223,7 +222,6 @@ void chrg_task_chargeMonitor(void *pvParameters)
 		vTaskDelay(250); 
 	}	
 }
-
 
 //static functions
 

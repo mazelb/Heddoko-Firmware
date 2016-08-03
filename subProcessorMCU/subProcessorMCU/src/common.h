@@ -85,7 +85,6 @@ typedef enum
 #define BATTERY_PERCENT_CRITICAL 8
 #define BATTERY_PERCENT_FAULT 5
 
-
 //int itoa(int value, char* sp, int radix);
 
 #endif /* COMMON_H_ */
