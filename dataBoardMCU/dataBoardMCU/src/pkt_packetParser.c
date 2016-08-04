@@ -30,7 +30,7 @@ status_t pkt_serializeRawPacket(uint8_t* destination, size_t maxDestinationLengt
 	for(i=0;i<payloadSize;i++)
 	{
 		//check that we have room in the destination buffer to store the byte.
-		if(destinationLength > maxDestinationLength)
+		if(*destinationLength > maxDestinationLength)
 		{
 			status = STATUS_FAIL;
 		}
@@ -56,7 +56,7 @@ status_t pkt_sendRawPacket(drv_uart_config_t* uartConfig, uint8_t* payload, uint
 }
 
 /***********************************************************************************************
- * drv_uart_getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* packet, uint32_t maxTime)
+ * pkt_getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* packet, uint32_t maxTime)
  * @brief returns a raw packet that is processed successfully.
  * @param uartConfig the configuration structure for the uart
  * @param packet the pointer to the packet where the bytes will be stored
