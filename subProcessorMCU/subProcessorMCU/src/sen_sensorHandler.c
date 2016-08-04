@@ -11,12 +11,13 @@
 #include "sen_sensorHandler.h"
 #include "drv_uart.h"
 #include "pkt_packetCommandsList.h"
+#include "pkt_packetParser.h"
 
 /*	Static function forward declarations	*/
 static void sendPacket(uint8_t *data, uint8_t length);	// send raw packet over UART
 static void disableRs485Transmit();	// toggle the GPIO to disable RS485 transmit
 static void enableRs485Transmit();	// toggle the GPIO to enable Rs485 transmit
-static void storePacket(drv_uart_rawPacket_t *packet);	// store the packet to local Full Frame structure
+static void storePacket(pkt_rawPacket_t *packet);	// store the packet to local Full Frame structure
 static void sendFullFrame();	// send the full frame of data from all sensor
 static void clearFullFrame();	// clear the full frame
 
@@ -25,9 +26,9 @@ extern xSemaphoreHandle semaphore_dataBoardUart;
 
 /*	Local variables	*/
 uint8_t number_FramesReceived = 0;
-drv_uart_rawPacket_t sensorFullFrame;
+pkt_rawPacket_t sensorFullFrame;
 sensor_state_t sgSensorState;
-drv_uart_rawPacket_t sensorPacket;	// packet to store sensor data
+pkt_rawPacket_t sensorPacket;	// packet to store sensor data
 static uint8_t sensorLoopCount = 0;	// controls the active sensor to fetch from
 bool enableStream = false;	// enables / disables sensor stream
 xQueueHandle queue_sensorHandler = NULL;
@@ -38,7 +39,6 @@ static drv_uart_config_t sensorPortConfig =
 {
 	.mem_index = -1,		// the driver will assign the mem_index
 	.p_usart = USART0,		// TODO: verify the actual physical port for sensor interface
-	.packetCallback = NULL,
 	.uart_options = 
 	{
 		.baudrate = SENSOR_BUS_SPEED_LOW,
@@ -46,7 +46,6 @@ static drv_uart_config_t sensorPortConfig =
 		.paritytype = CONF_PARITY,
 		.stopbits   = CONF_STOPBITS
 	},
-	.uartMode = DRV_UART_MODE_PACKET_PARSER_DMA
 };
 
 /*	Function definitions	*/
@@ -66,7 +65,7 @@ void sen_sensorHandler(void *pvParameters)
 	drv_uart_init(&sensorPortConfig);
 	
 	// initialize the queue to pass data to task communicating to board
-	queue_sensorHandler = xQueueCreate(10, sizeof(drv_uart_rawPacket_t));
+	queue_sensorHandler = xQueueCreate(10, sizeof(pkt_rawPacket_t));
 	if (queue_sensorHandler == NULL)
 	{
 		puts("Failed to create sensor data queue\r\n");
@@ -90,7 +89,7 @@ void sen_sensorHandler(void *pvParameters)
 			
 			// fetch the packet from buffer
 			bufferOffset = ((sensorLoopCount-1) * 36) + 5;	// each sensor has 36 bytes + 7 bytes are for main header minus 2 bytes to remove current header
-			drv_uart_getPacketTimed(&sensorPortConfig, sensorFullFrame.payload[bufferOffset], 100);
+			//drv_uart_getPacketTimed(&sensorPortConfig, sensorFullFrame.payload[bufferOffset], 100);
 			
 			sensorLoopCount--;
 		}
@@ -190,16 +189,16 @@ void sendChangePadding(bool paddingEnable, uint8_t paddingLength)
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 	outputDataBuffer[1] = PACKET_COMMAND_ID_CHANGE_PADDING;
 	
-	if (sensorPortConfig.uartMode == DRV_UART_MODE_PACKET_PARSER_DMA)		//padding is only used in interrupt driven DMA mode
-	{
+	//if (sensorPortConfig.uartMode == DRV_UART_MODE_PACKET_PARSER_DMA)		//padding is only used in interrupt driven DMA mode
+	//{
 		outputDataBuffer[2] = paddingEnable;
 		outputDataBuffer[3] = paddingLength;
-	}
-	else
-	{
+	//}
+	//else
+	//{
 		outputDataBuffer[2] = FALSE;
 		outputDataBuffer[3] = NULL;
-	}
+	//}
 	
 	sendPacket(outputDataBuffer, 4);
 }
@@ -208,27 +207,12 @@ void changeSensorState(sensor_state_t sensorState)
 {
 	if (sensorState != sgSensorState)
 	{
-		switch (sensorState)
-		{
-			case SENSOR_READY:
-				sgSensorState = SENSOR_READY;
-			break;
-			case SENSOR_STANDBY:
-				sgSensorState = SENSOR_STANDBY;
-			break;
-			case SENSOR_NOT_PRESENT:
-				sgSensorState = SENSOR_NOT_PRESENT;
-			break;
-			case SENSOR_COMM_ERROR:
-				sgSensorState = SENSOR_COMM_ERROR;
-			break;
-			default:
-			break;
-		}
+		sgSensorState = sensorState;
+		// add further actions here in a switch statement
 	}
 }
 
-static void storePacket(drv_uart_rawPacket_t *packet)
+static void storePacket(pkt_rawPacket_t *packet)
 {
 	uint8_t location = packet->payload[3] *36;		// 36 is the length of data from each sensor
 	
@@ -271,4 +255,14 @@ static void sendFullFrame()
 		// drv_uart_sendPacket();		// function call to send the packet.
 		xSemaphoreGive(semaphore_dataBoardUart);
 	}
+}
+
+sensor_state_t sen_getSensorState(void)
+{
+	return SENSOR_IDLE;
+}
+
+uint32_t sen_getDetectedSensors(void)
+{
+	return 0x000001ff;
 }

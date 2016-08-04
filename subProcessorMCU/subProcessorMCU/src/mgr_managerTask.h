@@ -36,8 +36,7 @@ typedef struct
 	uint16_t data;
 }mgr_eventMessage_t;
 
-
-
 void mgr_managerTask(void *pvParameters);
+void mgr_getSystemStatus(uint8_t *data);
 
 #endif /* MGR_MANAGERTASK_H_ */

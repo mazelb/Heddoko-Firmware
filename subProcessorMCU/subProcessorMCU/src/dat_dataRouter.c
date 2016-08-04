@@ -12,8 +12,9 @@
 #include "udi_cdc.h"
 #include "drv_gpio.h"
 #include "pkt_packetCommandsList.h"
+#include "pkt_packetParser.h"
 
-drv_uart_rawPacket_t dataBoardPacket;
+pkt_rawPacket_t dataBoardPacket;
 dat_dataRouterConfig_t* dataRouterConfig; 
 extern xQueueHandle cmd_queue_commandQueue;
 extern xQueueHandle queue_dataBoard;
@@ -43,9 +44,6 @@ void task(void)
  ***********************************************************************************************/
 void dat_task_dataRouter(void *pvParameters)
 {
-	uint8_t rxDataLength = 0;
-	uint8_t dataBoardRxBuffer[200] = {0};
-	uint16_t dataLength = 0;
 	dataRouterConfig = (dat_dataRouterConfig_t*)pvParameters; 
 	cmd_commandPacket_t daughterBoardPacket, usbPacket;
 	//mgr_eventMessage_t eventMessage; 
@@ -223,6 +221,10 @@ void dat_task_dataRouter(void *pvParameters)
 				//the packet was too big, we should delete it, possibly log an error
 				cmd_initPacketStructure(&usbPacket);
 			}
+		}
+		else
+		{
+			vTaskDelay(1);
 		}
 		wdt_restart(WDT);
 		//taskYIELD();

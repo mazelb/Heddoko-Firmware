@@ -22,10 +22,9 @@
 
 typedef enum
 {
-	SENSOR_READY,
-	SENSOR_STANDBY,
-	SENSOR_NOT_PRESENT,
-	SENSOR_COMM_ERROR,	//if it receives incomplete packets
+	SENSOR_IDLE = 0x00,
+	SENSOR_STREAMING,
+	SENSOR_ERROR,
 }sensor_state_t;
 
 typedef enum
@@ -45,6 +44,7 @@ void sendChangeBaud(uint32_t baud);
 void sendChangePadding(bool paddingEnable, uint8_t paddingLength);
 
 void sen_sensorHandler(void *pvParameters);
-
+sensor_state_t sen_getSensorState(void);
+uint32_t sen_getDetectedSensors(void);
 
 #endif /* SEN_SENSORHANDLER_H_ */

@@ -44,6 +44,16 @@ typedef enum
 	CHRG_CHARGER_STATE_SHUTDOWN_VBAT = 0x07
 }chrg_chargerState_t;
 
+typedef enum
+{
+	CHGR_BATTERY_LOW = 0x00,
+	CHGR_BATTERY_NOMINAL,
+	CHGR_BATTERY_FULL,
+	CHGR_BATTERY_CHARGING
+}chrg_batteryState_t;
+
 void chrg_task_chargeMonitor(void *pvParameters);
+uint32_t chrg_getBatteryPercentage(void);
+chrg_batteryState_t chrg_getChargeState(void);
 
 #endif /* CHRG_CHARGEMONITOR_H_ */

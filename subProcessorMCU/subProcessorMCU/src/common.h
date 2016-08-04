@@ -56,6 +56,12 @@ typedef enum
 #define TASK_COMMAND_PROC_STACK_SIZE         (2048/sizeof(portSTACK_TYPE))
 #define TASK_COMMAND_PROC_PRIORITY			 (tskIDLE_PRIORITY + 5)
 
+#define TASK_SENSOR_HANDLER_STACK_SIZE		 (2048/sizeof(portSTACK_TYPE))
+#define TASK_SENSOR_HANDLER_PRIORITY		 (tskIDLE_PRIORITY + 3)
+
+#define TASK_DATA_BOARD_MANAGER_STACK_SIZE	 (2048/sizeof(portSTACK_TYPE))
+#define TASK_DATA_BOARD_MANAGER_PRIORITY	 (tskIDLE_PRIORITY + 3)
+
 /* Board Init configuration */
 #define WDT_PERIOD                        10000
 

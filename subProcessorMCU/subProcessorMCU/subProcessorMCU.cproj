@@ -874,6 +874,12 @@
     <Compile Include="src\pkt_packetCommandsList.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\pkt_packetParser.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\pkt_packetParser.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\sen_sensorHandler.c">
       <SubType>compile</SubType>
     </Compile>

@@ -223,6 +223,30 @@ void chrg_task_chargeMonitor(void *pvParameters)
 	}	
 }
 
+uint32_t chrg_getBatteryPercentage(void)
+{
+	return getCalculatedPercentage(&ltc2941Config);
+}
+
+chrg_batteryState_t chrg_getChargeState(void)
+{
+	switch (chrg_currentChargerState)
+	{
+		case CHRG_CHARGER_STATE_LOW_BATTERY:
+			return CHGR_BATTERY_LOW;
+		break;
+		case CHRG_CHARGER_STATE_CHARGING:
+			return CHGR_BATTERY_CHARGING;
+		break;
+		case CHRG_CHARGER_STATE_CHARGE_COMPLETE:
+			return CHGR_BATTERY_FULL;
+		break;
+		default:
+			return CHGR_BATTERY_NOMINAL;
+		break;
+	}
+}
+
 //static functions
 
 //get charge status

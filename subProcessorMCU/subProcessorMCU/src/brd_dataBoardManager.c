@@ -9,6 +9,8 @@
 #include "common.h"
 #include "brd_dataBoardManager.h"
 #include "pkt_packetCommandsList.h"
+#include "mgr_managerTask.h"
+#include "pkt_packetParser.h"
 #include "drv_gpio.h"
 #include "drv_uart.h"
 #include "LTC2941-1.h"
@@ -17,17 +19,16 @@
 #define DATA_BOARD_TERMINAL_MSG_FREQ	2	// this controls the size of queue to data router
 
 /*	Static functions forward declaration	*/
-static void processPacket(drv_uart_rawPacket_t *packet);
+static void processPacket(pkt_rawPacket_t *packet);
 
 /*	Extern variables	*/
 extern xQueueHandle queue_sensorHandler;
 extern bool enableStream;
 extern uint32_t reqSensorMask;
 extern uint8_t dataRate;
-extern slave_twi_config_t ltc2941Config;
 
 /*	Local variables	*/
-drv_uart_rawPacket_t dataBoardPacket;
+pkt_rawPacket_t dataBoardPacket;
 xQueueHandle queue_dataBoard = NULL;		// queue to pass data to the data router
 xSemaphoreHandle semaphore_dataBoardUart = NULL;
 
@@ -35,7 +36,6 @@ static drv_uart_config_t dataBoardPortConfig =		// TODO: undefine the UART confi
 {
 	.mem_index = -1,		// the driver will assign the mem_index
 	.p_usart = UART1,
-	.packetCallback = NULL,
 	.uart_options = 
 	{
 		.baudrate = CONF_BAUDRATE,
@@ -43,13 +43,13 @@ static drv_uart_config_t dataBoardPortConfig =		// TODO: undefine the UART confi
 		.paritytype = CONF_PARITY,
 		.stopbits = CONF_STOPBITS
 	},
-	.uartMode = DRV_UART_MODE_PACKET_PARSER_DMA
+	.mode = DRV_UART_MODE_INTERRUPT
 };
 
 void dat_dataBoardManager(void *pvParameters)
 {
 	UNUSED(pvParameters);
-	drv_uart_rawPacket_t sensorPacket;
+	pkt_rawPacket_t sensorPacket;
 	
 	// initialize the UART for data board.
 	drv_uart_init(&dataBoardPortConfig);
@@ -65,7 +65,7 @@ void dat_dataBoardManager(void *pvParameters)
 	while (1)
 	{
 		// check for incoming packets from data board
-		if (drv_uart_getPacketTimed(&dataBoardPortConfig, &dataBoardPacket, 100) == STATUS_PASS)
+		if (pkt_getPacketTimed(&dataBoardPortConfig, &dataBoardPacket, 100) == STATUS_PASS)
 		{
 			// process the packet
 			processPacket(&dataBoardPacket);
@@ -75,9 +75,10 @@ void dat_dataBoardManager(void *pvParameters)
 	}
 }
 
-void processPacket(drv_uart_rawPacket_t *packet)
+void processPacket(pkt_rawPacket_t *packet)
 {
 	uint16_t chargeLevel;
+	uint8_t *p_systemStatus;
 	
 	if (packet->payloadSize < 2)
 	{
@@ -92,7 +93,7 @@ void processPacket(drv_uart_rawPacket_t *packet)
 			case PACKET_COMMAND_ID_SUBP_GET_STATUS:
 				// return current status of Power board
 				// use semaphore to access the UART
-				chargeLevel = getCalculatedPercentage(&ltc2941Config);
+				mgr_getSystemStatus(p_systemStatus);
 				
 			break;
 			case PACKET_COMMAND_ID_SUBP_CONFIG:
