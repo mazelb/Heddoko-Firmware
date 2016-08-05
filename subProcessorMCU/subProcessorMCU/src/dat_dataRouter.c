@@ -90,7 +90,7 @@ void dat_task_dataRouter(void *pvParameters)
 					// enable / disable sensor streaming
 					enableStream = dataBoardPacket.payload[1];
 				break;
-				case PACKET_COMMAND_ID_SUBP_OUTPUT_FRAME:
+				case PACKET_COMMAND_ID_SUBP_OUTPUT_DATA:
 					// this data is supposed to be passed out on USB and/or daughter board
 					
 					// unwrap the data before sending it out.

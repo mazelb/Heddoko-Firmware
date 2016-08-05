@@ -42,18 +42,6 @@ chrg_chargeMonitorConfig_t chargeMonitorConfiguration =
 	.pin_stat2 = DRV_GPIO_PIN_CHRG_STAT2
 };
 
-#pragma pack(push, 1)
-typedef struct
-{
-	uint8_t chargeLevel;	// battery percentage
-	chrg_batteryState_t chargerState;
-	uint8_t usbCommState;	// 0 - no comm; 1 - comm detected
-	uint8_t jackDetectState;		// detected jacks mask
-	sensor_state_t streamState;
-	uint32_t sensorMask;		// detected sensor mask
-}subp_status_t;
-#pragma pack(pop)
-
 //forward static declarations
 static void powerButtonHandler_HighEdge();
 static void powerButtonHandler_LowEdge();
@@ -99,16 +87,16 @@ void mgr_managerTask(void *pvParameters)
 	{
 		printf("Failed to create DAT task code %d\r\n", retCode);
 	}
-	//retCode = xTaskCreate(dat_dataBoardManager, "DB", TASK_DATA_BOARD_MANAGER_STACK_SIZE, NULL, TASK_DATA_BOARD_MANAGER_PRIORITY, NULL);
-	//if (retCode != pdPASS)
-	//{
-		//printf("Failed to create DB task code %d\r\n", retCode);
-	//}
-	//retCode = xTaskCreate(sen_sensorHandler, "SEN", TASK_SENSOR_HANDLER_STACK_SIZE, NULL, TASK_SENSOR_HANDLER_PRIORITY, NULL);
-	//if (retCode != pdPASS)
-	//{
-		//printf("Failed to create SEN task code %d\r\n", retCode);
-	//}
+	retCode = xTaskCreate(dat_dataBoardManager, "DB", TASK_DATA_BOARD_MANAGER_STACK_SIZE, NULL, TASK_DATA_BOARD_MANAGER_PRIORITY, NULL);
+	if (retCode != pdPASS)
+	{
+		printf("Failed to create DB task code %d\r\n", retCode);
+	}
+	retCode = xTaskCreate(sen_sensorHandlerTask, "SEN", TASK_SENSOR_HANDLER_STACK_SIZE, NULL, TASK_SENSOR_HANDLER_PRIORITY, NULL);
+	if (retCode != pdPASS)
+	{
+		printf("Failed to create SEN task code %d\r\n", retCode);
+	}
 	
 	drv_led_set(DRV_LED_GREEN, DRV_LED_FLASH);
 	//enable power to the data board
@@ -548,22 +536,4 @@ void clearAllEvents()
 			xQueueReceive(mgr_eventQueue, &(eventMessage), 10); 						
 		}
 	}		
-}
-
-void mgr_getSystemStatus(uint8_t *data)
-{
-	// populate the system status structure and return the pointer to data.
-	subp_status_t systemStatus;
-	drv_gpio_pin_state_t jcDc1, jcDc2;
-	
-	systemStatus.chargeLevel = (uint8_t) chrg_getBatteryPercentage();
-	systemStatus.chargerState = chrg_getChargeState();
-	systemStatus.usbCommState = (uint8_t) udi_cdc_is_tx_ready();	// should be 1 when connected
-	drv_gpio_getPinState(DRV_GPIO_PIN_JC1_DET, &jcDc1);	//DRV_GPIO_PIN_STATE_HIGH
-	drv_gpio_getPinState(DRV_GPIO_PIN_JC2_DET, &jcDc2);	//DRV_GPIO_PIN_STATE_HIGH
-	systemStatus.jackDetectState = (((jcDc1 == DRV_GPIO_PIN_STATE_HIGH ? 1:0) << 1) | (jcDc2 == DRV_GPIO_PIN_STATE_HIGH ? 1:0));	// TODO: confirm if its active high or active low 
-	systemStatus.streamState = sen_getSensorState();
-	systemStatus.sensorMask = sen_getDetectedSensors();
-	
-	data = &systemStatus;
 }

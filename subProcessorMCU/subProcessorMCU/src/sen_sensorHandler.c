@@ -13,6 +13,8 @@
 #include "pkt_packetCommandsList.h"
 #include "pkt_packetParser.h"
 
+#define SEN_DEFAULT_DATA_FRAME_LENGTH	35
+
 /*	Static function forward declarations	*/
 static void sendPacket(uint8_t *data, uint8_t length);	// send raw packet over UART
 static void disableRs485Transmit();	// toggle the GPIO to disable RS485 transmit
@@ -20,6 +22,17 @@ static void enableRs485Transmit();	// toggle the GPIO to enable Rs485 transmit
 static void storePacket(pkt_rawPacket_t *packet);	// store the packet to local Full Frame structure
 static void sendFullFrame();	// send the full frame of data from all sensor
 static void clearFullFrame();	// clear the full frame
+static void sendGetFrame(int sensorId);
+static void sendSetupModeEnable();
+static void sendUpdateCommand();
+static void sendGetDebugStatus();
+static void sendUpdateCommandFake();
+static void sendResetCommandFake();
+static void sendEnableHPR(uint8_t enable);
+static void sendChangeBaud(uint32_t baud);
+static void sendChangePadding(bool paddingEnable, uint8_t paddingLength);
+static status_t isSensorId(uint8_t byte);
+static void sendCommand();
 
 /*	Extern variables	*/
 extern xSemaphoreHandle semaphore_dataBoardUart;
@@ -27,9 +40,10 @@ extern xSemaphoreHandle semaphore_dataBoardUart;
 /*	Local variables	*/
 uint8_t number_FramesReceived = 0;
 pkt_rawPacket_t sensorFullFrame;
+uint32_t *p_sensorFullFramePayload = NULL;
 sensor_state_t sgSensorState;
 pkt_rawPacket_t sensorPacket;	// packet to store sensor data
-static uint8_t sensorLoopCount = 0;	// controls the active sensor to fetch from
+static uint8_t sensorLoopCount = 0;	// cycles from 1 to 9 which correspond to the sensor ID 0 to 8. 
 bool enableStream = false;	// enables / disables sensor stream
 xQueueHandle queue_sensorHandler = NULL;
 uint32_t reqSensorMask = 0, errSensorMask = 0;
@@ -56,9 +70,11 @@ static drv_uart_config_t sensorPortConfig =
  * @param void *pvParameters
  * @return void                      
  ************************************************************************/
-void sen_sensorHandler(void *pvParameters)
+void sen_sensorHandlerTask(void *pvParameters)
 {
 	uint8_t bufferOffset = 0;
+	bool firstFrame = TRUE;		// check if it is the very first frame
+	pkt_rawPacketNew_t tempPacket;
 	UNUSED(pvParameters);
 	
 	// initialize the UART driver
@@ -71,30 +87,45 @@ void sen_sensorHandler(void *pvParameters)
 		puts("Failed to create sensor data queue\r\n");
 	}
 	
+	p_sensorFullFramePayload = &sensorFullFrame.payload[0];
+	
 	while (1)
 	{
-		if (enableStream)	// fetch frames only if sensor data stream is enabled
+		if (enableStream)																// fetch frames only if sensor data stream is enabled
 		{
-			if (sensorLoopCount < 1)
+			if (sensorLoopCount < 1)													// if all the sensors data are fetched then pass update command
 			{
 				sendUpdateCommand();
-				sendFullFrame();
+				if (!firstFrame)
+				{	
+					sendFullFrame();
+				}
 				clearFullFrame();
 				vTaskDelay(3);
-				sensorLoopCount = 9;
+				sensorLoopCount = 9;													// reset the loop count to get frames from all sensors
+				firstFrame = FALSE;
 			}
 			// request packet
-			sendGetFrame(sensorLoopCount - 1);	// actual sensor id count is 0 to 8
+			sendGetFrame(sensorLoopCount - 1);											// actual sensor id count is 0 to 8
 			vTaskDelay(1);
 			
 			// fetch the packet from buffer
-			bufferOffset = ((sensorLoopCount-1) * 36) + 5;	// each sensor has 36 bytes + 7 bytes are for main header minus 2 bytes to remove current header
-			//drv_uart_getPacketTimed(&sensorPortConfig, sensorFullFrame.payload[bufferOffset], 100);
+			bufferOffset = ((sensorLoopCount-1) * 36) + 5;								// each sensor has 36 bytes + 7 bytes are for main header minus 2 bytes to remove current header
+			tempPacket.p_payload = &sensorFullFrame.payload[bufferOffset];				// TODO: verify this fancy method
+			pkt_getPacketTimed(&sensorPortConfig, &tempPacket, 1);						// NOTE: needs a pointer to the packet and not the packet.payload
 			
+			// perform a short check to verify the integrity of the packet
+			if ((tempPacket.payloadSize != SEN_DEFAULT_DATA_FRAME_LENGTH) || (isSensorId(sensorFullFrame.payload[bufferOffset + 3]) != STATUS_PASS))
+			{
+				// this is a corrupt frame, should discard it
+				puts("Corrupt Sensor packet\r");
+			}
 			sensorLoopCount--;
 		}
 		else
 		{
+			sensorLoopCount = 0;	// make sure that if the next time the stream starts, buffer is always cleared
+			firstFrame = TRUE;
 			// sit idle
 			vTaskDelay(100);
 		}
@@ -118,7 +149,7 @@ static void enableRs485Transmit()
 	drv_gpio_setPinState(GPIO_RS485_DATA_DIRECTION_RE,  DRV_GPIO_PIN_STATE_HIGH);
 }
 
-void sendGetFrame(int sensorId)
+static void sendGetFrame(int sensorId)
 {
 	uint8_t outputDataBuffer[3] = {0};
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
@@ -127,7 +158,7 @@ void sendGetFrame(int sensorId)
 	sendPacket(outputDataBuffer, 3);
 }
 
-void sendUpdateCommand()
+static void sendUpdateCommand()
 {
 	uint8_t outputDataBuffer[3] = {0};
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
@@ -135,7 +166,7 @@ void sendUpdateCommand()
 	sendPacket(outputDataBuffer, 2);
 }
 
-void sendSetupModeEnable()
+static void sendSetupModeEnable()
 {
 	uint8_t outputDataBuffer[3] = {0};
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
@@ -144,7 +175,7 @@ void sendSetupModeEnable()
 	sendPacket(outputDataBuffer, 3);
 }
 
-void sendGetDebugStatus()
+static void sendGetDebugStatus()
 {
 	uint8_t outputDataBuffer[3] = {0};
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
@@ -153,7 +184,7 @@ void sendGetDebugStatus()
 	sendPacket(outputDataBuffer, 3);
 }
 
-void sendResetCommandFake()
+static void sendResetCommandFake()
 {
 	uint8_t outputDataBuffer[3] = {0};
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
@@ -161,7 +192,7 @@ void sendResetCommandFake()
 	sendPacket(outputDataBuffer, 2);
 }
 
-void sendEnableHPR(uint8_t enable)
+static void sendEnableHPR(uint8_t enable)
 {
 	uint8_t outputDataBuffer[3] = {0};
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
@@ -170,7 +201,7 @@ void sendEnableHPR(uint8_t enable)
 	sendPacket(outputDataBuffer, 3);
 }
 
-void sendChangeBaud(uint32_t baud)
+static void sendChangeBaud(uint32_t baud)
 {
 	uint8_t outputDataBuffer[6] = {0};
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
@@ -183,37 +214,41 @@ void sendChangeBaud(uint32_t baud)
 	sendPacket(outputDataBuffer, 6);
 }
 
-void sendChangePadding(bool paddingEnable, uint8_t paddingLength)
+static void sendChangePadding(bool paddingEnable, uint8_t paddingLength)
 {
 	uint8_t outputDataBuffer[4] = {0};
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 	outputDataBuffer[1] = PACKET_COMMAND_ID_CHANGE_PADDING;
 	
-	//if (sensorPortConfig.uartMode == DRV_UART_MODE_PACKET_PARSER_DMA)		//padding is only used in interrupt driven DMA mode
-	//{
+	if (sensorPortConfig.mode == DRV_UART_MODE_DMA)		//padding is only used in interrupt driven DMA mode
+	{
 		outputDataBuffer[2] = paddingEnable;
 		outputDataBuffer[3] = paddingLength;
-	//}
-	//else
-	//{
+	}
+	else
+	{
 		outputDataBuffer[2] = FALSE;
 		outputDataBuffer[3] = NULL;
-	//}
+	}
 	
 	sendPacket(outputDataBuffer, 4);
 }
 
-void changeSensorState(sensor_state_t sensorState)
+static void changeSensorState(sensor_state_t sensorState)
 {
 	if (sensorState != sgSensorState)
 	{
 		sgSensorState = sensorState;
-		// add further actions here in a switch statement
+		// If required add further actions here in a switch statement
 	}
 }
 
 static void storePacket(pkt_rawPacket_t *packet)
 {
+	if (packet->payload[3] > 8)
+	{
+		return;	// the sensorId is not valid
+	}
 	uint8_t location = packet->payload[3] *36;		// 36 is the length of data from each sensor
 	
 	if (packet->payloadSize < 2)
@@ -265,4 +300,13 @@ sensor_state_t sen_getSensorState(void)
 uint32_t sen_getDetectedSensors(void)
 {
 	return 0x000001ff;
+}
+
+static status_t isSensorId(uint8_t byte)
+{
+	if (0 <= byte <= 8)
+	{
+		return STATUS_PASS;
+	}
+	return STATUS_FAIL;
 }

@@ -33,17 +33,7 @@ typedef enum
 	SENSOR_PACKET_INCOMPLETE,
 }sensor_error_code_t;
 
-void sendGetFrame(int sensorId);
-void sendSetupModeEnable();
-void sendUpdateCommand();
-void sendGetDebugStatus();
-void sendUpdateCommandFake();
-void sendResetCommandFake();
-void sendEnableHPR(uint8_t enable);
-void sendChangeBaud(uint32_t baud);
-void sendChangePadding(bool paddingEnable, uint8_t paddingLength);
-
-void sen_sensorHandler(void *pvParameters);
+void sen_sensorHandlerTask(void *pvParameters);
 sensor_state_t sen_getSensorState(void);
 uint32_t sen_getDetectedSensors(void);
 

@@ -10,6 +10,7 @@
 #include "brd_dataBoardManager.h"
 #include "pkt_packetCommandsList.h"
 #include "mgr_managerTask.h"
+#include "sts_statusHeartbeat.h"
 #include "pkt_packetParser.h"
 #include "drv_gpio.h"
 #include "drv_uart.h"
@@ -50,6 +51,9 @@ void dat_dataBoardManager(void *pvParameters)
 {
 	UNUSED(pvParameters);
 	pkt_rawPacket_t sensorPacket;
+	uint32_t buffer;
+	subp_status_t systemStatus;
+	uint8_t buff[10] = {0};
 	
 	// initialize the UART for data board.
 	drv_uart_init(&dataBoardPortConfig);
@@ -71,6 +75,11 @@ void dat_dataBoardManager(void *pvParameters)
 			processPacket(&dataBoardPacket);
 		}
 		
+		if (xQueueReceive(queue_dataBoard, &buffer, 100) == TRUE)
+		{
+			sts_getSystemStatus(&systemStatus);		
+		}
+		
 		vTaskDelay(100);
 	}
 }
@@ -78,7 +87,7 @@ void dat_dataBoardManager(void *pvParameters)
 void processPacket(pkt_rawPacket_t *packet)
 {
 	uint16_t chargeLevel;
-	uint8_t *p_systemStatus;
+	subp_status_t systemStatus;
 	
 	if (packet->payloadSize < 2)
 	{
@@ -93,7 +102,7 @@ void processPacket(pkt_rawPacket_t *packet)
 			case PACKET_COMMAND_ID_SUBP_GET_STATUS:
 				// return current status of Power board
 				// use semaphore to access the UART
-				mgr_getSystemStatus(p_systemStatus);
+				sts_getSystemStatus(&systemStatus);
 				
 			break;
 			case PACKET_COMMAND_ID_SUBP_CONFIG:
@@ -105,7 +114,7 @@ void processPacket(pkt_rawPacket_t *packet)
 				// enable / disable sensor streaming
 				enableStream = packet->payload[2];
 			break;
-			case PACKET_COMMAND_ID_SUBP_OUTPUT_FRAME:
+			case PACKET_COMMAND_ID_SUBP_OUTPUT_DATA:
 				// simply pass this data to daughter board and USB
 				// should not access the USB and daughter board UART directly, pass it on a queue and handle the data in dataRouter
 				xQueueSendToBack(queue_dataBoard, &packet->payload[2], 10);

@@ -15,6 +15,7 @@
 xQueueHandle cmd_queue_commandQueue = NULL;
 extern slave_twi_config_t ltc2941Config; 
 extern dat_dataRouterConfig_t dataRouterConfiguration;
+extern xQueueHandle queue_dataBoard;
 //static function forward declarations
 static void setTimeFromString(char* dateTime);
 static char* getTimeString(); 
@@ -211,7 +212,13 @@ void cmd_task_commandProcesor(void *pvParameters)
 						dat_sendStringToUsb(tempString);
 					}
 					forwardCommand = false; 
-				}				
+				}
+				else if (strncmp(packet.packetData, "getStatus", 9) == 0)				
+				{
+					xQueueSendToBack(queue_dataBoard, &chargeLevel, 10);
+					forwardCommand = false;
+				}
+				
 				if(forwardCommand == true)
 				{
 					//forward the command to the data board. 
