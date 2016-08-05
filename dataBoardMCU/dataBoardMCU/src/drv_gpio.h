@@ -16,7 +16,7 @@
 //#define DRV_GPIO_ID_PIN_SW0			PIO_PA2_IDX /* SOFTWARE BUTTON 0*/
 #define DRV_GPIO_ID_PIN_PW_SW		PIO_PA0_IDX /*	Power button	*/
 #define DRV_GPIO_ID_PIN_AC_SW1		PIO_PA2_IDX /*	Action Switch 1	*/
-#define DRV_GPIO_ID_PIN_AC_SW2		PIO_PA20_IDX /*	Action Switch 2	*/
+#define DRV_GPIO_ID_PIN_AC_SW2		PIO_PB14_IDX /*	Action Switch 2	*/
 #define DRV_GPIO_ID_PIN_JC_OC1		PIO_PA16_IDX /*	Jack OC 1	*/
 #define DRV_GPIO_ID_PIN_JC_OC2		PIO_PA15_IDX /*	Jack OC 2	*/
 #define DRV_GPIO_ID_PIN_JC_DC1		PIO_PA24_IDX /*	Jack detect 1	*/

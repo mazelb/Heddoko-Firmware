@@ -57,16 +57,7 @@ drv_gpio_config_t bootloaderGpioConfig[] =
 	{DRV_GPIO_ID_PIN_RED_LED,	DRV_GPIO_PIN_MODE_OUTPUT, DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_NONE    , NULL,				FALSE,	FALSE,			0},
 	{DRV_GPIO_ID_PIN_SD_CD,		DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_LOW,  DRV_GPIO_INTERRUPT_NONE	  , NULL,				TRUE,	TRUE,			0}	
 };
-drv_gpio_config_t programmingGpioConfig[] =
-{
-	/*  PIN ID					PIN MODE				  INITIAL PIN STATE       INTERRUPT MODE			INTERRUPT HANDLER  PULL UP EN  DEBOUNCE EN	setFlag */
-	{DRV_GPIO_ID_BLE1_RX,		DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_NONE, NULL,				TRUE,	TRUE,			0},
-	{DRV_GPIO_ID_BLE1_TX,		DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_NONE, NULL,				TRUE,	TRUE,			0},
-	{DRV_GPIO_ID_BLE2_RX,		DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_NONE, NULL,				TRUE,	TRUE,			0},
-	{DRV_GPIO_ID_BLE2_TX,		DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_NONE, NULL,				TRUE,	TRUE,			0},
-	{DRV_GPIO_ID_BLE3_RX,		DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_NONE, NULL,				TRUE,	TRUE,			0},
-	{DRV_GPIO_ID_BLE3_TX,		DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_NONE, NULL,				TRUE,	TRUE,			0}	
-};
+
 
 /***********************************************************************************************
  * drv_gpio_initializeAll(void)
@@ -89,18 +80,7 @@ status_t drv_gpio_initializeAll(void)
 			status |= STATUS_FAIL;
 		}
 	}
-	//drv_gpio_config(&gpioConfig[DRV_GPIO_PIN_SD_CD]); 
-	//drv_gpio_config(&gpioConfig[DRV_GPIO_PIN_BLUE_LED]); 
-	//drv_gpio_config(&gpioConfig[DRV_GPIO_PIN_RED_LED]); 
-	//drv_gpio_config(&gpioConfig[DRV_GPIO_PIN_GREEN_LED]); 
-	//
-	//drv_gpio_config(&gpioConfig[DRV_GPIO_PIN_PW_SW]); 
-	//drv_gpio_config(&gpioConfig[DRV_GPIO_PIN_AC_SW1]); 
-	//drv_gpio_config(&gpioConfig[DRV_GPIO_PIN_AC_SW2]); 
-	//
-	//drv_gpio_config(&gpioConfig[DRV_GPIO_PIN_BLE_RST1]);
-	//drv_gpio_config(&gpioConfig[DRV_GPIO_PIN_BLE_RST2]);
-	//drv_gpio_config(&gpioConfig[DRV_GPIO_PIN_BLE_RST3]);
+
 	
 	
 	return status; 
@@ -130,27 +110,6 @@ status_t drv_gpio_initializeForBootloader(void)
 	return status; 
 }
 
-/***********************************************************************************************
- * drv_gpio_ConfigureBLEForProgramming(void)
- * @brief Set the GPIO for Rx and Tx of all UARTs to High Impedance
- * @param 
- * @return STATUS_PASS if successful, STATUS_FAIL if there is an error
- ***********************************************************************************************/	
-status_t drv_gpio_ConfigureBLEForProgramming(void)
-{
-	status_t status = STATUS_PASS;
-	int numGpio = sizeof(programmingGpioConfig)/sizeof(drv_gpio_config_t);
-	int i = 0;
-
-	for(i = 0; i < numGpio ; i++)
-	{
-		if(drv_gpio_config(&programmingGpioConfig[i]) != STATUS_PASS)
-		{
-			status |= STATUS_FAIL;
-		}
-	}	
-	return status;
-}
 
 /***********************************************************************************************
  * drv_gpio_config(drv_gpio_config_t* gpioConfig)
