@@ -22,7 +22,8 @@ drv_uart_config_t uart0Config =
 		.charlength = CONF_CHARLENGTH,
 		.paritytype = CONF_PARITY,
 		.stopbits   = CONF_STOPBITS
-	}
+	},
+	.mode = DRV_UART_MODE_INTERRUPT
 };
 drv_uart_config_t uart1Config =
 {
@@ -34,7 +35,8 @@ drv_uart_config_t uart1Config =
 		.charlength = CONF_CHARLENGTH,
 		.paritytype = CONF_PARITY,
 		.stopbits   = CONF_STOPBITS
-	}
+	},
+	.mode = DRV_UART_MODE_INTERRUPT
 };
 
 drv_led_config_t ledConfiguration =

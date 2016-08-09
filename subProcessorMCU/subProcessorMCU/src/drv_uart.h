@@ -69,8 +69,6 @@ typedef struct
 	Pdc* dmaController; //assigned during initialization
 }fifo_mem_block_t;
 
-
-
 typedef struct
 {
 	Usart *p_usart;

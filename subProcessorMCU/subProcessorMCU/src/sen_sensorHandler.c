@@ -98,7 +98,7 @@ void sen_sensorHandlerTask(void *pvParameters)
 				sendUpdateCommand();
 				if (!firstFrame)
 				{	
-					sendFullFrame();
+					//sendFullFrame();
 				}
 				clearFullFrame();
 				vTaskDelay(3);
@@ -112,7 +112,7 @@ void sen_sensorHandlerTask(void *pvParameters)
 			// fetch the packet from buffer
 			bufferOffset = ((sensorLoopCount-1) * 36) + 5;								// each sensor has 36 bytes + 7 bytes are for main header minus 2 bytes to remove current header
 			tempPacket.p_payload = &sensorFullFrame.payload[bufferOffset];				// TODO: verify this fancy method
-			pkt_getPacketTimed(&sensorPortConfig, &tempPacket, 1);						// NOTE: needs a pointer to the packet and not the packet.payload
+			pkt_getPacketTimedNew(&sensorPortConfig, &tempPacket, 1);						// NOTE: needs a pointer to the packet and not the packet.payload
 			
 			// perform a short check to verify the integrity of the packet
 			if ((tempPacket.payloadSize != SEN_DEFAULT_DATA_FRAME_LENGTH) || (isSensorId(sensorFullFrame.payload[bufferOffset + 3]) != STATUS_PASS))
@@ -299,7 +299,7 @@ sensor_state_t sen_getSensorState(void)
 
 uint32_t sen_getDetectedSensors(void)
 {
-	return 0x000001ff;
+	return 0x000001df;
 }
 
 static status_t isSensorId(uint8_t byte)

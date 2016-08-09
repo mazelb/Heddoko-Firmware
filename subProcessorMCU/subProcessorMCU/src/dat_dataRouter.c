@@ -166,33 +166,33 @@ void dat_task_dataRouter(void *pvParameters)
 		//}
 						
 		//try to read byte from daughter board
-		if(drv_uart_getChar(dataRouterConfig->daughterBoard, &receivedByte) == STATUS_PASS)
-		{
-			//if byte exists, pass through to the daughter board and USB (if connected)
-			if(daughterBoardPacket.packetSize < CMD_INCOMING_CMD_SIZE_MAX -1) //check we have room for the command. 
-			{				
-				daughterBoardPacket.packetData[daughterBoardPacket.packetSize++] = receivedByte;				
-				if(receivedByte == '\n')
-				{
-					//make sure the packet is null terminated
-					daughterBoardPacket.packetData[daughterBoardPacket.packetSize] = 0x00;
-					if(cmd_queue_commandQueue != NULL)
-					{
-						if(xQueueSendToBack(cmd_queue_commandQueue,( void * ) &daughterBoardPacket,5) != TRUE)
-						{
-							//this is an error, we should log it. 
-						}						
-					}
-					//clear the packet for the next one. 
-					cmd_initPacketStructure(&daughterBoardPacket);
-				}
-			}
-			else
-			{
-				//the packet was too big, we should delete it, possibly log an error
-				cmd_initPacketStructure(&daughterBoardPacket);
-			}
-		}
+		//if(drv_uart_getChar(dataRouterConfig->daughterBoard, &receivedByte) == STATUS_PASS)
+		//{
+			////if byte exists, pass through to the daughter board and USB (if connected)
+			//if(daughterBoardPacket.packetSize < CMD_INCOMING_CMD_SIZE_MAX -1) //check we have room for the command. 
+			//{				
+				//daughterBoardPacket.packetData[daughterBoardPacket.packetSize++] = receivedByte;				
+				//if(receivedByte == '\n')
+				//{
+					////make sure the packet is null terminated
+					//daughterBoardPacket.packetData[daughterBoardPacket.packetSize] = 0x00;
+					//if(cmd_queue_commandQueue != NULL)
+					//{
+						//if(xQueueSendToBack(cmd_queue_commandQueue,( void * ) &daughterBoardPacket,5) != TRUE)
+						//{
+							////this is an error, we should log it. 
+						//}						
+					//}
+					////clear the packet for the next one. 
+					//cmd_initPacketStructure(&daughterBoardPacket);
+				//}
+			//}
+			//else
+			//{
+				////the packet was too big, we should delete it, possibly log an error
+				//cmd_initPacketStructure(&daughterBoardPacket);
+			//}
+		//}
 		//check if there's any data on the 
 		if(udi_cdc_is_rx_ready() == true)
 		{
@@ -229,8 +229,7 @@ void dat_task_dataRouter(void *pvParameters)
 		wdt_restart(WDT);
 		//taskYIELD();
 		//vTaskDelay(1);
-				
-		
+	
 	}	
 }
 //note... for now it must be prepended with "PwrBrdMsg:"
@@ -254,6 +253,3 @@ status_t dat_sendStringToUsb(char* str)
 	udi_cdc_write_buf(str, length); 
 	return STATUS_PASS;	
 }
-
-
-

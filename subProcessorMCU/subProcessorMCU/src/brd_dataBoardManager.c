@@ -6,6 +6,7 @@
  */ 
 
 #include <asf.h>
+#include <string.h>
 #include "common.h"
 #include "brd_dataBoardManager.h"
 #include "pkt_packetCommandsList.h"
@@ -21,12 +22,19 @@
 
 /*	Static functions forward declaration	*/
 static void processPacket(pkt_rawPacket_t *packet);
+static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet);
+static void sendDateTimeResp(status_t status);
+static void sendDateTime();
+static uint8_t convertToBcd(uint32_t twoDigitNumber);
+static uint32_t convertFromBcd(uint8_t bcdNumber);
+static void sendStatus(subp_status_t status);
 
 /*	Extern variables	*/
 extern xQueueHandle queue_sensorHandler;
 extern bool enableStream;
 extern uint32_t reqSensorMask;
 extern uint8_t dataRate;
+extern drv_uart_config_t uart0Config;
 
 /*	Local variables	*/
 pkt_rawPacket_t dataBoardPacket;
@@ -35,7 +43,7 @@ xSemaphoreHandle semaphore_dataBoardUart = NULL;
 
 static drv_uart_config_t dataBoardPortConfig =		// TODO: undefine the UART configuration in brd_board.c
 {
-	.mem_index = -1,		// the driver will assign the mem_index
+	.mem_index = 1,		// the driver will assign the mem_index
 	.p_usart = UART1,
 	.uart_options = 
 	{
@@ -56,7 +64,7 @@ void dat_dataBoardManager(void *pvParameters)
 	uint8_t buff[10] = {0};
 	
 	// initialize the UART for data board.
-	drv_uart_init(&dataBoardPortConfig);
+	//drv_uart_init(&dataBoardPortConfig);
 	
 	queue_dataBoard = xQueueCreate(DATA_BOARD_TERMINAL_MSG_FREQ, DATA_BOARD_TERMINAL_MSG_LENGTH);
 	if (queue_dataBoard == NULL)
@@ -65,6 +73,8 @@ void dat_dataBoardManager(void *pvParameters)
 	}
 	
 	semaphore_dataBoardUart = xSemaphoreCreateMutex();
+	
+	dataBoardPortConfig = uart0Config;
 	
 	while (1)
 	{
@@ -75,26 +85,22 @@ void dat_dataBoardManager(void *pvParameters)
 			processPacket(&dataBoardPacket);
 		}
 		
-		if (xQueueReceive(queue_dataBoard, &buffer, 100) == TRUE)
-		{
-			sts_getSystemStatus(&systemStatus);		
-		}
-		
 		vTaskDelay(100);
 	}
 }
 
 void processPacket(pkt_rawPacket_t *packet)
 {
+	status_t status;
 	uint16_t chargeLevel;
 	subp_status_t systemStatus;
+	subp_dateTime_t dateTime;
 	
 	if (packet->payloadSize < 2)
 	{
 		return;	// a packet should have minimum of two bytes
 	}
 	
-	// TODO: does this data need to be unwrapped? It should be unwrapped in the UART driver itself
 	if (packet->payload[0] == PACKET_TYPE_MASTER_CONTROL)
 	{
 		switch (packet->payload[1])
@@ -103,24 +109,171 @@ void processPacket(pkt_rawPacket_t *packet)
 				// return current status of Power board
 				// use semaphore to access the UART
 				sts_getSystemStatus(&systemStatus);
-				
+				if (xSemaphoreTake(semaphore_dataBoardUart, 100) == pdTRUE)
+				{
+					sendStatus(systemStatus);
+					xSemaphoreGive(semaphore_dataBoardUart);
+				}
 			break;
 			case PACKET_COMMAND_ID_SUBP_CONFIG:
 				// set the received sub processor configuration
-				dataRate = packet->payload[3];
-				reqSensorMask = packet->payload[4] | (packet->payload[5] << 8);	// we ignore the rest of the packet as the total number of sensors is only 9
+				dataRate = packet->payload[2];
+				reqSensorMask = packet->payload[3] | (packet->payload[4] << 8);	// we ignore the rest of the packet as the total number of sensors is only 9
 			break;
 			case PACKET_COMMAND_ID_SUBP_STREAMING:
 				// enable / disable sensor streaming
-				enableStream = packet->payload[2];
+				enableStream = (bool) packet->payload[2];
 			break;
 			case PACKET_COMMAND_ID_SUBP_OUTPUT_DATA:
 				// simply pass this data to daughter board and USB
 				// should not access the USB and daughter board UART directly, pass it on a queue and handle the data in dataRouter
 				xQueueSendToBack(queue_dataBoard, &packet->payload[2], 10);
 			break;
+			case PACKET_COMMAND_ID_SUBP_POWER_DOWN_RESP:
+				// the data board is now powering down
+			break;
+			case PACKET_COMMAND_ID_SUBP_GET_DATE_TIME:
+				// the data board has requested current date and time
+				sendDateTime();
+			break;
+			case PACKET_COMMAND_ID_SUBP_SET_DATE_TIME:
+				// the data board has sent new date and time
+				status = setDateTimeFromPacket(packet);
+				sendDateTimeResp(status);
+			break;
 			default:
 			break;
 		}
 	}
+}
+
+static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet)
+{
+	status_t status = STATUS_PASS;
+	subp_dateTime_t dateTime;
+	uint32_t year = 0, month = 0, dayOfWeek = 0, date = 0;
+	uint32_t hour, minute, second;
+	
+	// set to registers directly
+	dateTime.time = packet->payload[2] | (packet->payload[3] << 8) | (packet->payload[4] << 16) | (0x00 <<22);	// 0x00 as we are using 24-hour mode
+	dateTime.date = packet->payload[6] | (packet->payload[7] << 8) | (((packet->payload[8] & 0x1F) | (packet->payload[8] & 0xE0)) << 16) 
+					| (packet->payload[9] << 24);
+	
+	// Date
+	RTC->RTC_CR |= RTC_CR_UPDCAL;
+	while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD);
+
+	RTC->RTC_SCCR = RTC_SCCR_ACKCLR;
+	RTC->RTC_CALR = dateTime.date;
+	RTC->RTC_CR &= (~RTC_CR_UPDCAL);
+	/* Clear SECENV in SCCR */
+	RTC->RTC_SCCR |= RTC_SCCR_SECCLR;
+
+	status =  (RTC->RTC_VER & RTC_VER_NVCAL);
+	
+	// Time
+	RTC->RTC_CR |= RTC_CR_UPDTIM;
+	while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD);
+	RTC->RTC_SCCR = RTC_SCCR_ACKCLR;
+	RTC->RTC_TIMR = dateTime.time;
+	RTC->RTC_CR &= (~RTC_CR_UPDTIM);
+	RTC->RTC_SCCR |= RTC_SCCR_SECCLR;
+
+	status |= (RTC->RTC_VER & RTC_VER_NVTIM);
+	
+	/*	Second Method	*/
+	// set the time first
+	//hour = convertFromBcd(packet->payload[4]);
+	//minute = convertFromBcd(packet->payload[3]);
+	//second = convertFromBcd(packet->payload[2]);
+	//if (rtc_set_time(RTC, hour, minute, second) != STATUS_PASS)
+	//{
+		//status = STATUS_FAIL;
+	//}
+	//
+	//// set the date
+	//year = (convertFromBcd(packet->payload[6]) * 100 ) + convertFromBcd(packet->payload[7]);
+	//month = convertFromBcd(packet->payload[8] & 0x1F);	// lower 5 bits are for months
+	//dayOfWeek = convertFromBcd(packet->payload[8] & 0xE0) >> 4;	// higher 3 bits are for day
+	//date = convertFromBcd(packet->payload[9]);
+	//if (rtc_set_date(RTC, year, month, date, dayOfWeek) != STATUS_PASS)
+	//{
+		//status |= STATUS_FAIL;
+	//}
+	
+	/*	return the status	*/
+	return status;
+}
+
+static void sendDateTimeResp(status_t status)
+{
+	uint8_t response[3] = {0};
+		
+	if (status == STATUS_PASS)		// date and time successfully written
+	{
+		response[0] = PACKET_TYPE_SUB_PROCESSOR;
+		response[1] = PACKET_COMMAND_ID_SUBP_SET_DATE_TIME_RESP;
+		response[2] = 0x01;
+		pkt_sendRawPacket(&dataBoardPortConfig, response, 0x03);
+	}
+	else							// failed to write date and time
+	{
+		response[0] = PACKET_TYPE_SUB_PROCESSOR;
+		response[1] = PACKET_COMMAND_ID_SUBP_SET_DATE_TIME_RESP;
+		response[2] = 0x00;
+		pkt_sendRawPacket(&dataBoardPortConfig, response, 0x03);
+	}
+}
+
+static void sendDateTime()
+{
+	// fetch current date and time from RTC and send it
+	
+	uint32_t year, month, dayOfWeek, date;
+	uint32_t seconds, minutes, hour;
+	subp_dateTime_t dateTime;
+	uint8_t response[10] = {0};
+	
+	rtc_get_date(RTC, &year, &month, &date, &dayOfWeek);
+	rtc_get_time(RTC, &hour, &minutes, &seconds);	// returns hour in 24-hour mode
+	
+	// convert to BCD before sending out
+	year = convertToBcd(year/100) | (convertToBcd(year%100) << 8) ;
+	month = convertToBcd(month);
+	dayOfWeek = convertToBcd(dayOfWeek);
+	date = convertToBcd(date);
+	hour = convertToBcd(hour);
+	minutes = convertToBcd(minutes);
+	seconds = convertToBcd(seconds);
+	dateTime.time = seconds | (minutes << 8) | (hour << 16) | (0x00 << 22);		// 0x00 as the time is in 24-hour mode
+	dateTime.date = year | (month << 16) | (dayOfWeek << 21) | (date << 24);
+	
+	response[0] = PACKET_TYPE_SUB_PROCESSOR;
+	response[1] = PACKET_COMMAND_ID_SUBP_GET_DATE_TIME_RESP;
+	memcpy(&response[2], &dateTime, 8);
+	pkt_sendRawPacket(&dataBoardPortConfig, response, 0x0A);
+}
+
+static uint32_t convertFromBcd(uint8_t bcdNumber)
+{
+	return (((bcdNumber & 0xF0) >> 4) * 10 + (bcdNumber & 0x0F));
+}
+
+static uint8_t convertToBcd(uint32_t twoDigitNumber)
+{
+	int tens, units;
+	tens = twoDigitNumber / 10;
+	units = twoDigitNumber % 10;
+	return ((tens << 4) | units);
+}
+
+static void sendStatus(subp_status_t status)
+{
+	uint8_t response[11] = {0};
+		
+	response[0] = PACKET_TYPE_SUB_PROCESSOR;
+	response[1] = PACKET_COMMAND_ID_SUBP_GET_STATUS_RESP;
+	memcpy(&response[2], &status, 9);
+		
+	pkt_sendRawPacket(&dataBoardPortConfig, response, sizeof(response));
 }

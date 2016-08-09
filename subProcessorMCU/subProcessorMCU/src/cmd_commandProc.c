@@ -213,11 +213,6 @@ void cmd_task_commandProcesor(void *pvParameters)
 					}
 					forwardCommand = false; 
 				}
-				else if (strncmp(packet.packetData, "getStatus", 9) == 0)				
-				{
-					xQueueSendToBack(queue_dataBoard, &chargeLevel, 10);
-					forwardCommand = false;
-				}
 				
 				if(forwardCommand == true)
 				{

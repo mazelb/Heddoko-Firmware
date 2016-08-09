@@ -87,7 +87,7 @@ void mgr_managerTask(void *pvParameters)
 	{
 		printf("Failed to create DAT task code %d\r\n", retCode);
 	}
-	retCode = xTaskCreate(dat_dataBoardManager, "DB", TASK_DATA_BOARD_MANAGER_STACK_SIZE, NULL, TASK_DATA_BOARD_MANAGER_PRIORITY, NULL);
+	retCode = xTaskCreate(dat_dataBoardManager, "DBM", TASK_DATA_BOARD_MANAGER_STACK_SIZE, NULL, TASK_DATA_BOARD_MANAGER_PRIORITY, NULL);
 	if (retCode != pdPASS)
 	{
 		printf("Failed to create DB task code %d\r\n", retCode);
