@@ -45,11 +45,9 @@ void task(void)
 void dat_task_dataRouter(void *pvParameters)
 {
 	dataRouterConfig = (dat_dataRouterConfig_t*)pvParameters; 
-	cmd_commandPacket_t daughterBoardPacket, usbPacket;
+	cmd_commandPacket_t usbPacket;
 	//mgr_eventMessage_t eventMessage; 
 	//initialize the packets
-	cmd_initPacketStructure(&daughterBoardPacket);
-	daughterBoardPacket.packetSource = CMD_COMMAND_SOURCE_DAUGHTER; 
 	cmd_initPacketStructure(&usbPacket);
 	usbPacket.packetSource = CMD_COMMAND_SOURCE_USB;
 		
@@ -236,14 +234,14 @@ void dat_task_dataRouter(void *pvParameters)
 status_t dat_sendDebugMsgToDataBoard(char* debugString)
 {
 	//possibly add some sort of error handling here.	
-	drv_uart_putString(dataRouterConfig->dataBoardUart, debugString);
+	drv_uart_putString(dataRouterConfig->dataBoardUart, debugString);	// TODO: wrap the message 
 	return STATUS_PASS;
 }
 
 status_t dat_sendPacketToDataBoard(cmd_commandPacket_t* packet)
 { 
 	//possibly add some sort of error handling here.
-	drv_uart_putData(dataRouterConfig->dataBoardUart, packet->packetData, packet->packetSize);	
+	drv_uart_putData(dataRouterConfig->dataBoardUart, packet->packetData, packet->packetSize);	//TODO: what is this, if important wrap it before sending.
 	return STATUS_PASS;	
 }
 

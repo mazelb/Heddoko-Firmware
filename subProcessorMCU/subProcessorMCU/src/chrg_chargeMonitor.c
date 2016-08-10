@@ -194,7 +194,7 @@ void chrg_task_chargeMonitor(void *pvParameters)
 					if(mgr_eventQueue != NULL)
 					{
 						dat_sendDebugMsgToDataBoard("PwrBrdMsg:Battery Level Empty\r\n");
-						//dont send the message 
+						//don't send the message 
 						//if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
 						//{
 							////this is an error, we should log it.

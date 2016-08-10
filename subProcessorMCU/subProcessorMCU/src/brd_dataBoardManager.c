@@ -31,29 +31,18 @@ static void sendStatus(subp_status_t status);
 
 /*	Extern variables	*/
 extern xQueueHandle queue_sensorHandler;
+extern xQueueHandle mgr_eventQueue;
 extern bool enableStream;
 extern uint32_t reqSensorMask;
 extern uint8_t dataRate;
-extern drv_uart_config_t uart0Config;
+extern drv_uart_config_t uart0Config, uart1Config;
 
 /*	Local variables	*/
 pkt_rawPacket_t dataBoardPacket;
 xQueueHandle queue_dataBoard = NULL;		// queue to pass data to the data router
 xSemaphoreHandle semaphore_dataBoardUart = NULL;
 
-static drv_uart_config_t dataBoardPortConfig =		// TODO: undefine the UART configuration in brd_board.c
-{
-	.mem_index = 1,		// the driver will assign the mem_index
-	.p_usart = UART1,
-	.uart_options = 
-	{
-		.baudrate = CONF_BAUDRATE,
-		.charlength = CONF_CHARLENGTH,
-		.paritytype = CONF_PARITY,
-		.stopbits = CONF_STOPBITS
-	},
-	.mode = DRV_UART_MODE_INTERRUPT
-};
+static drv_uart_config_t dataBoardPortConfig;
 
 void dat_dataBoardManager(void *pvParameters)
 {
@@ -63,8 +52,7 @@ void dat_dataBoardManager(void *pvParameters)
 	subp_status_t systemStatus;
 	uint8_t buff[10] = {0};
 	
-	// initialize the UART for data board.
-	//drv_uart_init(&dataBoardPortConfig);
+	// the UART for data board is initialized in the brd_init function.
 	
 	queue_dataBoard = xQueueCreate(DATA_BOARD_TERMINAL_MSG_FREQ, DATA_BOARD_TERMINAL_MSG_LENGTH);
 	if (queue_dataBoard == NULL)
@@ -74,7 +62,7 @@ void dat_dataBoardManager(void *pvParameters)
 	
 	semaphore_dataBoardUart = xSemaphoreCreateMutex();
 	
-	dataBoardPortConfig = uart0Config;
+	dataBoardPortConfig = uart1Config;
 	
 	while (1)
 	{
@@ -95,6 +83,7 @@ void processPacket(pkt_rawPacket_t *packet)
 	uint16_t chargeLevel;
 	subp_status_t systemStatus;
 	subp_dateTime_t dateTime;
+	mgr_eventMessage_t eventMessage; 
 	
 	if (packet->payloadSize < 2)
 	{
@@ -131,6 +120,14 @@ void processPacket(pkt_rawPacket_t *packet)
 			break;
 			case PACKET_COMMAND_ID_SUBP_POWER_DOWN_RESP:
 				// the data board is now powering down
+				eventMessage.sysEvent = SYS_EVENT_POWER_SWITCH;		// TODO: remove the call from the manager task.
+				if(mgr_eventQueue != NULL)
+				{
+					if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
+					{
+						//this is an error, we should log it.
+					}
+				}
 			break;
 			case PACKET_COMMAND_ID_SUBP_GET_DATE_TIME:
 				// the data board has requested current date and time
@@ -153,6 +150,7 @@ static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet)
 	subp_dateTime_t dateTime;
 	uint32_t year = 0, month = 0, dayOfWeek = 0, date = 0;
 	uint32_t hour, minute, second;
+	uint32_t startTime = xTaskGetTickCount();
 	
 	// set to registers directly
 	dateTime.time = packet->payload[2] | (packet->payload[3] << 8) | (packet->payload[4] << 16) | (0x00 <<22);	// 0x00 as we are using 24-hour mode
@@ -161,7 +159,14 @@ static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet)
 	
 	// Date
 	RTC->RTC_CR |= RTC_CR_UPDCAL;
-	while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD);
+	while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD)
+	{
+		if (xTaskGetTickCount() - startTime > 1000)		// it can take up to one second to get the ACKUPD bit
+		{
+			status |= STATUS_FAIL;
+			return status;
+		}
+	}
 
 	RTC->RTC_SCCR = RTC_SCCR_ACKCLR;
 	RTC->RTC_CALR = dateTime.date;
@@ -173,33 +178,20 @@ static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet)
 	
 	// Time
 	RTC->RTC_CR |= RTC_CR_UPDTIM;
-	while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD);
+	while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD)
+	{
+		if (xTaskGetTickCount() - startTime > 1000)		// it can take up to one second to get the ACKUPD bit
+		{
+			status |= STATUS_FAIL;
+			return status;
+		}
+	}
 	RTC->RTC_SCCR = RTC_SCCR_ACKCLR;
 	RTC->RTC_TIMR = dateTime.time;
 	RTC->RTC_CR &= (~RTC_CR_UPDTIM);
 	RTC->RTC_SCCR |= RTC_SCCR_SECCLR;
 
 	status |= (RTC->RTC_VER & RTC_VER_NVTIM);
-	
-	/*	Second Method	*/
-	// set the time first
-	//hour = convertFromBcd(packet->payload[4]);
-	//minute = convertFromBcd(packet->payload[3]);
-	//second = convertFromBcd(packet->payload[2]);
-	//if (rtc_set_time(RTC, hour, minute, second) != STATUS_PASS)
-	//{
-		//status = STATUS_FAIL;
-	//}
-	//
-	//// set the date
-	//year = (convertFromBcd(packet->payload[6]) * 100 ) + convertFromBcd(packet->payload[7]);
-	//month = convertFromBcd(packet->payload[8] & 0x1F);	// lower 5 bits are for months
-	//dayOfWeek = convertFromBcd(packet->payload[8] & 0xE0) >> 4;	// higher 3 bits are for day
-	//date = convertFromBcd(packet->payload[9]);
-	//if (rtc_set_date(RTC, year, month, date, dayOfWeek) != STATUS_PASS)
-	//{
-		//status |= STATUS_FAIL;
-	//}
 	
 	/*	return the status	*/
 	return status;
