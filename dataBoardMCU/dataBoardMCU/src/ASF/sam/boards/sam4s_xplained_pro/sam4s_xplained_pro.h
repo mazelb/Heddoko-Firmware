@@ -542,11 +542,11 @@
 
 //! \name SD Card
 //@{
-#define SD_MMC_0_CD_GPIO            (PIO_PC12_IDX)
-#define SD_MMC_0_CD_PIO_ID          ID_PIOC
+#define SD_MMC_0_CD_GPIO            (PIO_PA17_IDX)  //TODO add ifdef for HW Changed from PIO_PC12_IDX
+#define SD_MMC_0_CD_PIO_ID          ID_PIOA			//TODO add ifdef for HW Changed from ID_PIOC
 #define SD_MMC_0_CD_FLAGS           (PIO_INPUT | PIO_PULLUP)
 
-#define SD_MMC_0_CD_DETECT_VALUE    0
+#define SD_MMC_0_CD_DETECT_VALUE    1				//TODO add ifdef for HW Changed from 0
 
 #define SD_MMC_0_CD    {PIO_PC12, PIOC, ID_PIOC, PIO_INPUT, PIO_PULLUP | PIO_DEBOUNCE | PIO_IT_RISE_EDGE}
 #define SD_MMC_0_CD_MASK PIO_PC12

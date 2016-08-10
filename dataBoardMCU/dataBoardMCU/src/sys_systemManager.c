@@ -19,6 +19,7 @@
 #include "subp_subProcessor.h"
 #include "dat_dataManager.h"
 #include "dbg_debugManager.h"
+#include "net_wirelessNetwork.h"
 
 /* Global Variables */
 xQueueHandle queue_systemManager = NULL;
@@ -59,6 +60,10 @@ void sys_systemManagerTask(void* pvParameters)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create sd card task\r\n");
 	}
+	if(xTaskCreate(net_wirelessNetworkTask, "wif", (4000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+4, NULL) != pdPASS)	
+	{
+		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create wireless task\r\n");
+	}	
 	vTaskDelay(200); 
 	sendStateChangeMessage(SYSTEM_STATE_INIT); 
 	

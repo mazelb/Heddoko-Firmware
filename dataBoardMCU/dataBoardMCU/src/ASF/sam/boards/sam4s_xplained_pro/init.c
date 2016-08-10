@@ -47,6 +47,7 @@
 #include <gpio.h>
 #include <ioport.h>
 #include <wdt.h>
+#include "conf_winc.h"
 
 /**
  * \addtogroup sam4s_xplained_pro_group

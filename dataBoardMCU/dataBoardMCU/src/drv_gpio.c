@@ -76,7 +76,7 @@ status_t drv_gpio_initializeAll(void)
 	{
 		if(drv_gpio_config(&gpioConfig[i]) != STATUS_PASS)
 		{
-			//printf("failed to initialize GPIO at index %d", i);
+			//dbg_printString(DBG_LOG_LEVEL_DEBUG,"failed to initialize GPIO at index %d", i);
 			status |= STATUS_FAIL;
 		}
 	}
@@ -103,7 +103,7 @@ status_t drv_gpio_initializeForBootloader(void)
 	{
 		if(drv_gpio_config(&gpioConfig[i]) != STATUS_PASS)
 		{
-			//printf("failed to initialize GPIO at index %d", i);
+			//dbg_printString(DBG_LOG_LEVEL_DEBUG,"failed to initialize GPIO at index %d", i);
 			status |= STATUS_FAIL;
 		}
 	}	
@@ -174,10 +174,10 @@ status_t drv_gpio_config(drv_gpio_config_t* gpioConfig)
 			{
 				NVIC_EnableIRQ(PIOB_IRQn);
 			}
-			else if (p_pio == PIOC)
-			{
-				NVIC_EnableIRQ(PIOC_IRQn);
-			}
+			//else if (p_pio == PIOC)
+			//{
+				//NVIC_EnableIRQ(PIOC_IRQn);
+			//}
 		}
 		//turn off any pulldown resistors
 		p_pio->PIO_PPDDR |= PinMask; 
@@ -366,10 +366,11 @@ status_t drv_gpio_enable_interrupt(drv_gpio_pins_t pin)
 	{
 		NVIC_EnableIRQ(PIOB_IRQn);
 	}
-	else if (p_pio == PIOC)
-	{
-		NVIC_EnableIRQ(PIOC_IRQn);
-	}
+	//
+	//else if (p_pio == PIOC)
+	//{
+		//NVIC_EnableIRQ(PIOC_IRQn);
+	//}
 	return status;
 }
 
@@ -606,11 +607,11 @@ static void drv_gpio_int_stat(uint32_t ul_id, uint32_t ul_mask)
 static void drv_gpio_int_cd(uint32_t ul_id, uint32_t ul_mask)
 {
 	uint32_t PinMask = pio_get_pin_group_mask(gpioConfig[DRV_GPIO_PIN_SD_CD].pinId);
-	pio_disable_interrupt(PIOC, PinMask);
-	uint32_t ReadIsr = PIOC->PIO_ISR;
+	pio_disable_interrupt(PIOA, PinMask);
+	uint32_t ReadIsr = PIOA->PIO_ISR;
 	if (PinMask == ul_mask)
 	{
 		gpioConfig[DRV_GPIO_PIN_SD_CD].gpioSetFlag = 1;
 	}
-	pio_enable_interrupt(PIOC, PinMask);
+	pio_enable_interrupt(PIOA, PinMask);
 }

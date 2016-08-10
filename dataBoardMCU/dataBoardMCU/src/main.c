@@ -35,6 +35,7 @@
 //should contain a call to system manager
 
 #include <asf.h>
+
 #include "common.h"
 #include "sys_systemManager.h"
 

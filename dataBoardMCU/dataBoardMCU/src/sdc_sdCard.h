@@ -13,7 +13,7 @@
 #include <asf.h>
 #include "common.h"
 
-#define SD_CD_PIN					PIO_PC12_IDX
+#define SD_CD_PIN					PIO_PA17_IDX //TODO add ifdef for new HW 
 
 
 #define SD_CARD_FILENAME_LENGTH		150

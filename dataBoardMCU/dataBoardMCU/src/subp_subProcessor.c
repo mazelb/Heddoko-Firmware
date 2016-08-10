@@ -12,6 +12,7 @@
 #include "sys_systemManager.h"
 #include "drv_uart.h"
 #include "dbg_debugManager.h"
+#include "net_wirelessNetwork.h"
 #include "heddokoPacket.pb-c.h"
 #include "pkt_packetParser.h"
 
@@ -153,6 +154,7 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 					{					
 						sdc_writeToFile(&dataLogFile, serializedDataBuffer, serializedLength); 
 					}
+					net_sendPacket(serializedDataBuffer, serializedLength);
 				}
 				if(rawFullFrame->timeStamp > lastTimeStamp)
 				{					
