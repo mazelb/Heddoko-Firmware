@@ -24,9 +24,9 @@ src/ASF/common/components/wifi/winc1500/bus_wrapper/source/nm_bus_wrapper_sam4s.
  ../src/ASF/common/components/wifi/winc1500/common/include/nm_common.h \
  ../src/ASF/common/components/wifi/winc1500/common/include/nm_debug.h \
  ../src/ASF/common/components/wifi/winc1500/bsp/include/nm_bsp_internal.h \
- ../src/ASF/common/components/wifi/winc1500/bus_wrapper/include/nm_bus_wrapper.h \
- ../src/asf.h ../src/ASF/sam/utils/compiler.h \
- ../src/ASF/common/utils/parts.h \
+ ../src/ASF/common/components/wifi/winc1500/bsp/include/nm_bsp_sam4s.h \
+ ../src/config/conf_winc.h ../src/ASF/common/boards/board.h \
+ ../src/ASF/sam/utils/compiler.h ../src/ASF/common/utils/parts.h \
  ../src/ASF/sam/utils/preprocessor/preprocessor.h \
  ../src/ASF/sam/utils/preprocessor/tpaste.h \
  ../src/ASF/sam/utils/preprocessor/stringz.h \
@@ -105,16 +105,16 @@ src/ASF/common/components/wifi/winc1500/bus_wrapper/source/nm_bus_wrapper_sam4s.
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\arm-none-eabi\include\alloca.h \
  ../src/ASF/common/utils/interrupt.h \
  ../src/ASF/common/utils/interrupt/interrupt_sam_nvic.h \
- ../src/ASF/sam/utils/status_codes.h \
+ ../src/ASF/sam/boards/sam4s_xplained_pro/sam4s_xplained_pro.h \
+ ../src/config/conf_board.h \
+ ../src/ASF/common/components/wifi/winc1500/bus_wrapper/include/nm_bus_wrapper.h \
+ ../src/asf.h ../src/ASF/sam/utils/status_codes.h \
  ../src/ASF/common/services/delay/delay.h \
  ../src/ASF/common/services/clock/sysclk.h ../src/config/conf_clock.h \
  ../src/ASF/common/services/clock/sam4s/sysclk.h \
  ../src/ASF/common/services/clock/osc.h \
  ../src/ASF/common/services/clock/sam4s/osc.h \
- ../src/ASF/common/boards/board.h \
- ../src/ASF/sam/boards/sam4s_xplained_pro/sam4s_xplained_pro.h \
- ../src/config/conf_board.h ../src/ASF/sam/drivers/pmc/pmc.h \
- ../src/ASF/common/services/clock/pll.h \
+ ../src/ASF/sam/drivers/pmc/pmc.h ../src/ASF/common/services/clock/pll.h \
  ../src/ASF/common/services/clock/sam4s/pll.h \
  ../src/ASF/common/services/delay/sam/cycle_counter.h \
  ../src/ASF/thirdparty/fatfs/fatfs-r0.09/src/diskio.h \
@@ -164,7 +164,7 @@ src/ASF/common/components/wifi/winc1500/bus_wrapper/source/nm_bus_wrapper_sam4s.
  ../src/ASF/common/services/serial/sam_uart/uart_serial.h \
  ../src/ASF/sam/drivers/uart/uart.h ../src/ASF/sam/drivers/usart/usart.h \
  ../src/config/conf_uart_serial.h ../src/ASF/sam/drivers/wdt/wdt.h \
- ../src/ASF/sam/drivers/pio/pio_handler.h ../src/config/conf_winc.h
+ ../src/ASF/sam/drivers/pio/pio_handler.h
 
 c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\arm-none-eabi\include\stdio.h:
 
@@ -212,9 +212,11 @@ c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\arm-no
 
 ../src/ASF/common/components/wifi/winc1500/bsp/include/nm_bsp_internal.h:
 
-../src/ASF/common/components/wifi/winc1500/bus_wrapper/include/nm_bus_wrapper.h:
+../src/ASF/common/components/wifi/winc1500/bsp/include/nm_bsp_sam4s.h:
 
-../src/asf.h:
+../src/config/conf_winc.h:
+
+../src/ASF/common/boards/board.h:
 
 ../src/ASF/sam/utils/compiler.h:
 
@@ -376,6 +378,14 @@ c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\arm-no
 
 ../src/ASF/common/utils/interrupt/interrupt_sam_nvic.h:
 
+../src/ASF/sam/boards/sam4s_xplained_pro/sam4s_xplained_pro.h:
+
+../src/config/conf_board.h:
+
+../src/ASF/common/components/wifi/winc1500/bus_wrapper/include/nm_bus_wrapper.h:
+
+../src/asf.h:
+
 ../src/ASF/sam/utils/status_codes.h:
 
 ../src/ASF/common/services/delay/delay.h:
@@ -389,12 +399,6 @@ c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\arm-no
 ../src/ASF/common/services/clock/osc.h:
 
 ../src/ASF/common/services/clock/sam4s/osc.h:
-
-../src/ASF/common/boards/board.h:
-
-../src/ASF/sam/boards/sam4s_xplained_pro/sam4s_xplained_pro.h:
-
-../src/config/conf_board.h:
 
 ../src/ASF/sam/drivers/pmc/pmc.h:
 
@@ -511,5 +515,3 @@ c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\arm\arm-gnu-toolchain\arm-no
 ../src/ASF/sam/drivers/wdt/wdt.h:
 
 ../src/ASF/sam/drivers/pio/pio_handler.h:
-
-../src/config/conf_winc.h:

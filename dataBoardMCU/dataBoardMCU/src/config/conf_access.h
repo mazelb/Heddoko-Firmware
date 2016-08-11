@@ -255,11 +255,11 @@
 #define ACCESS_USB           false //!< MEM <-> USB interface.
 #endif
 
-#ifdef ACCESS_MEM_TO_RAM_ENABLED
+//#ifdef ACCESS_MEM_TO_RAM_ENABLED
 #define ACCESS_MEM_TO_RAM    true  //!< MEM <-> RAM interface.
-#else
-#define ACCESS_MEM_TO_RAM    false //!< MEM <-> RAM interface.
-#endif
+//#else
+//#define ACCESS_MEM_TO_RAM    false //!< MEM <-> RAM interface.
+//#endif
 
 #define ACCESS_STREAM        false //!< Streaming MEM <-> MEM interface.
 #define ACCESS_STREAM_RECORD false //!< Streaming MEM <-> MEM interface in record mode.

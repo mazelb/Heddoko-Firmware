@@ -70,7 +70,7 @@ void dbg_debugTask(void* pvParameters)
 	
 	//initialize the debug uart
 	status = drv_uart_init(&debugUartConfig);
-	
+	dbg_printString(DBG_LOG_LEVEL_DEBUG, "Debug Task Started\r\n");
 	while(1)
 	{
 		if(drv_uart_getlineTimed(&debugUartConfig,buffer,sizeof(buffer),5) == STATUS_PASS)

@@ -16,6 +16,7 @@
 #include "msg_messenger.h"
 #include "drv_gpio.h"
 #include "drv_uart.h"
+#include "drv_led.h"
 #include "subp_subProcessor.h"
 #include "dat_dataManager.h"
 #include "dbg_debugManager.h"
@@ -24,6 +25,7 @@
 /* Global Variables */
 xQueueHandle queue_systemManager = NULL;
 sys_manager_systemState_t currentState = SYSTEM_STATE_INIT; 
+
 /*	Local static functions	*/
 static void sendStateChangeMessage(sys_manager_systemState_t state);
 /*	Extern functions	*/
@@ -41,7 +43,15 @@ void sys_systemManagerTask(void* pvParameters)
 	msg_message_t eventMessage;
 	//initialize the GPIO here... possibly split it up later
 	drv_gpio_initializeAll();
-	
+	drv_led_config_t ledConfiguration =
+	{
+		.redLed = DRV_GPIO_PIN_RED_LED,
+		.greenLed = DRV_GPIO_PIN_GREEN_LED,
+		.blueLed = DRV_GPIO_PIN_BLUE_LED
+	};
+	drv_led_init(&ledConfiguration);
+	drv_led_set(DRV_LED_WHITE,DRV_LED_SOLID);
+	vTaskDelay(200);
 	queue_systemManager = xQueueCreate(10, sizeof(msg_message_t));
 	if (queue_systemManager != 0)
 	{

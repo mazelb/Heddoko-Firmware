@@ -91,7 +91,7 @@ void sdc_sdCardTask(void *pvParameters)
 		drv_gpio_getPinState(DRV_GPIO_PIN_SD_CD, &sdCd_newVal);
 		if (sdCd_newVal != sdCd_oldVal)
 		{
-			if (sdCd_newVal == true)
+			if (sdCd_newVal == DRV_GPIO_PIN_STATE_LOW)
 			{
 				cardRemovedCall();
 			}
@@ -607,7 +607,7 @@ status_t  __attribute__((optimize("O0"))) initializeSdCard()
 bool sdCardPresent()
 {
 	//NOTE: Change as per the board in use
-	return !(ioport_get_pin_level(SD_CD_PIN));	//The GPIO is pulled low when card is inserted.
+	return (ioport_get_pin_level(SD_CD_PIN));	//The GPIO is pulled high when card is inserted.
 }
 
 void changeActiveBuffer(sdc_file_t *fileObject)
@@ -724,15 +724,15 @@ void checkCardDetectInt()
 	{
 		drv_gpio_pin_state_t sdCdPinState;
 		drv_gpio_getPinState(DRV_GPIO_PIN_SD_CD, &sdCdPinState);
-		if (sdCdPinState == DRV_GPIO_PIN_STATE_LOW)
+		if (sdCdPinState == DRV_GPIO_PIN_STATE_HIGH)
 		{
 			
 			//SD card not present, set the respective event
 			cardRemovedCall();
 			//reconfigure the SD-card interrupt to look for insertion of card
-			drv_gpio_config_interrupt(DRV_GPIO_PIN_SD_CD, DRV_GPIO_INTERRUPT_HIGH_EDGE);
+			drv_gpio_config_interrupt(DRV_GPIO_PIN_SD_CD, DRV_GPIO_INTERRUPT_LOW_EDGE);
 		}
-		else if (sdCdPinState == DRV_GPIO_PIN_STATE_HIGH)
+		else if (sdCdPinState == DRV_GPIO_PIN_STATE_LOW)
 		{
 			dbg_printString(DBG_LOG_LEVEL_VERBOSE,"SD-card Inserted\r\n");
 			//SD card present or inserted, set the respective event

@@ -51,7 +51,7 @@
 //#define SD_MMC_SPI_MODE
 
 // Define to enable the SDIO support
-#define SDIO_SUPPORT_ENABLE
+//#define SDIO_SUPPORT_ENABLE
 
 // Define it to enable the debug trace to the current standard output (stdio)
 //#define SD_MMC_DEBUG
