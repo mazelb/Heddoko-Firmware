@@ -233,8 +233,14 @@ void dat_task_dataRouter(void *pvParameters)
 //note... for now it must be prepended with "PwrBrdMsg:"
 status_t dat_sendDebugMsgToDataBoard(char* debugString)
 {
-	//possibly add some sort of error handling here.	
-	drv_uart_putString(dataRouterConfig->dataBoardUart, debugString);	// TODO: wrap the message 
+	//possibly add some sort of error handling here.
+	uint16_t length = strlen(debugString);
+	uint8_t outputBuf[100] = {0};
+	outputBuf[0] = PACKET_TYPE_SUB_PROCESSOR;
+	outputBuf[1] = PACKET_COMMAND_ID_SUBP_OUTPUT_DATA;
+	memcpy(&outputBuf[2], debugString, length);
+	pkt_sendRawPacket(dataRouterConfig->dataBoardUart, outputBuf, length+2);
+	//drv_uart_putString(dataRouterConfig->dataBoardUart, outputBuf);	// TODO: wrap the message 
 	return STATUS_PASS;
 }
 

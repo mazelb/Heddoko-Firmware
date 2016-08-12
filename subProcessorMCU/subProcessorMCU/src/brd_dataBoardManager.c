@@ -17,6 +17,7 @@
 #include "drv_uart.h"
 #include "LTC2941-1.h"
 
+#define DATA_BOARD_STATUS_MSG_DELAY		30	// actual delay is 200 times this value in milli-seconds
 #define DATA_BOARD_TERMINAL_MSG_LENGTH	200
 #define DATA_BOARD_TERMINAL_MSG_FREQ	2	// this controls the size of queue to data router
 
@@ -32,7 +33,6 @@ static void sendStatus(subp_status_t status);
 /*	Extern variables	*/
 extern xQueueHandle queue_sensorHandler;
 extern xQueueHandle mgr_eventQueue;
-extern bool enableStream;
 extern uint32_t reqSensorMask;
 extern uint8_t dataRate;
 extern drv_uart_config_t uart0Config, uart1Config;
@@ -50,7 +50,7 @@ void dat_dataBoardManager(void *pvParameters)
 	pkt_rawPacket_t sensorPacket;
 	uint32_t buffer;
 	subp_status_t systemStatus;
-	uint8_t buff[10] = {0};
+	uint32_t statusMsgDelay = 0;
 	
 	// the UART for data board is initialized in the brd_init function.
 	
@@ -73,6 +73,16 @@ void dat_dataBoardManager(void *pvParameters)
 			processPacket(&dataBoardPacket);
 		}
 		
+		if ((statusMsgDelay % DATA_BOARD_STATUS_MSG_DELAY) == 0)
+		{
+			sts_getSystemStatus(&systemStatus);
+			if (xSemaphoreTake(semaphore_dataBoardUart, 1000) == pdTRUE)	// wait for one second to make sure we send out status everytime
+			{
+				sendStatus(systemStatus);
+				xSemaphoreGive(semaphore_dataBoardUart);
+			}
+		}
+		statusMsgDelay++;
 		vTaskDelay(100);
 	}
 }
@@ -111,7 +121,7 @@ void processPacket(pkt_rawPacket_t *packet)
 			break;
 			case PACKET_COMMAND_ID_SUBP_STREAMING:
 				// enable / disable sensor streaming
-				enableStream = (bool) packet->payload[2];
+				sen_enableSensorStream((bool) packet->payload[2]);
 			break;
 			case PACKET_COMMAND_ID_SUBP_OUTPUT_DATA:
 				// simply pass this data to daughter board and USB
@@ -150,7 +160,7 @@ static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet)
 	subp_dateTime_t dateTime;
 	uint32_t year = 0, month = 0, dayOfWeek = 0, date = 0;
 	uint32_t hour, minute, second;
-	uint32_t startTime = xTaskGetTickCount();
+	unsigned long startTime = xTaskGetTickCount(), curTime = 0;
 	
 	// set to registers directly
 	dateTime.time = packet->payload[2] | (packet->payload[3] << 8) | (packet->payload[4] << 16) | (0x00 <<22);	// 0x00 as we are using 24-hour mode
@@ -159,15 +169,15 @@ static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet)
 	
 	// Date
 	RTC->RTC_CR |= RTC_CR_UPDCAL;
-	while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD)
-	{
-		if (xTaskGetTickCount() - startTime > 1000)		// it can take up to one second to get the ACKUPD bit
-		{
-			status |= STATUS_FAIL;
-			return status;
-		}
-	}
-
+	//while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD)
+	//{
+		//curTime = xTaskGetTickCount();
+		//if (curTime - startTime > 2000)		// it can take up to one second to get the ACKUPD bit
+		//{
+			//status |= STATUS_FAIL;
+			//return status;
+		//}
+	//}
 	RTC->RTC_SCCR = RTC_SCCR_ACKCLR;
 	RTC->RTC_CALR = dateTime.date;
 	RTC->RTC_CR &= (~RTC_CR_UPDCAL);
@@ -178,14 +188,15 @@ static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet)
 	
 	// Time
 	RTC->RTC_CR |= RTC_CR_UPDTIM;
-	while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD)
-	{
-		if (xTaskGetTickCount() - startTime > 1000)		// it can take up to one second to get the ACKUPD bit
-		{
-			status |= STATUS_FAIL;
-			return status;
-		}
-	}
+	//while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD)
+	//{
+		//curTime = xTaskGetTickCount();
+		//if (curTime - startTime > 2000)		// it can take up to one second to get the ACKUPD bit
+		//{
+			//status |= STATUS_FAIL;
+			//return status;
+		//}
+	//}
 	RTC->RTC_SCCR = RTC_SCCR_ACKCLR;
 	RTC->RTC_TIMR = dateTime.time;
 	RTC->RTC_CR &= (~RTC_CR_UPDTIM);

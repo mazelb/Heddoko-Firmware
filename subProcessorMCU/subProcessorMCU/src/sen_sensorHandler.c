@@ -32,8 +32,10 @@ static void sendResetCommandFake();
 static void sendEnableHPR(uint8_t enable);
 static void sendChangeBaud(uint32_t baud);
 static void sendChangePadding(bool paddingEnable, uint8_t paddingLength);
-static status_t isSensorId(uint8_t byte);
+static status_t isExpectedSensorId(uint8_t byte, uint8_t expectedId);
+static status_t isSensorRequested(uint8_t sensorId);
 static void sendCommand();
+static void changeSensorState(sensor_state_t sensorState);
 
 /*	Extern variables	*/
 extern xSemaphoreHandle semaphore_dataBoardUart;
@@ -42,14 +44,15 @@ extern dat_dataRouterConfig_t dataRouterConfiguration;
 
 /*	Local variables	*/
 uint8_t number_FramesReceived = 0;
-pkt_rawPacket_t sensorFullFrame;
+//pkt_rawPacket_t sensorFullFrame;
+uint8_t sensorFullFrame[512] = {0};
 uint32_t *p_sensorFullFramePayload = NULL;
 sensor_state_t sgSensorState;
 pkt_rawPacket_t sensorPacket;	// packet to store sensor data
 static uint8_t sensorLoopCount = 0;	// cycles from 1 to 9 which correspond to the sensor ID 0 to 8. 
 bool enableStream = false;	// enables / disables sensor stream
 xQueueHandle queue_sensorHandler = NULL;
-uint32_t reqSensorMask = 0, errSensorMask = 0;
+uint32_t reqSensorMask = 0, detectedSensorMask = 0;
 uint8_t dataRate = 0;
 
 static drv_uart_config_t sensorPortConfig;
@@ -80,7 +83,7 @@ void sen_sensorHandlerTask(void *pvParameters)
 		puts("Failed to create sensor data queue\r\n");
 	}
 	
-	p_sensorFullFramePayload = &sensorFullFrame.payload[0];
+	p_sensorFullFramePayload = sensorFullFrame;
 	
 	while (1)
 	{
@@ -95,33 +98,54 @@ void sen_sensorHandlerTask(void *pvParameters)
 				}
 				else
 				{
+					changeSensorState(SENSOR_STREAMING);
 					sendResetCommandFake();
 				}
 				clearFullFrame();
-				vTaskDelay(3);
+				vTaskDelay(13);	// TODO: setting the delay to a really low value overflows the UART buffers
 				sensorLoopCount = 9;													// reset the loop count to get frames from all sensors
 				firstFrame = FALSE;
 			}
 			// request packet
-			sendGetFrame(0);	//sensorLoopCount - 1											// actual sensor id count is 0 to 8
-			vTaskDelay(1);
-			
-			// fetch the packet from buffer
-			bufferOffset = ((sensorLoopCount-1) * 35) + 5;								// each sensor has 36 bytes + 7 bytes are for main header minus 2 bytes to remove current header
-			tempPacket.p_payload = &sensorFullFrame.payload[bufferOffset];				// TODO: verify this fancy method
-			pkt_getPacketTimedNew(&sensorPortConfig, &tempPacket, 10);					// NOTE: needs a pointer to the packet and not the packet.payload
-			
-			// perform a short check to verify the integrity of the packet
-			if ((tempPacket.payloadSize != SEN_DEFAULT_DATA_FRAME_LENGTH) || (isSensorId(sensorFullFrame.payload[bufferOffset + 2]) != STATUS_PASS))
+			if (isSensorRequested(sensorLoopCount-1) == STATUS_PASS)		// NOTE: this will fill the rest of the frame with nulls
 			{
-				// this is a corrupt frame, should discard it
-				dat_sendDebugMsgToDataBoard("Corrupt sensor packet\r\n");
+				sendGetFrame(0);	//sensorLoopCount - 1											// actual sensor id count is 0 to 8
+				vTaskDelay(1);
+			
+				// fetch the packet from buffer
+				bufferOffset = ((sensorLoopCount-1) * 35) + 5;								// each sensor has 36 bytes + 7 bytes are for main header minus 2 bytes to remove current header
+				tempPacket.p_payload = &sensorFullFrame[bufferOffset]; 				
+				pkt_getPacketTimedNew(&sensorPortConfig, &tempPacket, 10);					// NOTE: needs a pointer to the packet and not the packet.payload
+			
+				// perform a short check to verify the integrity of the packet
+				if (((tempPacket.payloadSize != SEN_DEFAULT_DATA_FRAME_LENGTH) || 
+					(isExpectedSensorId(sensorFullFrame[bufferOffset + 2], sensorLoopCount - 1)) != STATUS_PASS))	// check for the size of packet and valid sensor ID
+				{
+					// this is a corrupt frame, should discard it
+					//dat_sendDebugMsgToDataBoard("Corrupt sensor packet\r\n");
+					detectedSensorMask &= ~(0x01 << (sensorLoopCount - 1));		// clear the detected sensor mask
+					if (reqSensorMask != detectedSensorMask)					// if not all the requested sensors are present then move to Error state
+					{
+						changeSensorState(SENSOR_ERROR);
+					}
+				}
+				else
+				{
+					detectedSensorMask |= (0x01 << (sensorLoopCount - 1));		// set the detected sensor mask
+					if (reqSensorMask == detectedSensorMask)					// if all the sensors are present then change the state to streaming
+					{
+						changeSensorState(SENSOR_STREAMING);
+					}
+					number_FramesReceived++;	// set the count for the number of frames received
+				}
 			}
 			sensorLoopCount--;
 		}
 		else
 		{
+			changeSensorState(SENSOR_IDLE);
 			sensorLoopCount = 0;	// make sure that if the next time the stream starts, buffer is always cleared
+			detectedSensorMask = 0;
 			firstFrame = TRUE;
 			// sit idle
 			vTaskDelay(100);
@@ -133,7 +157,7 @@ static void sendPacket(uint8_t *data, uint8_t length)
 {
 	enableRs485Transmit();
 	pkt_sendRawPacket(&sensorPortConfig, data, length);
-	delay_us(200);
+	delay_us(200);	// time taken for the get frame to be transmitted
 	disableRs485Transmit();
 }
 
@@ -249,13 +273,13 @@ static void changeSensorState(sensor_state_t sensorState)
 	}
 }
 
-static void storePacket(pkt_rawPacket_t *packet)
+static void storePacket(pkt_rawPacket_t *packet)	// this function is obsolete as pointer manipulation is used to store data
 {
 	if (packet->payload[3] > 8)
 	{
 		return;	// the sensorId is not valid
 	}
-	uint8_t location = packet->payload[3] *36;		// 36 is the length of data from each sensor
+	uint8_t location = packet->payload[3] *35;		// 36 is the length of data from each sensor
 	
 	if (packet->payloadSize < 2)
 	{
@@ -265,9 +289,9 @@ static void storePacket(pkt_rawPacket_t *packet)
 	if ((packet->payload[0] == PACKET_TYPE_IMU_SENSOR) && (packet->payload[0] == PACKET_COMMAND_ID_GET_FRAME_RESP))
 	{
 		// starting from the 3rd byte is sensor Id followed by sensor data, store it
-		memcpy(&sensorFullFrame.payload[location + 7], packet->payload[3], 36);		// we need first 7 bytes for header
-		sensorFullFrame.payloadSize += 36;
-		number_FramesReceived++;
+		//memcpy(&sensorFullFrame.payload[location + 7], packet->payload[3], 36);		// we need first 7 bytes for header
+		//sensorFullFrame.payloadSize += 36;
+		//number_FramesReceived++;
 	}	
 }
 
@@ -275,44 +299,69 @@ static void clearFullFrame()
 {
 	// clear the local structure holding the full frame of all sensors
 	memset(&sensorFullFrame, 0x00, sizeof(sensorFullFrame));
-	sensorFullFrame.payloadSize = 0;	// TODO: do i really need this or I wrote it out by mistake?
+	//sensorFullFrame.payloadSize = 0;	// TODO: do i really need this or I wrote it out by mistake?
 	number_FramesReceived = 0;
 }
 
 static void sendFullFrame()
 {
+	uint32_t frameSize = 0;
 	long sysTickCount = xTaskGetTickCount();
 	// send all sensors data to the data board
 	if (xSemaphoreTake(semaphore_dataBoardUart, 1) == TRUE)
 	{
-		sensorFullFrame.payload[0] = PACKET_TYPE_SUB_PROCESSOR;
-		sensorFullFrame.payload[1] = PACKET_COMMAND_ID_SUBP_FULL_FRAME;
-		sensorFullFrame.payload[2] = number_FramesReceived;
+		sensorFullFrame[0] = PACKET_TYPE_SUB_PROCESSOR;
+		sensorFullFrame[1] = PACKET_COMMAND_ID_SUBP_FULL_FRAME;
+		sensorFullFrame[2] = number_FramesReceived;
 		// assign the sys tick, little endian
-		sensorFullFrame.payload[3] = (sysTickCount >> 0) & 0xff;
-		sensorFullFrame.payload[4] = (sysTickCount >> 8) & 0xff;
-		sensorFullFrame.payload[5] = (sysTickCount >> 16) & 0xff;
-		sensorFullFrame.payload[6] = (sysTickCount >> 24) & 0xff;
-		pkt_sendRawPacket(dataRouterConfiguration.dataBoardUart, &sensorFullFrame, 322);	// TODO: reduce the packet size according to the number of sensors present
+		sensorFullFrame[3] = (sysTickCount >> 0) & 0xff;
+		sensorFullFrame[4] = (sysTickCount >> 8) & 0xff;
+		sensorFullFrame[5] = (sysTickCount >> 16) & 0xff;
+		sensorFullFrame[6] = (sysTickCount >> 24) & 0xff;
+		frameSize = (number_FramesReceived * 35) + 7;
+		pkt_sendRawPacket(dataRouterConfiguration.dataBoardUart, sensorFullFrame, frameSize);	// TODO: reduce the packet size according to the number of sensors present
 		xSemaphoreGive(semaphore_dataBoardUart);
 	}
 }
 
 sensor_state_t sen_getSensorState(void)
 {
-	return SENSOR_IDLE;
+	return sgSensorState;
 }
 
 uint32_t sen_getDetectedSensors(void)
 {
-	return 0x000001df;
+	return detectedSensorMask;
 }
 
-static status_t isSensorId(uint8_t byte)
+static status_t isExpectedSensorId(uint8_t byte, uint8_t expectedId)
 {
 	if (0 <= byte <= 8)
 	{
-		return STATUS_PASS;
+		if (byte == expectedId)
+		{
+			return STATUS_PASS;
+		}
 	}
 	return STATUS_FAIL;
+}
+
+static status_t isSensorRequested(uint8_t sensorId)
+{
+	if (0 <= sensorId <= 8)
+	{
+		if (((reqSensorMask >> sensorId) && 0x01)!= 0)
+		{
+			return STATUS_PASS;
+		}
+	}
+	return STATUS_FAIL;
+}
+
+void sen_enableSensorStream(bool enable)
+{
+	if (reqSensorMask != 0)
+	{
+		enableStream = enable;	// only enable the stream if any sensors are requested
+	}
 }
