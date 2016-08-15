@@ -12,10 +12,12 @@
 #include "common.h"
 #include "drv_gpio.h"
 
+//#define ENABLE_SENSORS_DEBUG_MODE
+
 #define GPIO_RS485_DATA_DIRECTION_RE	DRV_GPIO_PIN_GPIO
 #define GPIO_RS485_DATA_DIRECTION_DE	DRV_GPIO_PIN_GPIO
 
-#define SENSOR_BUS_SPEED_HIGH			2000000
+#define SENSOR_BUS_SPEED_HIGH			921600
 #define SENSOR_BUS_SPEED_LOW			460800
 
 //#define ENABLE_SENSOR_PACKET_TEST		//enable this define to switch to the debug packet and check the integrity of data

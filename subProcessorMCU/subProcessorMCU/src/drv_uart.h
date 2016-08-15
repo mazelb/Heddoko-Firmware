@@ -20,14 +20,15 @@
 
 #ifndef DRV_UART_H_
 #define DRV_UART_H_
-#define FIFO_BUFFER_SIZE 1024
+#define FIFO_BUFFER_SIZE 2048
 
 #define UART0_IDX			0
 #define UART1_IDX			1
 #define USART0_IDX			2
 #define USART1_IDX			3
 #define NUMBER_OF_BLOCKS 4
-#define DMA_BLOCK_SIZE 2048
+#define DMA_BLOCK_SIZE 2//2048
+
 typedef enum
 {
 	DRV_UART_MODE_INTERRUPT = 0,
@@ -46,7 +47,6 @@ typedef struct
 	uint16_t numBytes;
 	uint8_t buffer[DMA_BLOCK_SIZE];	
 }tx_mem_blocks_t;
-
 
 typedef struct  
 {

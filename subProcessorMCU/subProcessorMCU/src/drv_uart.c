@@ -39,7 +39,7 @@ typedef struct
 
 
 //global variables
-volatile drv_uart_memory_buf_t uartMemBuf[4]; //4 UARTS, 4 buffers
+volatile drv_uart_memory_buf_t uartMemBuf[3]; //4 UARTS, 4 buffers
 volatile fifo_mem_block_t fifo_mem_block;
 
 volatile uint32_t fullBufferError = 0;

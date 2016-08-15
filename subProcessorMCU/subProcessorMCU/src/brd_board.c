@@ -32,7 +32,7 @@ drv_uart_config_t uart1Config =
 	.mem_index = 1,
 	.uart_options =
 	{
-		.baudrate   = CONF_BAUDRATE,
+		.baudrate   = SENSOR_BUS_SPEED_LOW,
 		.charlength = CONF_CHARLENGTH,
 		.paritytype = CONF_PARITY,
 		.stopbits   = CONF_STOPBITS
@@ -91,7 +91,7 @@ static void configure_console(void)
 {
 	const usart_serial_options_t usart_serial_options = 
 	{
-		.baudrate   = CONF_TEST_BAUDRATE,
+		.baudrate   = SENSOR_BUS_SPEED_LOW,
 		.charlength = CONF_TEST_CHARLENGTH,
 		.paritytype = CONF_TEST_PARITY,
 		.stopbits   = CONF_TEST_STOPBITS,
@@ -153,6 +153,14 @@ void brd_deInitAllUarts()
 	drv_uart_deInit(&uart1Config);
 }
 
+
+void changeUartBaud(uint32_t baud)
+{
+	brd_deInitAllUarts();
+	uart0Config.uart_options.baudrate = baud;
+	//uart1Config.uart_options.baudrate = baud;
+	brd_initAllUarts();
+}
 
 /**
  *  \brief Handler for watchdog interrupt.

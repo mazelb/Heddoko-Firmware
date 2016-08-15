@@ -42,7 +42,7 @@ pkt_rawPacket_t dataBoardPacket;
 xQueueHandle queue_dataBoard = NULL;		// queue to pass data to the data router
 xSemaphoreHandle semaphore_dataBoardUart = NULL;
 
-static drv_uart_config_t dataBoardPortConfig;
+static drv_uart_config_t *dataBoardPortConfig;
 
 void dat_dataBoardManager(void *pvParameters)
 {
@@ -62,12 +62,12 @@ void dat_dataBoardManager(void *pvParameters)
 	
 	semaphore_dataBoardUart = xSemaphoreCreateMutex();
 	
-	dataBoardPortConfig = uart1Config;
+	dataBoardPortConfig = &uart1Config;
 	
 	while (1)
 	{
 		// check for incoming packets from data board
-		if (pkt_getPacketTimed(&dataBoardPortConfig, &dataBoardPacket, 100) == STATUS_PASS)
+		if (pkt_getPacketTimed(dataBoardPortConfig, &dataBoardPacket, 100) == STATUS_PASS)
 		{
 			// process the packet
 			processPacket(&dataBoardPacket);
@@ -167,6 +167,7 @@ static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet)
 	dateTime.date = packet->payload[6] | (packet->payload[7] << 8) | (((packet->payload[8] & 0x1F) | (packet->payload[8] & 0xE0)) << 16) 
 					| (packet->payload[9] << 24);
 	
+	taskENTER_CRITICAL();
 	// Date
 	RTC->RTC_CR |= RTC_CR_UPDCAL;
 	//while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD)
@@ -205,6 +206,7 @@ static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet)
 	status |= (RTC->RTC_VER & RTC_VER_NVTIM);
 	
 	/*	return the status	*/
+	taskEXIT_CRITICAL();
 	return status;
 }
 
@@ -217,14 +219,14 @@ static void sendDateTimeResp(status_t status)
 		response[0] = PACKET_TYPE_SUB_PROCESSOR;
 		response[1] = PACKET_COMMAND_ID_SUBP_SET_DATE_TIME_RESP;
 		response[2] = 0x01;
-		pkt_sendRawPacket(&dataBoardPortConfig, response, 0x03);
+		pkt_sendRawPacket(dataBoardPortConfig, response, 0x03);
 	}
 	else							// failed to write date and time
 	{
 		response[0] = PACKET_TYPE_SUB_PROCESSOR;
 		response[1] = PACKET_COMMAND_ID_SUBP_SET_DATE_TIME_RESP;
 		response[2] = 0x00;
-		pkt_sendRawPacket(&dataBoardPortConfig, response, 0x03);
+		pkt_sendRawPacket(dataBoardPortConfig, response, 0x03);
 	}
 }
 
@@ -254,7 +256,7 @@ static void sendDateTime()
 	response[0] = PACKET_TYPE_SUB_PROCESSOR;
 	response[1] = PACKET_COMMAND_ID_SUBP_GET_DATE_TIME_RESP;
 	memcpy(&response[2], &dateTime, 8);
-	pkt_sendRawPacket(&dataBoardPortConfig, response, 0x0A);
+	pkt_sendRawPacket(dataBoardPortConfig, response, 0x0A);
 }
 
 static uint32_t convertFromBcd(uint8_t bcdNumber)
@@ -278,5 +280,5 @@ static void sendStatus(subp_status_t status)
 	response[1] = PACKET_COMMAND_ID_SUBP_GET_STATUS_RESP;
 	memcpy(&response[2], &status, 9);
 		
-	pkt_sendRawPacket(&dataBoardPortConfig, response, sizeof(response));
+	pkt_sendRawPacket(dataBoardPortConfig, response, sizeof(response));
 }
