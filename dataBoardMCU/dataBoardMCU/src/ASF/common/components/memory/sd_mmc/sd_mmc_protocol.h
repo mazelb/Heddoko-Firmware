@@ -60,7 +60,7 @@ extern "C" {
  */
 
 // SD/MMC/SDIO default clock frequency for initialization (400KHz)
-#define SDMMC_CLOCK_INIT   400000
+#define SDMMC_CLOCK_INIT   400000 //changed from 400000
 
 
 /**

@@ -35,6 +35,7 @@ sdc_file_t debugLogFile =
 static status_t processCommand(char* command, size_t cmdSize);
 static void processEvent(msg_message_t* message);
 static void printString(char* str);
+static void configure_console(void);
 /*	Extern functions	*/
 /*	Extern variables	*/
 
@@ -67,7 +68,7 @@ void dbg_debugTask(void* pvParameters)
 	}
 	//initialize the semaphore
 	semaphore_dbgUartWrite = xSemaphoreCreateMutex();
-	
+	configure_console(); //enable printf... consider removing
 	//initialize the debug uart
 	status = drv_uart_init(&debugUartConfig);
 	dbg_printString(DBG_LOG_LEVEL_DEBUG, "Debug Task Started\r\n");
@@ -163,3 +164,25 @@ static void printString(char* str)
 	}
 }
 
+static void configure_console(void)
+{
+	const usart_serial_options_t usart_serial_options = 
+	{
+		.baudrate   = CONF_BAUDRATE,
+		.charlength = CONF_CHARLENGTH,
+		.paritytype = CONF_PARITY,
+		.stopbits   = CONF_STOPBITS,
+	};
+
+	/* Configure console UART. */
+	stdio_serial_init(UART1, &usart_serial_options);
+
+	/* Specify that stdout should not be buffered. */
+	#if defined(__GNUC__)
+		setbuf(stdout, NULL);
+	#else
+	/* Already the case in IAR's Normal DLIB default configuration: printf()
+	 * emits one character at a time.
+	 */
+	#endif
+}

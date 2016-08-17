@@ -508,14 +508,14 @@ status_t sdc_closeFile(sdc_file_t* fileObject)
 
 void initSdGpio()
 {
-	gpio_configure_pin(SD_MMC_0_CD_GPIO, SD_MMC_0_CD_FLAGS);
-	/* Configure HSMCI pins */
-	gpio_configure_pin(PIN_HSMCI_MCCDA_GPIO, PIN_HSMCI_MCCDA_FLAGS);
-	gpio_configure_pin(PIN_HSMCI_MCCK_GPIO, PIN_HSMCI_MCCK_FLAGS);
-	gpio_configure_pin(PIN_HSMCI_MCDA0_GPIO, PIN_HSMCI_MCDA0_FLAGS);
-	gpio_configure_pin(PIN_HSMCI_MCDA1_GPIO, PIN_HSMCI_MCDA1_FLAGS);
-	gpio_configure_pin(PIN_HSMCI_MCDA2_GPIO, PIN_HSMCI_MCDA2_FLAGS);
-	gpio_configure_pin(PIN_HSMCI_MCDA3_GPIO, PIN_HSMCI_MCDA3_FLAGS);
+	//gpio_configure_pin(SD_MMC_0_CD_GPIO, SD_MMC_0_CD_FLAGS);
+	///* Configure HSMCI pins */
+	//gpio_configure_pin(PIN_HSMCI_MCCDA_GPIO, PIN_HSMCI_MCCDA_FLAGS);
+	//gpio_configure_pin(PIN_HSMCI_MCCK_GPIO, PIN_HSMCI_MCCK_FLAGS);
+	//gpio_configure_pin(PIN_HSMCI_MCDA0_GPIO, PIN_HSMCI_MCDA0_FLAGS);
+	//gpio_configure_pin(PIN_HSMCI_MCDA1_GPIO, PIN_HSMCI_MCDA1_FLAGS);
+	//gpio_configure_pin(PIN_HSMCI_MCDA2_GPIO, PIN_HSMCI_MCDA2_FLAGS);
+	//gpio_configure_pin(PIN_HSMCI_MCDA3_GPIO, PIN_HSMCI_MCDA3_FLAGS);
 }
 
 status_t  __attribute__((optimize("O0"))) initializeSdCard()
@@ -580,21 +580,21 @@ status_t  __attribute__((optimize("O0"))) initializeSdCard()
 		}
 		
 		//Check the free space on card
-		res = f_getfree("0:", &freeClusters, &fs1);
-		if (res != FR_OK)
-		{
-			result = STATUS_FAIL;
-			dbg_printString(DBG_LOG_LEVEL_ERROR,"Cannot calculate free space\r");
-			return result;
-		}
-		totalSectors = (fs1->n_fatent -2) * fs1->csize;	//only needed to calculate used space
-		freeSectors = freeClusters * fs1->csize;	//assuming 512 bytes/sector
-		if ((freeSectors/2) < 307200) //TODO wow, this is a great random number
-		{
-			result = STATUS_FAIL;
-			dbg_printString(DBG_LOG_LEVEL_ERROR,"Low disk space on SD-card\r");
-			return result;
-		}
+		//res = f_getfree("0:", &freeClusters, &fs1);
+		//if (res != FR_OK)
+		//{
+			//result = STATUS_FAIL;
+			//dbg_printString(DBG_LOG_LEVEL_ERROR,"Cannot calculate free space\r");
+			//return result;
+		//}
+		//totalSectors = (fs1->n_fatent -2) * fs1->csize;	//only needed to calculate used space
+		//freeSectors = freeClusters * fs1->csize;	//assuming 512 bytes/sector
+		//if ((freeSectors/2) < 307200) //TODO wow, this is a great random number
+		//{
+			//result = STATUS_FAIL;
+			//dbg_printString(DBG_LOG_LEVEL_ERROR,"Low disk space on SD-card\r");
+			//return result;
+		//}
 	}
 	else 
 	{

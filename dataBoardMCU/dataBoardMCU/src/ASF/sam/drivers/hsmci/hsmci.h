@@ -47,6 +47,8 @@
 #ifndef HSMCI_H_INCLUDED
 #define HSMCI_H_INCLUDED
 
+#define HSMCI_DEBUG
+
 #include "compiler.h"
 #include "sd_mmc_protocol.h"
 

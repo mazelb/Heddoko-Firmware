@@ -35,7 +35,7 @@
 //should contain a call to system manager
 
 #include <asf.h>
-
+#include "conf_board.h"
 #include "common.h"
 #include "sys_systemManager.h"
 
@@ -102,6 +102,7 @@ int main (void)
 	irq_initialize_vectors();
 	cpu_irq_enable();
 	sysclk_init();
+	board_init();
 	
 	/* Insert application code here, after the board has been initialized. */
 	if (xTaskCreate(sys_systemManagerTask, "SM", TASK_SYSTEM_MANAGER_STACK_SIZE, NULL, TASK_SYSTEM_MANAGER_PRIORITY, NULL) != pdPASS)

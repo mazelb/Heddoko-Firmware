@@ -375,6 +375,7 @@ static inline uint32_t sysclk_get_cpu_hz(void)
 	return sysclk_get_main_hz() /
 		((CONFIG_SYSCLK_PRES == SYSCLK_PRES_3) ? 3 :
 			(1 << (CONFIG_SYSCLK_PRES >> PMC_MCKR_PRES_Pos)));
+	//return 120000000;		
 }
 
 /**
@@ -389,6 +390,7 @@ static inline uint32_t sysclk_get_peripheral_hz(void)
 	return sysclk_get_main_hz() /
 		((CONFIG_SYSCLK_PRES == SYSCLK_PRES_3) ? 3 :
 			(1 << (CONFIG_SYSCLK_PRES >> PMC_MCKR_PRES_Pos)));
+			//return 120000000;	
 }
 
 /**
