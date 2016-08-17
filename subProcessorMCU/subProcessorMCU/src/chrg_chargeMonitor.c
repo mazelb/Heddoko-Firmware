@@ -28,7 +28,6 @@
 0x07 Shutdown_VBAT
  */ 
 
-
 #include "chrg_chargeMonitor.h"
 #include "dat_dataRouter.h"
 #include "drv_led.h"
@@ -195,7 +194,7 @@ void chrg_task_chargeMonitor(void *pvParameters)
 					if(mgr_eventQueue != NULL)
 					{
 						dat_sendDebugMsgToDataBoard("PwrBrdMsg:Battery Level Empty\r\n");
-						//dont send the message 
+						//don't send the message 
 						//if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
 						//{
 							////this is an error, we should log it.
@@ -224,6 +223,29 @@ void chrg_task_chargeMonitor(void *pvParameters)
 	}	
 }
 
+uint32_t chrg_getBatteryPercentage(void)
+{
+	return getCalculatedPercentage(&ltc2941Config);
+}
+
+chrg_batteryState_t chrg_getChargeState(void)
+{
+	switch (chrg_currentChargerState)
+	{
+		case CHRG_CHARGER_STATE_LOW_BATTERY:
+			return CHGR_BATTERY_LOW;
+		break;
+		case CHRG_CHARGER_STATE_CHARGING:
+			return CHGR_BATTERY_CHARGING;
+		break;
+		case CHRG_CHARGER_STATE_CHARGE_COMPLETE:
+			return CHGR_BATTERY_FULL;
+		break;
+		default:
+			return CHGR_BATTERY_NOMINAL;
+		break;
+	}
+}
 
 //static functions
 
