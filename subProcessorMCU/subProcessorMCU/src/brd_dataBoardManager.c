@@ -17,9 +17,10 @@
 #include "drv_uart.h"
 #include "LTC2941-1.h"
 
-#define DATA_BOARD_STATUS_MSG_DELAY		30	// actual delay is 200 times this value in milli-seconds
-#define DATA_BOARD_TERMINAL_MSG_LENGTH	200
-#define DATA_BOARD_TERMINAL_MSG_FREQ	2	// this controls the size of queue to data router
+/*	Local defines	*/
+#define DATA_BOARD_STATUS_MSG_DELAY		30	// actual delay is 200 times this value in milliseconds
+#define DATA_BOARD_TERMINAL_MSG_LENGTH	200 // the maximum length of the string that can go out in OUTPUT_DATA message
+#define DATA_BOARD_TERMINAL_MSG_FREQ	2	// this also controls the size of queue to data router
 
 /*	Static functions forward declaration	*/
 static void processPacket(pkt_rawPacket_t *packet);
@@ -31,10 +32,7 @@ static uint32_t convertFromBcd(uint8_t bcdNumber);
 static void sendStatus(subp_status_t status);
 
 /*	Extern variables	*/
-extern xQueueHandle queue_sensorHandler;
 extern xQueueHandle mgr_eventQueue;
-extern uint32_t reqSensorMask;
-extern uint8_t dataRate;
 extern drv_uart_config_t uart0Config, uart1Config;
 
 /*	Local variables	*/
@@ -44,6 +42,14 @@ xSemaphoreHandle semaphore_dataBoardUart = NULL;
 
 static drv_uart_config_t *dataBoardPortConfig;
 
+/*	Function definitions	*/
+
+/************************************************************************
+ * dat_dataBoardManager(void *pvParameters)
+ * @brief Manages the data board and handles the communication to it
+ * @param void *pvParameters
+ * @return void                      
+ ************************************************************************/
 void dat_dataBoardManager(void *pvParameters)
 {
 	UNUSED(pvParameters);
@@ -73,20 +79,28 @@ void dat_dataBoardManager(void *pvParameters)
 			processPacket(&dataBoardPacket);
 		}
 		
+		// send the heart beat at the set interval
 		if ((statusMsgDelay % DATA_BOARD_STATUS_MSG_DELAY) == 0)
 		{
 			sts_getSystemStatus(&systemStatus);
-			if (xSemaphoreTake(semaphore_dataBoardUart, 1000) == pdTRUE)	// wait for one second to make sure we send out status everytime
+			if (xSemaphoreTake(semaphore_dataBoardUart, 1000) == pdTRUE)	// wait for one second to make sure we send out status every time
 			{
 				sendStatus(systemStatus);
 				xSemaphoreGive(semaphore_dataBoardUart);
 			}
 		}
+		
 		statusMsgDelay++;
 		vTaskDelay(100);
 	}
 }
 
+/************************************************************************
+ * processPacket(pkt_rawPacket_t *packet)
+ * @brief Process the received packet
+ * @param pkt_rawPacket_t *packet: pointer to the packet
+ * @return void                      
+ ************************************************************************/
 void processPacket(pkt_rawPacket_t *packet)
 {
 	status_t status;
@@ -116,16 +130,15 @@ void processPacket(pkt_rawPacket_t *packet)
 			break;
 			case PACKET_COMMAND_ID_SUBP_CONFIG:
 				// set the received sub processor configuration
-				dataRate = packet->payload[2];
-				reqSensorMask = packet->payload[3] | (packet->payload[4] << 8);	// we ignore the rest of the packet as the total number of sensors is only 9
+				sen_setConfig(&packet->payload[2]);
 			break;
 			case PACKET_COMMAND_ID_SUBP_STREAMING:
 				// enable / disable sensor streaming
 				sen_enableSensorStream((bool) packet->payload[2]);
 			break;
 			case PACKET_COMMAND_ID_SUBP_OUTPUT_DATA:
-				// simply pass this data to daughter board and USB
-				// should not access the USB and daughter board UART directly, pass it on a queue and handle the data in dataRouter
+				// simply pass this data to USB
+				// should not access the USB directly, pass it on a queue and handle the data in dataRouter
 				xQueueSendToBack(queue_dataBoard, &packet->payload[2], 10);
 			break;
 			case PACKET_COMMAND_ID_SUBP_POWER_DOWN_RESP:
@@ -154,12 +167,16 @@ void processPacket(pkt_rawPacket_t *packet)
 	}
 }
 
+/************************************************************************
+ * setDateTimeFromPacket(pkt_rawPacket_t *packet)
+ * @brief Set the date and time received from the data board
+ * @param pkt_rawPacket_t *packet: pointer to the packet
+ * @return status_t: STATUS_PASS or STATUS_FAILED                   
+ ************************************************************************/
 static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet)
 {
 	status_t status = STATUS_PASS;
 	subp_dateTime_t dateTime;
-	uint32_t year = 0, month = 0, dayOfWeek = 0, date = 0;
-	uint32_t hour, minute, second;
 	unsigned long startTime = xTaskGetTickCount(), curTime = 0;
 	
 	// set to registers directly
@@ -170,46 +187,54 @@ static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet)
 	taskENTER_CRITICAL();
 	// Date
 	RTC->RTC_CR |= RTC_CR_UPDCAL;
-	//while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD)
-	//{
-		//curTime = xTaskGetTickCount();
-		//if (curTime - startTime > 2000)		// it can take up to one second to get the ACKUPD bit
-		//{
-			//status |= STATUS_FAIL;
-			//return status;
-		//}
-	//}
+	//delay_ms(1500);	// NOTE: remove this delay when the while loop below starts working
+	while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD)
+	{
+		curTime = xTaskGetTickCount();
+		if (curTime - startTime > 2000)		// it can take up to one second to get the ACKUPD bit
+		{
+			status |= STATUS_FAIL;
+			return status;
+		}
+	}
 	RTC->RTC_SCCR = RTC_SCCR_ACKCLR;
 	RTC->RTC_CALR = dateTime.date;
 	RTC->RTC_CR &= (~RTC_CR_UPDCAL);
-	/* Clear SECENV in SCCR */
 	RTC->RTC_SCCR |= RTC_SCCR_SECCLR;
 
-	status =  (RTC->RTC_VER & RTC_VER_NVCAL);
+	status |=  (RTC->RTC_VER & RTC_VER_NVCAL);	// check if the RTC contains a valid value
 	
 	// Time
 	RTC->RTC_CR |= RTC_CR_UPDTIM;
-	//while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD)
-	//{
-		//curTime = xTaskGetTickCount();
-		//if (curTime - startTime > 2000)		// it can take up to one second to get the ACKUPD bit
-		//{
-			//status |= STATUS_FAIL;
-			//return status;
-		//}
-	//}
+	//delay_ms(1500);	// NOTE: remove this delay when the while loop below starts working
+	while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD)
+	{
+		curTime = xTaskGetTickCount();
+		if (curTime - startTime > 2000)		// it can take up to one second to get the ACKUPD bit
+		{
+			status |= STATUS_FAIL;
+			return status;
+		}
+	}
 	RTC->RTC_SCCR = RTC_SCCR_ACKCLR;
 	RTC->RTC_TIMR = dateTime.time;
 	RTC->RTC_CR &= (~RTC_CR_UPDTIM);
 	RTC->RTC_SCCR |= RTC_SCCR_SECCLR;
 
-	status |= (RTC->RTC_VER & RTC_VER_NVTIM);
+	status |= (RTC->RTC_VER & RTC_VER_NVTIM);	// check if the RTC contains a valid value
 	
 	/*	return the status	*/
 	taskEXIT_CRITICAL();
 	return status;
 }
 
+/************************************************************************
+ * sendDateTimeResp(status_t status)
+ * @brief Send the date and time response following the request to set date and time
+ * @param status_t status: STATUS_PASS if it set the parameters successfully,
+ *                         STATUS_FAIL if it failed to set the parameter
+ * @return void                   
+ ************************************************************************/
 static void sendDateTimeResp(status_t status)
 {
 	uint8_t response[3] = {0};
@@ -230,6 +255,12 @@ static void sendDateTimeResp(status_t status)
 	}
 }
 
+/************************************************************************
+ * sendDateTime()
+ * @brief Send date and time (wrapped) to the data board
+ * @param void
+ * @return void                   
+ ************************************************************************/
 static void sendDateTime()
 {
 	// fetch current date and time from RTC and send it
@@ -259,11 +290,23 @@ static void sendDateTime()
 	pkt_sendRawPacket(dataBoardPortConfig, response, 0x0A);
 }
 
+/************************************************************************
+ * convertFromBcd(uint8_t bcdNumber)
+ * @brief Convert the BCD encoded number to an integer
+ * @param uint8_t bcdNumber
+ * @return uint32_t: converted integer       
+ ************************************************************************/
 static uint32_t convertFromBcd(uint8_t bcdNumber)
 {
 	return (((bcdNumber & 0xF0) >> 4) * 10 + (bcdNumber & 0x0F));
 }
 
+/************************************************************************
+ * convertToBcd(uint32_t twoDigitNumber)
+ * @brief Convert an integer to BCD encoded number
+ * @param uint32_t twoDigitNumber
+ * @return uint8_t: converted BCD number       
+ ************************************************************************/
 static uint8_t convertToBcd(uint32_t twoDigitNumber)
 {
 	int tens, units;
@@ -272,6 +315,12 @@ static uint8_t convertToBcd(uint32_t twoDigitNumber)
 	return ((tens << 4) | units);
 }
 
+/************************************************************************
+ * sendStatus(subp_status_t status)
+ * @brief Send the status message to the data board
+ * @param subp_status_t status message
+ * @return void       
+ ************************************************************************/
 static void sendStatus(subp_status_t status)
 {
 	uint8_t response[11] = {0};

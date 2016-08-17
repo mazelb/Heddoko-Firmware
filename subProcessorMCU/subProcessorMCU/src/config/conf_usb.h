@@ -94,10 +94,10 @@
 // extern void user_callback_vbus_action(bool b_vbus_high);
 // #define  UDC_SOF_EVENT()                  user_callback_sof_action()
 // extern void user_callback_sof_action(void);
-// #define  UDC_SUSPEND_EVENT()              user_callback_suspend_action()
-// extern void user_callback_suspend_action(void);
-// #define  UDC_RESUME_EVENT()               user_callback_resume_action()
-// extern void user_callback_resume_action(void);
+ #define  UDC_SUSPEND_EVENT()              user_callback_suspend_action()	// used to detect if comm is absent on USB
+ extern void user_callback_suspend_action(void);
+ #define  UDC_RESUME_EVENT()               user_callback_resume_action()	// used to detect if comm is present on USB
+ extern void user_callback_resume_action(void);
 // Mandatory when USB_DEVICE_ATTR authorizes remote wakeup feature
 // #define  UDC_REMOTEWAKEUP_ENABLE()        user_callback_remotewakeup_enable()
 // extern void user_callback_remotewakeup_enable(void);

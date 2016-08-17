@@ -32,7 +32,7 @@ extern uint32_t powerButtonLowCount;
 dat_dataRouterConfig_t dataRouterConfiguration = 
 {
 	.dataBoardUart = &uart1Config,
-	.daughterBoard = &uart0Config 
+	//.daughterBoard = &uart0Config 
 };
 
 chrg_chargeMonitorConfig_t chargeMonitorConfiguration = 

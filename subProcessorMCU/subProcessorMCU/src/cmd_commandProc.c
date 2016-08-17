@@ -65,11 +65,7 @@ void cmd_task_commandProcesor(void *pvParameters)
 				{
 					forwardCommand = false; 
 					cmd_sendDateTimeCommand();
-					if(packet.packetSource == CMD_COMMAND_SOURCE_DAUGHTER)
-					{
-						drv_uart_putString(dataRouterConfiguration.daughterBoard, getTimeString());
-					}
-					else if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+					if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
 					{
 						dat_sendStringToUsb(getTimeString());
 					}
@@ -79,11 +75,7 @@ void cmd_task_commandProcesor(void *pvParameters)
 					//handle the set time command. 					
 					chargeLevel = ltc2941GetCharge(&ltc2941Config);
 					sprintf(tempString,"raw charge Level: %d\r\n",chargeLevel);
-					if(packet.packetSource == CMD_COMMAND_SOURCE_DAUGHTER)
-					{
-						drv_uart_putString(dataRouterConfiguration.daughterBoard, tempString);
-					}
-					else if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+					if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
 					{
 						dat_sendStringToUsb(tempString);
 					}
@@ -95,11 +87,7 @@ void cmd_task_commandProcesor(void *pvParameters)
 					//handle the set time command. 					
 					chargeLevel = getCalculatedPercentage(&ltc2941Config);
 					sprintf(tempString,"charge Level: %d\r\n",chargeLevel);
-					if(packet.packetSource == CMD_COMMAND_SOURCE_DAUGHTER)
-					{
-						drv_uart_putString(dataRouterConfiguration.daughterBoard, tempString);
-					}
-					else if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+					if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
 					{
 						dat_sendStringToUsb(tempString);
 					}
@@ -133,11 +121,7 @@ void cmd_task_commandProcesor(void *pvParameters)
 				{
 					//handle the set time command. 
 					sprintf(tempString,"charger status: %x\r\n",ltc2941GetStatus(&ltc2941Config));
-					if(packet.packetSource == CMD_COMMAND_SOURCE_DAUGHTER)
-					{
-						drv_uart_putString(dataRouterConfiguration.daughterBoard, tempString);
-					}
-					else if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+					if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
 					{
 						dat_sendStringToUsb(tempString);
 					}						
@@ -194,20 +178,12 @@ void cmd_task_commandProcesor(void *pvParameters)
 				else if(strncmp(packet.packetData,"pbVersion",9)==0)
 				{
 					sprintf(tempString," PB VERSION %s\r\n", VERSION);
-					if(packet.packetSource == CMD_COMMAND_SOURCE_DAUGHTER)
-					{
-						drv_uart_putString(dataRouterConfiguration.daughterBoard, tempString);
-					}
-					else if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+					if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
 					{
 						dat_sendStringToUsb(tempString);
 					}
 					sprintf(tempString,"BUILD DATE: %s %s\r\n", __DATE__,__TIME__);
-					if(packet.packetSource == CMD_COMMAND_SOURCE_DAUGHTER)
-					{
-						drv_uart_putString(dataRouterConfiguration.daughterBoard, tempString);
-					}
-					else if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+					if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
 					{
 						dat_sendStringToUsb(tempString);
 					}
