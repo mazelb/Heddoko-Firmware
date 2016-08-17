@@ -30,6 +30,7 @@
 
 #include "chrg_chargeMonitor.h"
 #include "dat_dataRouter.h"
+#include "brd_dataBoardManager.h"
 #include "drv_led.h"
 #include "mgr_managerTask.h"
 #include "LTC2941-1.h"
@@ -110,14 +111,7 @@ void chrg_task_chargeMonitor(void *pvParameters)
 		if(powerButtonLowCount == 10) //approximately 3.5 seconds
 		{			
 			//should be we reset the power board? or just power off
-			eventMessage.sysEvent = SYS_EVENT_POWER_SWITCH;
-			if(mgr_eventQueue != NULL)
-			{
-				if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
-				{
-					//this is an error, we should log it.
-				}
-			}				
+			dat_sendPowerDownReq();	// send command to the data board manager
 		}
 				
 		//check if the state is new

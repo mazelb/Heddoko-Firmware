@@ -53,5 +53,6 @@ sensor_state_t sen_getSensorState(void);
 uint32_t sen_getDetectedSensors(void);
 void sen_enableSensorStream(bool enable);
 void sen_setConfig(uint8_t *data);
+void sen_preSleepProcess();
 
 #endif /* SEN_SENSORHANDLER_H_ */

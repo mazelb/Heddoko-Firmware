@@ -12,6 +12,7 @@
 #include "pkt_packetCommandsList.h"
 #include "mgr_managerTask.h"
 #include "sts_statusHeartbeat.h"
+#include "sen_sensorHandler.h"
 #include "pkt_packetParser.h"
 #include "drv_gpio.h"
 #include "drv_uart.h"
@@ -143,7 +144,7 @@ void processPacket(pkt_rawPacket_t *packet)
 			break;
 			case PACKET_COMMAND_ID_SUBP_POWER_DOWN_RESP:
 				// the data board is now powering down
-				eventMessage.sysEvent = SYS_EVENT_POWER_SWITCH;		// TODO: remove the call from the manager task.
+				eventMessage.sysEvent = SYS_EVENT_POWER_SWITCH;
 				if(mgr_eventQueue != NULL)
 				{
 					if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
@@ -165,6 +166,22 @@ void processPacket(pkt_rawPacket_t *packet)
 			break;
 		}
 	}
+}
+
+/************************************************************************
+ * dat_sendPowerDownReq()
+ * @brief Send the power down req to the data board and sensor handler
+ * @param void
+ * @return void                   
+ ************************************************************************/
+void dat_sendPowerDownReq()
+{
+	uint8_t response[3] = {0};
+	
+	response[0] = PACKET_TYPE_SUB_PROCESSOR;
+	response[1] = PACKET_COMMAND_ID_SUBP_POWER_DOWN_REQ;
+	pkt_sendRawPacket(dataBoardPortConfig, response, 0x02);
+	sen_preSleepProcess();
 }
 
 /************************************************************************

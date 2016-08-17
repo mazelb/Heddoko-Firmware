@@ -30,6 +30,6 @@ typedef struct
 #pragma pack(pop)
 
 void dat_dataBoardManager(void *pvParameters);
-
+void dat_sendPowerDownReq();
 
 #endif /* BRD_DATABOARDMANAGER_H_ */

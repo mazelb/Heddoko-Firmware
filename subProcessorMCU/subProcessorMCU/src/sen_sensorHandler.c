@@ -658,6 +658,18 @@ void sen_setConfig(uint8_t *data)
 	}
 }
 
+/************************************************************************
+ * sen_preSleepProcess()
+ * @brief Disable the sensor stream and clear the reqSensor mask
+ * @param uint8_t *data: pointer to the data
+ * @return void                     
+ ************************************************************************/
+void sen_preSleepProcess()
+{
+	enableStream = false;
+	reqSensorMask = 0;
+}
+
 /*	Debug commands	*/
 #ifdef ENABLE_SENSORS_DEBUG_MODE
 /************************************************************************
