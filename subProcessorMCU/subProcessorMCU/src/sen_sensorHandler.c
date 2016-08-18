@@ -114,6 +114,7 @@ imuFrame_t imuFrameData =
  * @param void *pvParameters
  * @return void                      
  ************************************************************************/
+__attribute__((optimize("O0")))
 void sen_sensorHandlerTask(void *pvParameters)
 {
 	UNUSED(pvParameters);
@@ -148,7 +149,7 @@ void sen_sensorHandlerTask(void *pvParameters)
 				else
 				{
 					// reconfigure the baud rate (in case sensors were disconnected, default speed is LOW)
-					sendCommand(COMMAND_ID_CHANGE_BAUD, NULL, SENSOR_BUS_SPEED_LOW);
+					sendCommand(COMMAND_ID_CHANGE_BAUD, NULL, SENSOR_BUS_SPEED_LOW);	// NOTE: the call to these two functions is removed with optimization.
 					sendCommand(COMMAND_ID_CHANGE_BAUD, NULL, SENSOR_BUS_SPEED_HIGH);
 					// change the sensor state to streaming
 					changeSensorState(SENSOR_STREAMING);
@@ -594,7 +595,7 @@ uint32_t sen_getDetectedSensors(void)
  ************************************************************************/
 static status_t isExpectedSensorId(uint8_t byte, uint8_t expectedId)
 {
-	if (0 <= byte <= 8)
+	if ((byte >= SEN_MIN_SENSOR_ID) && (byte <= SEN_MAX_SENSOR_ID))
 	{
 		if (byte == expectedId)
 		{
@@ -612,7 +613,7 @@ static status_t isExpectedSensorId(uint8_t byte, uint8_t expectedId)
  ************************************************************************/
 static status_t isSensorRequested(uint8_t sensorId)
 {
-	if (0 <= sensorId <= 8)
+	if ((sensorId >= SEN_MIN_SENSOR_ID) && (sensorId <= SEN_MAX_SENSOR_ID))
 	{
 		if (((reqSensorMask >> sensorId) & 0x01)!= 0)
 		{
