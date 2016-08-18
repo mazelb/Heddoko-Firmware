@@ -160,6 +160,7 @@ C_SRCS +=  \
 ../src/ASF/common/components/wifi/winc1500/spi_flash/source/spi_flash.c \
 ../src/ASF/sam/drivers/matrix/matrix.c \
 ../src/ASF/sam/drivers/spi/spi.c \
+../src/ble_bluetoothManager.c \
 ../src/dat_dataManager.c \
 ../src/dbg_debugManager.c \
 ../src/drv_led.c \
@@ -238,6 +239,7 @@ src/ASF/common/components/wifi/winc1500/socket/source/socket.o \
 src/ASF/common/components/wifi/winc1500/spi_flash/source/spi_flash.o \
 src/ASF/sam/drivers/matrix/matrix.o \
 src/ASF/sam/drivers/spi/spi.o \
+src/ble_bluetoothManager.o \
 src/dat_dataManager.o \
 src/dbg_debugManager.o \
 src/drv_led.o \
@@ -309,6 +311,7 @@ src/ASF/common/components/wifi/winc1500/socket/source/socket.o \
 src/ASF/common/components/wifi/winc1500/spi_flash/source/spi_flash.o \
 src/ASF/sam/drivers/matrix/matrix.o \
 src/ASF/sam/drivers/spi/spi.o \
+src/ble_bluetoothManager.o \
 src/dat_dataManager.o \
 src/dbg_debugManager.o \
 src/drv_led.o \
@@ -380,6 +383,7 @@ src/ASF/common/components/wifi/winc1500/socket/source/socket.d \
 src/ASF/common/components/wifi/winc1500/spi_flash/source/spi_flash.d \
 src/ASF/sam/drivers/matrix/matrix.d \
 src/ASF/sam/drivers/spi/spi.d \
+src/ble_bluetoothManager.d \
 src/dat_dataManager.d \
 src/dbg_debugManager.d \
 src/drv_led.d \
@@ -451,6 +455,7 @@ src/ASF/common/components/wifi/winc1500/socket/source/socket.d \
 src/ASF/common/components/wifi/winc1500/spi_flash/source/spi_flash.d \
 src/ASF/sam/drivers/matrix/matrix.d \
 src/ASF/sam/drivers/spi/spi.d \
+src/ble_bluetoothManager.d \
 src/dat_dataManager.d \
 src/dbg_debugManager.d \
 src/drv_led.d \
@@ -517,6 +522,8 @@ LINKER_SCRIPT_DEP+=  \
 
 
 # AVR32/GNU C Compiler
+
+
 
 
 

@@ -1232,6 +1232,12 @@
     <None Include="src\ASF\sam\drivers\spi\spi.h">
       <SubType>compile</SubType>
     </None>
+    <Compile Include="src\ble_bluetoothManager.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\ble_bluetoothManager.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\config\conf_clock.h">
       <SubType>compile</SubType>
     </Compile>

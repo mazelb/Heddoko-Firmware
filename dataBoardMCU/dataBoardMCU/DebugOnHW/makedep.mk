@@ -40,6 +40,8 @@ src\ASF\sam\drivers\matrix\matrix.c
 
 src\ASF\sam\drivers\spi\spi.c
 
+src\ble_bluetoothManager.c
+
 src\dat_dataManager.c
 
 src\dbg_debugManager.c

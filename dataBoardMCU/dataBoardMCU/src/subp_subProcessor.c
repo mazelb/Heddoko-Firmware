@@ -207,7 +207,7 @@ status_t convertFullFrameToProtoBuff(subp_fullImuFrameSet_t* rawFullFrame, Heddo
 	int i = 0;
 	protoPacket->fulldataframe->timestamp = rawFullFrame->timeStamp;	
 	protoPacket->fulldataframe->n_imudataframe = rawFullFrame->sensorCount;
-	for(i=0;i<MAX_NUMBER_OF_IMU_SENSORS;i++)
+	for(i=0;i<rawFullFrame->sensorCount;i++)
 	{	
 		//initialize all the frames
 		//heddoko__imu_data_frame__init(&protoPacket->fulldataframe->imudataframe[i]);

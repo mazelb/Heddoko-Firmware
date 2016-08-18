@@ -65,7 +65,7 @@ void net_wirelessNetworkTask(void *pvParameters)
 	
 	tstrM2MAPConfig strM2MAPConfig;
 	memset(&strM2MAPConfig, 0x00, sizeof(tstrM2MAPConfig));
-	strcpy((char *)&strM2MAPConfig.au8SSID, "FuckYou");
+	strcpy((char *)&strM2MAPConfig.au8SSID, "Virus");
 	strM2MAPConfig.u8ListenChannel = 6;
 	strM2MAPConfig.u8SecType = M2M_WIFI_SEC_OPEN;
 	strM2MAPConfig.au8DHCPServerIP[0] = 0xC0; /* 192 */

@@ -52,21 +52,17 @@ void sys_systemManagerTask(void* pvParameters)
 	};
 	drv_led_init(&ledConfiguration);
 	drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
-	playSound(400,880);
-	playSound(400,932);
-	playSound(400,988);
+	drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_HIGH);
+	playSound(800,900);
+	playSound(800,2500);
+	playSound(800,4000);
 	drv_led_set(DRV_LED_RED,DRV_LED_SOLID);
 	playSound(400,1047);
-	playSound(400,1109);
-	playSound(400,1175);
 	drv_led_set(DRV_LED_WHITE,DRV_LED_SOLID);
 	playSound(400,1244);
-	playSound(400,1319);
-	playSound(400,1397);
 	drv_led_set(DRV_LED_BLUE,DRV_LED_SOLID);
-	playSound(400,1480);
 	playSound(400,1568);
-	playSound(400,1660);
+	//drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_LOW);
 	vTaskDelay(200);
 	queue_systemManager = xQueueCreate(10, sizeof(msg_message_t));
 	if (queue_systemManager != 0)
@@ -123,14 +119,14 @@ void playSound(float duration, float frequency)
 	long half_period;
 	float wavelength;
 	
-	wavelength=(1/frequency)*1000;
-	cycles= (long)(duration/wavelength);
+	wavelength=(1/frequency)*1000000;
+	cycles= (long)((duration*1000)/wavelength);
 	half_period = (long)(wavelength/2);
 	for (i=0;i<cycles;i++)
 	{
-		delay_ms(half_period);
+		delay_us(half_period);
 		drv_gpio_setPinState(DRV_GPIO_PIN_PIEZO_OUT, DRV_GPIO_PIN_STATE_HIGH);
-		delay_ms(half_period);
+		delay_us(half_period);
 		drv_gpio_setPinState(DRV_GPIO_PIN_PIEZO_OUT, DRV_GPIO_PIN_STATE_LOW);
 	}
 
