@@ -119,8 +119,8 @@ typedef enum
 #define TASK_SENSOR_HANDLER_PRIORITY			(tskIDLE_PRIORITY + 3)
 #define TASK_SUB_PROCESS_MANAGER_STACK_SIZE		(3072/sizeof(portSTACK_TYPE))
 #define	TASK_SUB_PROCESS_MANAGER_PRIORITY		(tskIDLE_PRIORITY + 3)
-#define TASK_DATA_MANAGER_STACK_SIZE			(3072/sizeof(portSTACK_TYPE))
-#define TASK_DATA_MANAGER_PRIORITY				(tskIDLE_PRIORITY + 3)
+#define TASK_DEBUG_MANAGER_STACK_SIZE			(3072/sizeof(portSTACK_TYPE))
+#define TASK_DEBUG_MANAGER_PRIORITY				(tskIDLE_PRIORITY + 3)
 
 //static void _EXFUN (putStr, (char * str)) __attribute__((weakref ("puts")));
 

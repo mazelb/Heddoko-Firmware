@@ -57,6 +57,7 @@ build/
 *.map
 *.srec
 *.d
+*.mk
 
 # MSTest test Results
 [Tt]est[Rr]esult*/

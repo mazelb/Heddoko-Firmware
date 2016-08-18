@@ -47,6 +47,7 @@
 #include <gpio.h>
 #include <ioport.h>
 #include <wdt.h>
+#include "conf_winc.h"
 
 /**
  * \addtogroup sam4s_xplained_pro_group
@@ -65,22 +66,22 @@ void board_init(void)
 	 */
 	ioport_init();
 
-	/* Initialize LED0, turned off */
-	ioport_set_pin_level(LED_0_PIN, !LED_0_ACTIVE);
-	ioport_set_pin_dir(LED_0_PIN, IOPORT_DIR_OUTPUT);
-
-	/* Initialize SW0 */
-	ioport_set_pin_dir(BUTTON_0_PIN, IOPORT_DIR_INPUT);
-	ioport_set_pin_mode(BUTTON_0_PIN, (BUTTON_0_ACTIVE ?
-				IOPORT_MODE_PULLDOWN : IOPORT_MODE_PULLUP));
-
-	/* Initialize EXT3 LED0, LED1 & LED2, turned off */
-	ioport_set_pin_level(IO1_LED1_PIN, !IO1_LED1_ACTIVE);
-	ioport_set_pin_dir(IO1_LED1_PIN, IOPORT_DIR_OUTPUT);
-	ioport_set_pin_level(IO1_LED2_PIN, !IO1_LED2_ACTIVE);
-	ioport_set_pin_dir(IO1_LED2_PIN, IOPORT_DIR_OUTPUT);
-	ioport_set_pin_level(IO1_LED3_PIN, !IO1_LED3_ACTIVE);
-	ioport_set_pin_dir(IO1_LED3_PIN, IOPORT_DIR_OUTPUT);
+	///* Initialize LED0, turned off */
+	//ioport_set_pin_level(LED_0_PIN, !LED_0_ACTIVE);
+	//ioport_set_pin_dir(LED_0_PIN, IOPORT_DIR_OUTPUT);
+//
+	///* Initialize SW0 */
+	//ioport_set_pin_dir(BUTTON_0_PIN, IOPORT_DIR_INPUT);
+	//ioport_set_pin_mode(BUTTON_0_PIN, (BUTTON_0_ACTIVE ?
+				//IOPORT_MODE_PULLDOWN : IOPORT_MODE_PULLUP));
+//
+	///* Initialize EXT3 LED0, LED1 & LED2, turned off */
+	//ioport_set_pin_level(IO1_LED1_PIN, !IO1_LED1_ACTIVE);
+	//ioport_set_pin_dir(IO1_LED1_PIN, IOPORT_DIR_OUTPUT);
+	//ioport_set_pin_level(IO1_LED2_PIN, !IO1_LED2_ACTIVE);
+	//ioport_set_pin_dir(IO1_LED2_PIN, IOPORT_DIR_OUTPUT);
+	//ioport_set_pin_level(IO1_LED3_PIN, !IO1_LED3_ACTIVE);
+	//ioport_set_pin_dir(IO1_LED3_PIN, IOPORT_DIR_OUTPUT);
 
 #ifdef CONF_BOARD_UART_CONSOLE
 	/* Configure UART pins */
@@ -183,7 +184,7 @@ void board_init(void)
 	
 #endif
 
-#ifdef CONF_BOARD_SD_MMC_HSMCI
+//#ifdef CONF_BOARD_SD_MMC_HSMCI
 
 /* Configure HSMCI pins */
 gpio_configure_pin(PIN_HSMCI_MCCDA_GPIO, PIN_HSMCI_MCCDA_FLAGS);
@@ -196,7 +197,7 @@ gpio_configure_pin(PIN_HSMCI_MCDA3_GPIO, PIN_HSMCI_MCDA3_FLAGS);
 /* Configure SD/MMC card detect pin */
 gpio_configure_pin(SD_MMC_0_CD_GPIO, SD_MMC_0_CD_FLAGS);
 
-#endif
+//#endif
 
 
 

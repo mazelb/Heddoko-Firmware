@@ -13,6 +13,8 @@
 
 #define PACKET_QUEUE_LENGTH 10
 #define MAX_NUMBER_OF_IMU_SENSORS 9
+
+#define DATALOG_MAX_BUFFER_SIZE		8000
 //Sub processor messages
 
 #define PACKET_COMMAND_ID_SUBP_GET_STATUS 0x51

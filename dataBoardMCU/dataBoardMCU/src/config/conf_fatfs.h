@@ -87,7 +87,7 @@
 /* To enable string functions, set _USE_STRFUNC to 1 or 2. */
 
 
-#define    _USE_MKFS        1    /* 0:Disable or 1:Enable */
+#define    _USE_MKFS        0    /* 0:Disable or 1:Enable */
 /* To enable f_mkfs function, set _USE_MKFS to 1 and set _FS_READONLY to 0 */
 
 
@@ -170,7 +170,7 @@
 / Physical Drive Configurations
 /----------------------------------------------------------------------------*/
 
-#define _VOLUMES    4
+#define _VOLUMES    1
 /* Number of volumes (logical drives) to be used. */
 
 
@@ -227,12 +227,12 @@
 /      function must be added to the project. */
 
 
-#define    _FS_SHARE    0    /* 0:Disable or >=1:Enable */
+#define    _FS_SHARE    3    /* 0:Disable or >=1:Enable */
 /* To enable file shareing feature, set _FS_SHARE to 1 or greater. The value
    defines how many files can be opened simultaneously. */
 
 //SMC added this in, TODO make sure it doesn't break anything
-#define FREERTOS_USED
+//#define FREERTOS_USED
 
 #endif /* _FFCONFIG */
 

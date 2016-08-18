@@ -9,6 +9,18 @@
 #include "msg_messenger.h"
 #include "drv_uart.h"
 
+/* Global Variables */
+
+/*	Static function forward declarations	*/
+
+/*	Local variables	*/
+
+/*	Extern functions	*/
+
+/*	Extern variables	*/
+
+/*	Function Definitions	*/
+
 /*	Static function forward declarations	*/
 static void processMessage(msg_message_t message);
 

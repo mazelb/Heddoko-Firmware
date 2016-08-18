@@ -13,57 +13,49 @@
 #define DRV_GPIO_H_
 
 
-//#define DRV_GPIO_ID_PIN_SW0			PIO_PA2_IDX /* SOFTWARE BUTTON 0*/
 #define DRV_GPIO_ID_PIN_PW_SW		PIO_PA0_IDX /*	Power button	*/
 #define DRV_GPIO_ID_PIN_AC_SW1		PIO_PA2_IDX /*	Action Switch 1	*/
-#define DRV_GPIO_ID_PIN_AC_SW2		PIO_PA20_IDX /*	Action Switch 2	*/
-#define DRV_GPIO_ID_PIN_JC_OC1		PIO_PA16_IDX /*	Jack OC 1	*/
-#define DRV_GPIO_ID_PIN_JC_OC2		PIO_PA15_IDX /*	Jack OC 2	*/
-#define DRV_GPIO_ID_PIN_JC_DC1		PIO_PA24_IDX /*	Jack detect 1	*/
-#define DRV_GPIO_ID_PIN_JC_DC2		PIO_PA25_IDX /*	Jack detect 2	*/
-#define DRV_GPIO_ID_PIN_JC_EN1		PIO_PA19_IDX /*	Jack EN 1	*/
-#define DRV_GPIO_ID_PIN_JC_EN2		PIO_PA23_IDX /*	Jack EN 2	*/
-#define DRV_GPIO_ID_PIN_BLE_RST1	PIO_PB10_IDX /*	BLE RST 1	*/
-#define DRV_GPIO_ID_PIN_BLE_RST2	PIO_PA17_IDX /*	BLE RST 2	*/
-#define DRV_GPIO_ID_PIN_BLE_RST3	PIO_PA18_IDX /*	BLE RST 3	*/
-#define DRV_GPIO_ID_PIN_GREEN_LED	PIO_PB13_IDX /*	Green LED	*/
+#define DRV_GPIO_ID_PIN_AC_SW2		PIO_PB14_IDX /*	Action Switch 2	*/
+#define DRV_GPIO_ID_PIN_BLE_RST		PIO_PA23_IDX /*	BLE Reset	*/
+#define DRV_GPIO_ID_PIN_GREEN_LED	PIO_PB1_IDX /*	Green LED	*/
 #define DRV_GPIO_ID_PIN_BLUE_LED	PIO_PB0_IDX /*	Blue LED	*/
-#define DRV_GPIO_ID_PIN_RED_LED		PIO_PB1_IDX /*	Red LED	*/
-#define DRV_GPIO_ID_PIN_LBO			PIO_PA11_IDX /*	LBO	*/
-#define DRV_GPIO_ID_PIN_SD_CD		PIO_PC12_IDX /* SD CARD DETECT	*/
-#define DRV_GPIO_ID_PIN_STAT		PIO_PA2_IDX /*	STAT	*/
-#define DRV_GPIO_ID_PIN_BT_PWR_EN	PIO_PA12_IDX /*	BT PWR EN	*/
+#define DRV_GPIO_ID_PIN_RED_LED		PIO_PA18_IDX /*	Red LED	*/
+#define DRV_GPIO_ID_PIN_SD_CD		PIO_PA17_IDX /* SD CARD DETECT	*/  //TODO add ifdef for new HW PIO_PC12
+#define DRV_GPIO_ID_PIN_USB_DET		PIO_PB13_IDX /*	USB Connected Detect */
+#define DRV_GPIO_ID_PIN_SUBP_GPIO	PIO_PA20_IDX /*	Sub-processor/ power board GPIO */
+#define DRV_GPIO_ID_PIN_AUX_GPIO	PIO_PA20_IDX /*	Auxiliary port GPIO */
+#define DRV_GPIO_ID_PIN_PIEZO_OUT	PIO_PA15_IDX /*	Piezo Buzzer Output */
+#define DRV_GPIO_ID_PIN_HAPTIC_OUT	PIO_PA19_IDX /*	Haptic Output */
+#define DRV_GPIO_ID_PIN_WIFI_IRQ	PIO_PA1_IDX /*	WIFI Module IRQ Pin */
+#define DRV_GPIO_ID_PIN_WIFI_EN		PIO_PA6_IDX /*	WIFI Module Enable Pin */
+#define DRV_GPIO_ID_PIN_WIFI_CS		PIO_PA11_IDX /*	WIFI Module Chip Select */
+#define DRV_GPIO_ID_PIN_WIFI_RST	PIO_PA24_IDX /*	WIFI Module Reset */
+#define DRV_GPIO_ID_PIN_WIFI_WAKE	PIO_PA25_IDX /*	WIFI Module Wake */
 
-//Programming pin GPIO definitions, used to put the BLE UART pins into a high impedance state
-#define DRV_GPIO_ID_BLE1_RX			PIO_PB3_IDX		/*	BLE1 RX	*/
-#define DRV_GPIO_ID_BLE1_TX			PIO_PB2_IDX		/*	BLE1 TX	*/
-#define DRV_GPIO_ID_BLE2_RX			PIO_PA6_IDX		/*	BLE2 RX	*/
-#define DRV_GPIO_ID_BLE2_TX			PIO_PA5_IDX		/*	BLE2 TX	*/
-#define DRV_GPIO_ID_BLE3_RX			PIO_PA22_IDX	/*	BLE3 RX	*/
-#define DRV_GPIO_ID_BLE3_TX			PIO_PA18_IDX	/*	BLE3 TX	*/
+
+
 
 
 typedef enum
 {	
-	DRV_GPIO_PIN_PW_SW,		
-	//DRV_GPIO_PIN_AC_SW1,		
-	//DRV_GPIO_PIN_AC_SW2,		
-	//DRV_GPIO_PIN_JC_OC1,		
-	//DRV_GPIO_PIN_JC_OC2,		
-	//DRV_GPIO_PIN_JC_DC1,		
-	//DRV_GPIO_PIN_JC_DC2,		
-	//DRV_GPIO_PIN_JC_EN1,		
-	//DRV_GPIO_PIN_JC_EN2,		
-	//DRV_GPIO_PIN_BLE_RST1,	
-	//DRV_GPIO_PIN_BLE_RST2,	
-	DRV_GPIO_PIN_BLE_RST3,	
-	//DRV_GPIO_PIN_GREEN_LED,	
-	//DRV_GPIO_PIN_BLUE_LED,	
-	//DRV_GPIO_PIN_RED_LED,		
-	//DRV_GPIO_PIN_LBO,		
-	DRV_GPIO_PIN_SD_CD
-	//DRV_GPIO_PIN_BT_PWR_EN,			
-	//DRV_GPIO_PIN_PB_GPIO	
+	DRV_GPIO_PIN_PW_SW,
+	DRV_GPIO_PIN_AC_SW1,
+	DRV_GPIO_PIN_AC_SW2,
+	DRV_GPIO_PIN_BLE_RST,
+	DRV_GPIO_PIN_GREEN_LED,
+	DRV_GPIO_PIN_BLUE_LED,
+	DRV_GPIO_PIN_RED_LED,
+	DRV_GPIO_PIN_SD_CD,
+	DRV_GPIO_PIN_USB_DET,
+	DRV_GPIO_PIN_SUBP_GPIO,
+	DRV_GPIO_PIN_AUX_GPIO,
+	DRV_GPIO_PIN_PIEZO_OUT,
+	DRV_GPIO_PIN_HAPTIC_OUT,
+	DRV_GPIO_PIN_WIFI_IRQ,
+	DRV_GPIO_PIN_WIFI_EN,
+	DRV_GPIO_PIN_WIFI_CS,
+	DRV_GPIO_PIN_WIFI_RST,
+	DRV_GPIO_PIN_WIFI_WAKE
 }drv_gpio_pins_t;
 	
 typedef enum 
@@ -110,6 +102,7 @@ status_t drv_gpio_setPinState(drv_gpio_pins_t pinId, drv_gpio_pin_state_t state)
 status_t drv_gpio_getPinState(drv_gpio_pins_t pinId, drv_gpio_pin_state_t* state);
 status_t drv_gpio_togglePin(drv_gpio_pins_t pinId);
 status_t drv_gpio_config_interrupt(drv_gpio_pins_t pin, drv_gpio_interrupt_t pinInt);
+status_t drv_gpio_config_interrupt_handler(drv_gpio_pins_t pin, drv_gpio_interrupt_t pinInt, void* handler);
 status_t drv_gpio_enable_interrupt(drv_gpio_pins_t pin);
 status_t drv_gpio_save_interrupt_mask_all(void);
 status_t drv_gpio_disable_interrupt_all(void);
