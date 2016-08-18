@@ -20,31 +20,20 @@
 
 #ifndef DRV_UART_H_
 #define DRV_UART_H_
-#define FIFO_BUFFER_SIZE 512
-#define RAW_PACKET_MAX_SIZE 350
-#define MAX_NUMBER_RAW_PACKETS 4
-//Raw Packet defines
-#define RAW_PACKET_START_BYTE 0xDE
-#define RAW_PACKET_ESCAPE_BYTE 0xDF
-#define RAW_PACKET_ESCAPE_OFFSET 0x10
+#define FIFO_BUFFER_SIZE 2048
+
+#define UART0_IDX			0
+#define UART1_IDX			1
+#define USART0_IDX			2
+#define USART1_IDX			3
+#define NUMBER_OF_BLOCKS 4
+#define DMA_BLOCK_SIZE 2//2048
 
 typedef enum
 {
-	DRV_UART_MODE_BYTE_BUFFER,
-	DRV_UART_MODE_PACKET_PARSER,
-	DRV_UART_MODE_PACKET_PARSER_DMA
+	DRV_UART_MODE_INTERRUPT = 0,
+	DRV_UART_MODE_DMA = 1
 }drv_uart_mode_t;
-
-typedef struct
-{
-	volatile uint8_t payload[RAW_PACKET_MAX_SIZE];		// TODO: should be at least twice the size in order to hold 330 bytes of unwrapped sensor full frame data
-	uint16_t payloadSize; //size of the payload
-	uint16_t bytesReceived; //number of bytes received
-	bool escapeFlag; //flag indicating the next byte was escaped
-}drv_uart_rawPacket_t;
-
-typedef void (*drv_uart_packetCallback_t)(drv_uart_rawPacket_t* packet);
-
 typedef struct
 {
 	uint8_t data_buf[FIFO_BUFFER_SIZE];
@@ -53,35 +42,53 @@ typedef struct
 	uint16_t num_bytes;
 }sw_fifo_typedef;
 
+typedef struct 
+{
+	uint16_t numBytes;
+	uint8_t buffer[DMA_BLOCK_SIZE];	
+}tx_mem_blocks_t;
+
+typedef struct  
+{
+	uint16_t validByteCount;
+	uint16_t readIndex;
+	uint16_t writeIndex; 
+	uint8_t transferEnabled; 
+	uint8_t buffer[DMA_BLOCK_SIZE];	
+}mem_block_t;
+
+
 typedef struct
 {
-	drv_uart_rawPacket_t packetArray[MAX_NUMBER_RAW_PACKETS];
-	uint16_t i_first;
-	uint16_t i_last;
-	uint16_t num_packets;
-}packet_fifo_t;
+	mem_block_t memoryBlocks[NUMBER_OF_BLOCKS];
+	uint16_t writeBlock;
+	uint16_t readBlock; 
+	uint16_t numValidBlocks;
+	pdc_packet_t uart_dma_rx_currentbuffer;
+	pdc_packet_t uart_dma_rx_nextbuffer;
+	Pdc* dmaController; //assigned during initialization
+}fifo_mem_block_t;
 
 typedef struct
 {
 	Usart *p_usart;
-	usart_serial_options_t uart_options;
-	drv_uart_mode_t uartMode;
-	int mem_index; 	//set this to -1 to disable byte fifo
-	drv_uart_packetCallback_t packetCallback;	//call back is null if this is not used.
+	usart_serial_options_t uart_options; 
+	int mem_index; 	
+	drv_uart_mode_t mode; 
 }drv_uart_config_t;
 
 status_t drv_uart_init(drv_uart_config_t* uartConfig);
-status_t drv_uart_putChar(drv_uart_config_t* uartConfig, char c);
-status_t drv_uart_getChar(drv_uart_config_t* uartConfig, char* c);
-status_t drv_uart_deInit(drv_uart_config_t* uartConfig);
+status_t drv_uart_putChar(drv_uart_config_t* uartConfig, char c); 
+status_t drv_uart_getChar(drv_uart_config_t* uartConfig, char* c); 
+status_t drv_uart_deInit(drv_uart_config_t* uartConfig); 
 status_t drv_uart_isInit(drv_uart_config_t* uartConfig);
-status_t drv_uart_getline(drv_uart_config_t* uartConfig, char* str, size_t str_size);
+status_t drv_uart_getline(drv_uart_config_t* uartConfig, char* str, size_t str_size); 
 status_t drv_uart_getlineTimed(drv_uart_config_t* uartConfig, char* str, size_t strSize, uint32_t maxTime);
-status_t drv_uart_getPacketTimed(drv_uart_config_t* uartConfig, drv_uart_rawPacket_t* packet, uint32_t maxTime);
 status_t drv_uart_getlineTimedSized(drv_uart_config_t* uartConfig, char* str, size_t strSize, uint32_t maxTime, uint8_t* strLength);
 uint32_t drv_uart_getNumBytes(drv_uart_config_t* uartConfig);
 void drv_uart_putString(drv_uart_config_t* uartConfig, char* str);
 void drv_uart_putData(drv_uart_config_t* uartConfig, char* str, size_t length);
 void drv_uart_flushRx(drv_uart_config_t* uartConfig);
-uint32_t drv_uart_getDroppedBytes(drv_uart_config_t* uartConfig);
+uint32_t drv_uart_getDroppedBytes(drv_uart_config_t* uartConfig); 
+
 #endif /* DRV_UART_H_ */

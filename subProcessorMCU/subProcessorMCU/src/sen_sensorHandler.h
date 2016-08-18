@@ -12,21 +12,35 @@
 #include "common.h"
 #include "drv_gpio.h"
 
-#define GPIO_RS485_DATA_DIRECTION_RE	DRV_GPIO_ID_PIN_GPIO
-#define GPIO_RS485_DATA_DIRECTION_DE	DRV_GPIO_ID_PIN_GPIO
+//#define ENABLE_SENSORS_DEBUG_MODE		//enable this define to switch to the debug packet and check the integrity of data
 
-#define SENSOR_BUS_SPEED_HIGH			2000000
+#define GPIO_RS485_DATA_DIRECTION_RE	DRV_GPIO_PIN_RS485
+#define GPIO_RS485_DATA_DIRECTION_DE	DRV_GPIO_PIN_RS485
+
+#define SENSOR_BUS_SPEED_HIGH			921600
 #define SENSOR_BUS_SPEED_LOW			460800
-
-//#define ENABLE_SENSOR_PACKET_TEST		//enable this define to switch to the debug packet and check the integrity of data
 
 typedef enum
 {
-	SENSOR_READY,
-	SENSOR_STANDBY,
-	SENSOR_NOT_PRESENT,
-	SENSOR_COMM_ERROR,	//if it receives incomplete packets
+	SENSOR_IDLE = 0x00,
+	SENSOR_STREAMING,
+	SENSOR_ERROR,
 }sensor_state_t;
+
+typedef	enum
+{
+	COMMAND_ID_GET_FRAME = 0x00,
+	COMMAND_ID_UPDATE,
+	COMMAND_ID_SETUP_MODE,
+	COMMAND_ID_GET_STATUS,
+	COMMAND_ID_ENABLE_HPR,
+	COMMAND_ID_CHANGE_BAUD,
+	COMMAND_ID_CHANGE_PADDING,
+	COMMAND_ID_SET_RATES,
+	COMMAND_ID_SET_IMU_ID,
+	COMMAND_ID_RESET_FAKE,
+	COMMAND_ID_UPDATE_FAKE
+}sensor_commands_t;
 
 typedef enum
 {
@@ -34,17 +48,10 @@ typedef enum
 	SENSOR_PACKET_INCOMPLETE,
 }sensor_error_code_t;
 
-void sendGetFrame(int sensorId);
-void sendSetupModeEnable();
-void sendUpdateCommand();
-void sendGetDebugStatus();
-void sendUpdateCommandFake();
-void sendResetCommandFake();
-void sendEnableHPR(uint8_t enable);
-void sendChangeBaud(uint32_t baud);
-void sendChangePadding(bool paddingEnable, uint8_t paddingLength);
-
-void sen_sensorHandler(void *pvParameters);
-
+void sen_sensorHandlerTask(void *pvParameters);
+sensor_state_t sen_getSensorState(void);
+uint32_t sen_getDetectedSensors(void);
+void sen_enableSensorStream(bool enable);
+void sen_setConfig(uint8_t *data);
 
 #endif /* SEN_SENSORHANDLER_H_ */

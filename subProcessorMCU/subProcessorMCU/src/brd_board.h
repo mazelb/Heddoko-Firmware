@@ -9,6 +9,8 @@
 #ifndef BRD_BOARD_H_
 #define BRD_BOARD_H_
 
+#include <asf.h>
+
 /** Baudrate setting : 115200 */
 #define CONF_TEST_BAUDRATE   115200
 /** Char setting     : 8-bit character length (don't care for UART) */
@@ -22,5 +24,6 @@ void brd_board_init();
 void brd_initAllUarts();
 void brd_deInitAllUarts();
 void brd_enableWatchdog();
+void changeUartBaud(uint32_t baud);
 
 #endif /* BRD_BOARD_H_ */

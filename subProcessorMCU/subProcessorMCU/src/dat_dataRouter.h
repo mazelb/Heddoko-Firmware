@@ -13,7 +13,7 @@
 typedef struct  
 {
 	drv_uart_config_t* dataBoardUart;
-	drv_uart_config_t* daughterBoard;	
+	//drv_uart_config_t* sensorUart;	
 }dat_dataRouterConfig_t;
 
 void dat_task_dataRouter(void *pvParameters);

@@ -13,14 +13,14 @@
 #include "mgr_managerTask.h"
 #include "dat_dataRouter.h"
 #include "chrg_chargeMonitor.h"
-
-
+#include "sen_sensorHandler.h"
+#include "brd_dataBoardManager.h"
 
 xQueueHandle mgr_eventQueue = NULL;
 xTimerHandle pwrButtonTimer = NULL;
 volatile mgr_systemStates_t currentSystemState = SYS_STATE_POWER_OFF; 
 
-//external dependancies
+//external dependencies
 
 extern drv_uart_config_t uart0Config;
 extern drv_uart_config_t uart1Config;
@@ -28,11 +28,11 @@ extern xQueueHandle cmd_queue_commandQueue;
 extern chrg_chargerState_t chrg_currentChargerState; 
 extern uint32_t powerButtonLowCount;
 
-
+//	is obsolete now 
 dat_dataRouterConfig_t dataRouterConfiguration = 
 {
 	.dataBoardUart = &uart1Config,
-	.daughterBoard = &uart0Config 
+	//.daughterBoard = &uart0Config 
 };
 
 chrg_chargeMonitorConfig_t chargeMonitorConfiguration = 
@@ -85,14 +85,25 @@ void mgr_managerTask(void *pvParameters)
 	retCode = xTaskCreate(dat_task_dataRouter, "DAT", TASK_DATA_ROUTER_STACK_SIZE, &dataRouterConfiguration, TASK_DATA_ROUTER_PRIORITY, NULL);
 	if (retCode != pdPASS)
 	{
-		printf("Failed to create CMD task code %d\r\n", retCode);
+		printf("Failed to create DAT task code %d\r\n", retCode);
 	}
+	retCode = xTaskCreate(dat_dataBoardManager, "DBM", TASK_DATA_BOARD_MANAGER_STACK_SIZE, NULL, TASK_DATA_BOARD_MANAGER_PRIORITY, NULL);
+	if (retCode != pdPASS)
+	{
+		printf("Failed to create DB task code %d\r\n", retCode);
+	}
+	retCode = xTaskCreate(sen_sensorHandlerTask, "SEN", TASK_SENSOR_HANDLER_STACK_SIZE, NULL, TASK_SENSOR_HANDLER_PRIORITY, NULL);
+	if (retCode != pdPASS)
+	{
+		printf("Failed to create SEN task code %d\r\n", retCode);
+	}
+	
 	drv_led_set(DRV_LED_GREEN, DRV_LED_FLASH);
 	//enable power to the data board
 	drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_HIGH);
 	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
 	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);	
-	drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_PULLED_LOW);
+	//drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_PULLED_LOW);
 	currentSystemState = SYS_STATE_POWER_ON;
 	//by default enable fast charging
 	drv_gpio_setPinState(DRV_GPIO_PIN_CHRG_SEL, DRV_GPIO_PIN_STATE_HIGH);	
@@ -188,9 +199,7 @@ void mgr_managerTask(void *pvParameters)
 			//rstc_start_software_reset(RSTC);
 		//}
 	}
-	
 }
-
 
 //static functions
 void powerButtonTimerCallback()
@@ -276,12 +285,12 @@ static void enterSleepMode()
 	vTaskDelay(2000);
 	while(loopCount < 30)
 	{		
-		drv_gpio_getPinState(DRV_GPIO_PIN_GPIO,&gpioPinState);
-		if(gpioPinState == DRV_GPIO_PIN_STATE_LOW)
-		{
+		//drv_gpio_getPinState(DRV_GPIO_PIN_GPIO,&gpioPinState);
+		//if(gpioPinState == DRV_GPIO_PIN_STATE_LOW)
+		//{
 			//the data board is ready to shutdown, leave the loop. 
-			break;
-		}
+			//break;
+		//}
 		vTaskDelay(10);
 		loopCount++;
 	}
@@ -339,7 +348,7 @@ static void enterSleepMode()
 	if(powerOnFlag == TRUE)
 	{	
 		//set the GPIO pin to be an input. 
-		drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_PULLED_LOW);
+		//drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_PULLED_LOW);
 		//enable power to the data board
 		drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_HIGH);
 		//wait for brain mcu to start up
@@ -349,12 +358,12 @@ static void enterSleepMode()
 		powerButtonLowCount = 16;
 		while(loopCount < 30)
 		{
-			drv_gpio_getPinState(DRV_GPIO_PIN_GPIO,&gpioPinState);
-			if(gpioPinState == DRV_GPIO_PIN_STATE_HIGH)
-			{
+			//drv_gpio_getPinState(DRV_GPIO_PIN_GPIO,&gpioPinState);
+			//if(gpioPinState == DRV_GPIO_PIN_STATE_HIGH)
+			//{
 				//the data board is powered up, break loop
-				break;
-			}
+				//break;
+			//}
 			vTaskDelay(50);
 			loopCount++;
 		}
@@ -462,7 +471,7 @@ static void enterPowerDownChargeState()
 	vTaskDelay(2000);
 	while(loopCount < 30)
 	{
-		drv_gpio_getPinState(DRV_GPIO_PIN_GPIO,&gpioPinState);
+		//drv_gpio_getPinState(DRV_GPIO_PIN_GPIO,&gpioPinState);
 		if(gpioPinState == DRV_GPIO_PIN_STATE_LOW)
 		{
 			//the data board is ready to shutdown, leave the loop.
@@ -471,7 +480,7 @@ static void enterPowerDownChargeState()
 		vTaskDelay(100);
 		loopCount++;
 	}	
-	drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_LOW);
+	//drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_LOW);
 	//turn off power to the data board
 	drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_LOW);
 	
@@ -481,7 +490,7 @@ static void enterPowerDownChargeState()
 static void exitPowerDownChargeState()
 {
 	//set the GPIO pin to be an input.
-	drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_PULLED_LOW);
+	//drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_PULLED_LOW);
 	//enable power to the data board
 	drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_HIGH);
 	//wait for brain mcu to start up
@@ -489,12 +498,12 @@ static void exitPowerDownChargeState()
 	uint32_t loopCount = 0;
 	while(loopCount < 30)
 	{
-		drv_gpio_getPinState(DRV_GPIO_PIN_GPIO,&gpioPinState);
-		if(gpioPinState == DRV_GPIO_PIN_STATE_HIGH)
-		{
+		//drv_gpio_getPinState(DRV_GPIO_PIN_GPIO,&gpioPinState);
+		//if(gpioPinState == DRV_GPIO_PIN_STATE_HIGH)
+		//{
 			//the data board is ready to shutdown, leave the loop.
-			break;
-		}
+			//break;
+		//}
 		vTaskDelay(100);
 		loopCount++;
 	}	

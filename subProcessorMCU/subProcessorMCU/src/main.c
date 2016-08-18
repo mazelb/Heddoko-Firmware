@@ -112,6 +112,5 @@ int main (void)
 			// No, so turn LED off.
 			ioport_set_pin_level(LED_0_PIN, !LED_0_ACTIVE);
 		}
-
 	}
 }

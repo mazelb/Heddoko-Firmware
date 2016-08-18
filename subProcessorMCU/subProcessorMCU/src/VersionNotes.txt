@@ -18,4 +18,4 @@
  3. Added in fix for the I2C where GPIO peripheral clock fix caused issue with I2C peripheral clock. 
 
  VERSION 0.2a (for amendment!)	- subProcessorMCU
- 1. 
+ 1. All new Project.
