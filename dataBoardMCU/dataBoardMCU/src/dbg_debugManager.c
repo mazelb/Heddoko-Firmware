@@ -134,7 +134,7 @@ static status_t processCommand(char* command, size_t cmdSize)
 	}
 	else if(strncmp(command, "?\r\n",cmdSize) == 0)
 	{
-		printString("Hello!\r\n");
+		printString("Brain pack alive!\r\n");
 	}
 	return status;	
 }

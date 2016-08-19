@@ -10,7 +10,7 @@
 #define BLE_BLUETOOTHMANAGER_H_
 
 
-
+void ble_bluetoothManagerTask(void *pvParameters);
 
 
 #endif /* BLE_BLUETOOTHMANAGER_H_ */

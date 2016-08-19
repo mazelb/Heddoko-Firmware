@@ -21,6 +21,7 @@
 #include "dat_dataManager.h"
 #include "dbg_debugManager.h"
 #include "net_wirelessNetwork.h"
+#include "ble_bluetoothManager.h"
 
 /* Global Variables */
 xQueueHandle queue_systemManager = NULL;
@@ -86,6 +87,11 @@ void sys_systemManagerTask(void* pvParameters)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create wireless task\r\n");
 	}
+	if(xTaskCreate(ble_bluetoothManagerTask, "ble", (4000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS)
+	{
+		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create ble task\r\n");
+	}
+	
 	vTaskDelay(200); 
 	sendStateChangeMessage(SYSTEM_STATE_INIT); 
 	
