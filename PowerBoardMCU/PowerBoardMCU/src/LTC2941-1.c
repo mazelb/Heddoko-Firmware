@@ -81,25 +81,32 @@ status_t ltc2941SetCharge(slave_twi_config_t* slaveConfig, uint16_t chargeLevel)
 		return STATUS_FAIL;
 	}	
 };
-uint16_t ltc2941GetCharge(slave_twi_config_t* slaveConfig)
+status_t ltc2941GetCharge(slave_twi_config_t* slaveConfig, uint16_t *charge)
 {
 	status_t status = STATUS_FAIL;
 	uint8_t chargeBytes[2] = {0};
-	uint16_t readData = 0;	
 	//Read two bytes of Accumulated charge
 	status = drv_i2c_read(slaveConfig, 0x02, chargeBytes, 2);
 	if (status != STATUS_PASS)
 	{
-		return 0;
+		#ifdef ENABLE_DEBUG_PRINTS
+		puts("Read from register failed\r\n");
+		#endif
+		return STATUS_FAIL;
 	}
-	readData = (((chargeBytes[0]&0xFF)<<8) + (chargeBytes[1]&0xFF));	
-	return readData;
+	*charge = (((chargeBytes[0]&0xFF)<<8) + (chargeBytes[1]&0xFF));	
+	return STATUS_PASS;
 }
 //[?3/?25/?2016 2:19 PM] Hriday Mehta: 
-uint32_t getCalculatedPercentage(slave_twi_config_t* slaveConfig)
+status_t getCalculatedPercentage(slave_twi_config_t* slaveConfig, uint32_t *percent)
 {	
-	uint32_t charge = ltc2941GetCharge(slaveConfig);
-	return (((charge - CHARGE_EMPTY_VALUE)*100) / (CHARGE_FULL_VALUE - CHARGE_EMPTY_VALUE));
+	uint16_t charge = 0;
+	if (ltc2941GetCharge(slaveConfig, &charge) == STATUS_PASS)
+	{
+		*percent = (((charge - CHARGE_EMPTY_VALUE)*100) / (CHARGE_FULL_VALUE - CHARGE_EMPTY_VALUE));
+		return STATUS_PASS;
+	}
+	return STATUS_FAIL;
 } 
 uint32_t getRegValueForPercent(uint32_t percent)
 {
@@ -130,7 +137,7 @@ uint8_t ltc2941GetStatus(slave_twi_config_t* slaveConfig)
 	if (status != STATUS_PASS)
 	{
 		#ifdef ENABLE_DEBUG_PRINTS
-		puts("Write to Control register failed\r\n");
+		puts("Read from status register failed\r\n");
 		#endif
 		return 0;
 	}	

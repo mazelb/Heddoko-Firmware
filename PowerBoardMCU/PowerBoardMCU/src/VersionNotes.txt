@@ -20,3 +20,8 @@
   VERSION 0.1h (for hero!)
  1. Turned off debug prints on the charge monitor. 
  
+  VERSION 0.1i (for intel!)
+ 1. Added changes to the i2c driver to help recover the bus incase it is hung up
+ 2. Added changes to functions in LTC2941 driver for getting raw charge and charge percentage. They return status pass or fail and the value by reference
+ 3. Added changes to the enter Sleep function to prevent the system from crashing (changed the wrong parameter that was passed to gpio driver).
+ 4. Added in changes to the crystal value. Changed the value to 16M.

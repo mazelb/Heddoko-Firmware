@@ -254,7 +254,7 @@ static void enterSleepMode()
 	cmd_commandPacket_t packet;
 	uint32_t powerOnFlag = FALSE, chargeFlag = FALSE;
 	drv_gpio_pin_state_t pwSwState = DRV_GPIO_PIN_STATE_HIGH;  
-	drv_gpio_pin_state_t chargingDetect = DRV_GPIO_INTERRUPT_LOW_EDGE; 
+	drv_gpio_pin_state_t chargingDetect = DRV_GPIO_PIN_STATE_HIGH; 
 	strncpy(packet.packetData,"Power\r\n",CMD_INCOMING_CMD_SIZE_MAX); 
 	uint32_t loopCount = 0;
 	packet.packetSize = strlen(packet.packetData); 
@@ -316,7 +316,7 @@ static void enterSleepMode()
 		//Processor wakes up from sleep
 		delay_ms(WAKEUP_DELAY);
 		drv_gpio_getPinState(DRV_GPIO_PIN_PWR_BTN, &pwSwState);	//poll the power switch
-		drv_gpio_getPinState(DRV_GPIO_ID_PIN_CHRG_PG, &chargingDetect); //
+		drv_gpio_getPinState(DRV_GPIO_PIN_CHRG_PG, &chargingDetect); //
 		if(pwSwState == DRV_GPIO_PIN_STATE_LOW)	//check if it is a false wakeup
 		{
 			//The power button has been held long enough, break the loop and power on. 
