@@ -17,3 +17,6 @@
  2. Added fix for set time command on start. The command was in the incorrect format
  3. Added in fix for the I2C where GPIO peripheral clock fix caused issue with I2C peripheral clock. 
 
+  VERSION 0.1h (for hero!)
+ 1. Turned off debug prints on the charge monitor. 
+ 

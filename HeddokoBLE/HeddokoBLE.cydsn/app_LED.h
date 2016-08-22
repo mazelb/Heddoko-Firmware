@@ -20,8 +20,8 @@
     /***************************************
     *       Constants
     ***************************************/
-    #define LED_OFF             0x01
-    #define LED_ON              0x00
+    #define LED_OFF             0x00
+    #define LED_ON              0x01
     
     #ifdef LOW_POWER_MODE
         #define ADV_LED_TIMEOUT     3

@@ -145,11 +145,11 @@ sint8 nm_bus_init(void *pvinit)
 	spi_reset(CONF_WINC_SPI);
 	spi_set_master_mode(CONF_WINC_SPI);
 	spi_disable_mode_fault_detect(CONF_WINC_SPI);
-#ifdef	__SAM4SD32C__
+//#ifdef	__SAM4SD32C__
 	spi_set_fixed_peripheral_select(CONF_WINC_SPI);
-#else
-	spi_set_peripheral_chip_select_value(CONF_WINC_SPI, CONF_WINC_SPI_NPCS);
-#endif
+//#else
+	//spi_set_peripheral_chip_select_value(CONF_WINC_SPI, CONF_WINC_SPI_NPCS);
+//#endif
 
 	spi_set_clock_polarity(CONF_WINC_SPI,
 			CONF_WINC_SPI_NPCS, CONF_WINC_SPI_POL);

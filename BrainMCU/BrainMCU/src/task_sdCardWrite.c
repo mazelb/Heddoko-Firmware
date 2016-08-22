@@ -85,6 +85,7 @@ void task_sdCardHandler(void *pvParameters)
 		{
 			f_close(&dataLogFile_obj); 
 			dataLogFileOpen = false; 
+			numBytesToWrite = 0; //clear the buffer!
 			//clear the flag. 
 			closeLogFileFlag = 0;
 		}
@@ -301,7 +302,7 @@ status_t task_sdCard_OpenNewFile()
 	if (xSemaphoreTake(semaphore_fatFsAccess, 100) == true)
 	{	
 		//Clear the buffer so we don't get any old frames in the new file
-		sdCardBufferPointer = 0;
+		sdCardBufferPointer = 0;		
 		//get the file index for the newly created file
 		//open the file that contains the index numbers
 		#if (FILE_CREATION_ALGO == COMMON_INDEX) 

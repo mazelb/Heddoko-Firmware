@@ -41,6 +41,58 @@ void system_board_init(void);
 }
 #endif
 
+#ifdef HW_V1_2 //Hardware Rev 1.2 pin defines
+
+/** \name SW1 definitions
+ *  @{ */
+#define SW1_PIN                   PIN_PA10
+#define SW1_ACTIVE                false
+#define SW1_INACTIVE              !SW1_INT_ACTIVE
+#define SW1_EIC_PIN               PIN_PA10A_EIC_EXTINT2
+#define SW1_EIC_MUX               MUX_PA10A_EIC_EXTINT2
+#define SW1_EIC_PINMUX            PINMUX_PA10A_EIC_EXTINT2
+#define SW1_EIC_LINE              2
+/** @} */
+
+/** \name SW2 definitions
+ *  @{ */
+#define SW2_PIN                   PIN_PA02
+#define SW2_ACTIVE                false
+#define SW2_INACTIVE              !SW2_ACTIVE
+#define SW2_EIC_PIN               PIN_PA02A_EIC_EXTINT2
+#define SW2_EIC_MUX               MUX_PA02A_EIC_EXTINT2
+#define SW2_EIC_PINMUX            PINMUX_PA02A_EIC_EXTINT2
+#define SW2_EIC_LINE              2
+/** @} */
+
+
+
+/**
+ * \name LED #0 definitions
+ *
+ * Wrapper macros for LED0, to ensure common naming across all Xplained
+ * boards.
+ *
+ *  @{ */
+#define LED_ACTIVE              false
+#define LED_INACTIVE            true
+
+
+#define LED_BLUE_PIN               PIN_PA07
+#define LED_RED_PIN                PIN_PA05
+#define LED_GREEN_PIN              PIN_PA06
+
+#define GPIO_RS485_DATA_DIRECTION_RE PIN_PA03
+#define GPIO_RS485_DATA_DIRECTION_DE PIN_PA04
+#define GPIO_RS485_DATA_RECEIVE false
+#define GPIO_RS485_DATA_TRANSMIT true
+
+//EM micro interrupt switch
+
+#define GPIO_EM_MICRO_INT_PIN   PIN_PA11
+
+#else //Default Rev 1.1 board setup
+
 /** \name LED0 definitions
  *  @{ */
 #define LED0_PIN                  PIN_PA08
@@ -51,13 +103,13 @@ void system_board_init(void);
 
 /** \name SW0 definitions
  *  @{ */
-#define SW1_INT_PIN                   PIN_PA05
-#define SW1_INT_ACTIVE                false
-#define SW1_INT_INACTIVE              !SW1_INT_ACTIVE
-#define SW1_INT_EIC_PIN               PIN_PA05A_EIC_EXTINT5
-#define SW1_INT_EIC_MUX               MUX_PA05A_EIC_EXTINT5
-#define SW1_INT_EIC_PINMUX            PINMUX_PA05A_EIC_EXTINT5
-#define SW1_INT_EIC_LINE              5
+#define SW1_PIN                   PIN_PA05
+#define SW1_ACTIVE                false
+#define SW1_INACTIVE              !SW1_INT_ACTIVE
+#define SW1_EIC_PIN               PIN_PA05A_EIC_EXTINT5
+#define SW1_EIC_MUX               MUX_PA05A_EIC_EXTINT5
+#define SW1_EIC_PINMUX            PINMUX_PA05A_EIC_EXTINT5
+#define SW1_EIC_LINE              5
 /** @} */
 
 /** \name SW1 definitions
@@ -71,6 +123,7 @@ void system_board_init(void);
 #define SW2_EIC_LINE              7
 /** @} */
 
+
 /**
  * \name LED #0 definitions
  *
@@ -78,10 +131,25 @@ void system_board_init(void);
  * boards.
  *
  *  @{ */
-#define LED_0_NAME                "LED0 (yellow)"
-#define LED_0_PIN                 LED0_PIN
-#define LED_0_ACTIVE              LED0_ACTIVE
-#define LED_0_INACTIVE            LED0_INACTIVE
+#define LED_ACTIVE              true
+#define LED_INACTIVE            false
+
+
+#define LED_BLUE_PIN               PIN_PA08	//There is only one color on this board
+#define LED_RED_PIN                PIN_PA08
+#define LED_GREEN_PIN              PIN_PA08
+
+#define GPIO_RS485_DATA_DIRECTION_RE PIN_PA02
+#define GPIO_RS485_DATA_DIRECTION_DE PIN_PA04
+#define GPIO_RS485_DATA_RECEIVE false
+#define GPIO_RS485_DATA_TRANSMIT true
+
+#define GPIO_EM_MICRO_INT_PIN   PIN_PA11
+
+#endif
+
+
+
 /** @} */
 
 /** Number of on-board LEDs */
