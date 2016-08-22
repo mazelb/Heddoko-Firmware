@@ -30,11 +30,12 @@ char tempString[255] = {0};
  ***********************************************************************************************/
 void cmd_task_commandProcesor(void *pvParameters)
 {
+	status_t status = STATUS_PASS;
 	cmd_queue_commandQueue = xQueueCreate( 10, sizeof(cmd_commandPacket_t));
 	cmd_commandPacket_t packet; 
 	cmd_initPacketStructure(&packet);
 	uint16_t chargeLevel = 0; 
-	uint32_t chargeRegValue = 0; 
+	uint32_t chargeRegValue = 0, chargePercent = 0; 
 	bool forwardCommand = true; 
 	if(cmd_queue_commandQueue == 0)
 	{
@@ -72,24 +73,44 @@ void cmd_task_commandProcesor(void *pvParameters)
 				}
 				else if(strncmp(packet.packetData,"getRawCharge",12)==0)
 				{
-					//handle the set time command. 					
-					chargeLevel = ltc2941GetCharge(&ltc2941Config);
-					sprintf(tempString,"raw charge Level: %d\r\n",chargeLevel);
-					if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+					//handle the set time command. 			
+					status = ltc2941GetCharge(&ltc2941Config, &chargeLevel);
+					if (status == STATUS_PASS)
 					{
-						dat_sendStringToUsb(tempString);
+						sprintf(tempString,"raw charge Level: %d\r\n",chargeLevel);
+						if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+						{
+							dat_sendStringToUsb(tempString);
+						}
+					}
+					else
+					{
+						if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+						{
+							dat_sendStringToUsb("Failed to read charge\r\n");
+						}
 					}
 					//don't forward this message on. 	
 					forwardCommand = false; 						
 				}		
 				else if(strncmp(packet.packetData,"getCharge",9)==0)
 				{
-					//handle the set time command. 					
-					chargeLevel = getCalculatedPercentage(&ltc2941Config);
-					sprintf(tempString,"charge Level: %d\r\n",chargeLevel);
-					if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+					//handle the set time command. 
+					status = getCalculatedPercentage(&ltc2941Config, &chargePercent);	// TODO: this functions magically changes the packet source to daughter board !!!!
+					if (status == STATUS_PASS)
 					{
-						dat_sendStringToUsb(tempString);
+						sprintf(tempString,"charge Level: %d\r\n", chargePercent);
+						if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+						{
+							dat_sendStringToUsb(tempString);
+						}
+					}
+					else
+					{
+						if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+						{
+							dat_sendStringToUsb("Failed to read battery percentage\r\n");
+						}
 					}
 					//don't forward this message on. 	
 					forwardCommand = false; 						

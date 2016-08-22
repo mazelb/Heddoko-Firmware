@@ -51,7 +51,7 @@ static drv_uart_config_t *dataBoardPortConfig;
  * @param void *pvParameters
  * @return void                      
  ************************************************************************/
-void dat_dataBoardManager(void *pvParameters)
+void brd_dataBoardManager(void *pvParameters)
 {
 	UNUSED(pvParameters);
 	pkt_rawPacket_t sensorPacket;
@@ -113,6 +113,7 @@ void processPacket(pkt_rawPacket_t *packet)
 	if (packet->payloadSize < 2)
 	{
 		return;	// a packet should have minimum of two bytes
+		// TODO: log error here, possibly a counter to track the errors
 	}
 	
 	if (packet->payload[0] == PACKET_TYPE_MASTER_CONTROL)
@@ -174,7 +175,7 @@ void processPacket(pkt_rawPacket_t *packet)
  * @param void
  * @return void                   
  ************************************************************************/
-void dat_sendPowerDownReq()
+void brd_sendPowerDownReq()
 {
 	uint8_t response[3] = {0};
 	
