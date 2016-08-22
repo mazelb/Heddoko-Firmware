@@ -90,9 +90,6 @@ uint16_t ltc2941GetCharge(slave_twi_config_t* slaveConfig)
 	status = drv_i2c_read(slaveConfig, 0x02, chargeBytes, 2);
 	if (status != STATUS_PASS)
 	{
-		#ifdef ENABLE_DEBUG_PRINTS
-		puts("Read from register failed\r\n");
-		#endif
 		return 0;
 	}
 	readData = (((chargeBytes[0]&0xFF)<<8) + (chargeBytes[1]&0xFF));	
