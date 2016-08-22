@@ -58,6 +58,7 @@ build/
 *.srec
 *.d
 *.mk
+*.atsuo
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
