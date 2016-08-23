@@ -25,3 +25,4 @@
  2. Added changes to functions in LTC2941 driver for getting raw charge and charge percentage. They return status pass or fail and the value by reference
  3. Added changes to the enter Sleep function to prevent the system from crashing (changed the wrong parameter that was passed to gpio driver).
  4. Added in changes to the crystal value. Changed the value to 16M.
+ 5. Added in the implementation for auto turn off. Removed pulling of down of GPIO pin

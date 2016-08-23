@@ -28,7 +28,6 @@
 0x07 Shutdown_VBAT
  */ 
 
-
 #include "chrg_chargeMonitor.h"
 #include "dat_dataRouter.h"
 #include "drv_led.h"
@@ -64,6 +63,8 @@ void chrg_task_chargeMonitor(void *pvParameters)
 		 newUsbConnectedState = DRV_GPIO_PIN_STATE_LOW; 
 	drv_gpio_pin_state_t pwrButtonState = DRV_GPIO_PIN_STATE_PULLED_HIGH,
 		 newPwrButtonState = DRV_GPIO_PIN_STATE_LOW; 
+	drv_gpio_pin_state_t dbGpioPinState = DRV_GPIO_PIN_STATE_PULLED_LOW,
+		 newDbGpioPinState = DRV_GPIO_PIN_STATE_PULLED_LOW;
 	
 	char tempString[100] = {0}; 	 
 	while(1)
@@ -100,7 +101,7 @@ void chrg_task_chargeMonitor(void *pvParameters)
 				dat_sendDebugMsgToDataBoard("PwrBrdMsg:pwr Button high\r\n");
 			}
 			else
-			{				
+			{
 				dat_sendDebugMsgToDataBoard("PwrBrdMsg:pwr Button low\r\n");
 			}
 			pwrButtonState = newPwrButtonState;
@@ -120,6 +121,25 @@ void chrg_task_chargeMonitor(void *pvParameters)
 					//this is an error, we should log it.
 				}
 			}				
+		}
+		
+		// check if the data board is ready to auto shutdown
+		drv_gpio_getPinState(DRV_GPIO_PIN_GPIO, &newDbGpioPinState);		// TODO: needs rigorous testing
+		if (newDbGpioPinState != dbGpioPinState)
+		{
+			dbGpioPinState = newDbGpioPinState;
+			if (newDbGpioPinState == DRV_GPIO_PIN_STATE_LOW)
+			{
+				// the brain pack is ready to shutdown
+				eventMessage.sysEvent = SYS_EVENT_POWER_SWITCH;
+				if(mgr_eventQueue != NULL)
+				{
+					if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
+					{
+						//this is an error, we should log it.
+					}
+				}
+			}
 		}
 				
 		//check if the state is new

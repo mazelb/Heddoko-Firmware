@@ -574,6 +574,7 @@ void stateEntry_PowerDown()
 	}
 	if (firstBoot == TRUE)
 	{
+		drv_gpio_setPinState(DRV_GPIO_PIN_PB_GPIO, DRV_GPIO_PIN_STATE_HIGH);	// set GPIO high to indicate that board has waken up
 		vTaskDelay(100);
 		//drv_gpio_setPinState(quinticConfig[0].resetPin, DRV_GPIO_PIN_STATE_HIGH);
 		//drv_gpio_setPinState(quinticConfig[1].resetPin, DRV_GPIO_PIN_STATE_HIGH);
@@ -1049,9 +1050,9 @@ void lowBatteryBlink()
 	#ifndef USES_NEW_POWER_BOARD //if we use the new power board don't blink the LED
 	for (int i = 0; i < 3; i++)
 	{
-		drv_gpio_setPinState(DRV_GPIO_PIN_PB_GPIO, DRV_GPIO_PIN_STATE_HIGH);
+		//drv_gpio_setPinState(DRV_GPIO_PIN_PB_GPIO, DRV_GPIO_PIN_STATE_HIGH);
 		delay_ms(LED_BLINK_RATE);
-		drv_gpio_setPinState(DRV_GPIO_PIN_PB_GPIO, DRV_GPIO_PIN_STATE_LOW);
+		//drv_gpio_setPinState(DRV_GPIO_PIN_PB_GPIO, DRV_GPIO_PIN_STATE_LOW);
 		delay_ms(LED_BLINK_RATE);
 	}
 	#endif

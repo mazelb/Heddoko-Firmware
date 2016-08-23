@@ -75,3 +75,6 @@
  3. CheckRtosStack is only done when debug prints are enabled.
  4. Introduced a check on debug log buffer copy, Concatenates if the previous data was not written to Sd card.
  5. Changed the printf to debugPrint for the line "debug sync failed with code %d\r\n" .
+
+ VERSION 0.4m (for makeup!)
+ 1. Added in GPIO call to set the PB_PIN high so as to indicate wakeup

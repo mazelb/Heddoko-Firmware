@@ -490,7 +490,7 @@ static void exitPowerDownChargeState()
 	while(loopCount < 30)
 	{
 		drv_gpio_getPinState(DRV_GPIO_PIN_GPIO,&gpioPinState);
-		if(gpioPinState == DRV_GPIO_PIN_STATE_HIGH)
+		if(gpioPinState == DRV_GPIO_PIN_STATE_LOW)
 		{
 			//the data board is ready to shutdown, leave the loop.
 			break;
