@@ -63,8 +63,8 @@ void chrg_task_chargeMonitor(void *pvParameters)
 		 newUsbConnectedState = DRV_GPIO_PIN_STATE_LOW; 
 	drv_gpio_pin_state_t pwrButtonState = DRV_GPIO_PIN_STATE_PULLED_HIGH,
 		 newPwrButtonState = DRV_GPIO_PIN_STATE_LOW; 
-	drv_gpio_pin_state_t dbGpioPinState = DRV_GPIO_PIN_STATE_PULLED_LOW,
-		 newDbGpioPinState = DRV_GPIO_PIN_STATE_PULLED_LOW;
+	drv_gpio_pin_state_t dbGpioPinState = DRV_GPIO_PIN_STATE_PULLED_HIGH,
+		 newDbGpioPinState = DRV_GPIO_PIN_STATE_PULLED_HIGH;
 	
 	char tempString[100] = {0}; 	 
 	while(1)
@@ -123,15 +123,15 @@ void chrg_task_chargeMonitor(void *pvParameters)
 			}				
 		}
 		
-		// check if the data board is ready to auto shutdown
-		drv_gpio_getPinState(DRV_GPIO_PIN_GPIO, &newDbGpioPinState);		// TODO: needs rigorous testing
+		// AUTO SHUTDOWN: check if the data board is ready to shutdown
+		drv_gpio_getPinState(DRV_GPIO_PIN_GPIO, &newDbGpioPinState);
 		if (newDbGpioPinState != dbGpioPinState)
 		{
 			dbGpioPinState = newDbGpioPinState;
 			if (newDbGpioPinState == DRV_GPIO_PIN_STATE_LOW)
 			{
 				// the brain pack is ready to shutdown
-				eventMessage.sysEvent = SYS_EVENT_POWER_SWITCH;
+				eventMessage.sysEvent = SYS_EVENT_AUTO_POWER_DOWN;
 				if(mgr_eventQueue != NULL)
 				{
 					if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)

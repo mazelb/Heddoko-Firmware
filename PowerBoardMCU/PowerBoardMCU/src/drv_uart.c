@@ -246,7 +246,7 @@ status_t drv_uart_deInit(drv_uart_config_t* uartConfig)
 	if(uartConfig->p_usart == UART0)
 	{
 		sysclk_disable_peripheral_clock(ID_UART0);
-
+		NVIC_DisableIRQ(UART0_IRQn);
 		//enable the pin
 		PIOA->PIO_PDR    |=  (PIO_PA9A_URXD0 | PIO_PA10A_UTXD0);			
 		PIOA->PIO_PUDR   |=  (PIO_PA9A_URXD0 | PIO_PA10A_UTXD0);
@@ -261,6 +261,7 @@ status_t drv_uart_deInit(drv_uart_config_t* uartConfig)
 	else if(uartConfig->p_usart == UART1)
 	{
 		sysclk_disable_peripheral_clock(ID_UART1);
+		NVIC_DisableIRQ(UART1_IRQn);
 		PIOB->PIO_PDR    =  (PIO_PB2A_URXD1 | PIO_PB3A_UTXD1);		
 		PIOB->PIO_PUDR   =  (PIO_PB2A_URXD1 | PIO_PB3A_UTXD1);
 		PIOB->PIO_CODR   =  (PIO_PB2A_URXD1 | PIO_PB3A_UTXD1);

@@ -12,6 +12,7 @@
 #include "LTC2941-1.h"
 
 
+
 drv_uart_config_t uart0Config =
 {
 	.p_usart = UART0,

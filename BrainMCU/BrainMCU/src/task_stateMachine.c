@@ -574,7 +574,7 @@ void stateEntry_PowerDown()
 	}
 	if (firstBoot == TRUE)
 	{
-		drv_gpio_setPinState(DRV_GPIO_PIN_PB_GPIO, DRV_GPIO_PIN_STATE_HIGH);	// set GPIO high to indicate that board has waken up
+		drv_gpio_setPinState(DRV_GPIO_PIN_PB_GPIO, DRV_GPIO_PIN_STATE_HIGH);	// set GPIO to indicate that board has woken up
 		vTaskDelay(100);
 		//drv_gpio_setPinState(quinticConfig[0].resetPin, DRV_GPIO_PIN_STATE_HIGH);
 		//drv_gpio_setPinState(quinticConfig[1].resetPin, DRV_GPIO_PIN_STATE_HIGH);

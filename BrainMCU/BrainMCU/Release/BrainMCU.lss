@@ -4116,60 +4116,60 @@ Disassembly of section .text:
 0040a710 <task_stateMachineHandler>:
   40a710:	b5f0      	push	{r4, r5, r6, r7, lr}
   40a712:	b085      	sub	sp, #20
-  40a714:	4b1a      	ldr	r3, [pc, #104]	; (40a780 <task_stateMachineHandler+0x70>)
+  40a714:	4b1b      	ldr	r3, [pc, #108]	; (40a784 <task_stateMachineHandler+0x74>)
   40a716:	9300      	str	r3, [sp, #0]
   40a718:	2200      	movs	r2, #0
   40a71a:	4613      	mov	r3, r2
-  40a71c:	4919      	ldr	r1, [pc, #100]	; (40a784 <task_stateMachineHandler+0x74>)
-  40a71e:	481a      	ldr	r0, [pc, #104]	; (40a788 <task_stateMachineHandler+0x78>)
-  40a720:	4c1a      	ldr	r4, [pc, #104]	; (40a78c <task_stateMachineHandler+0x7c>)
-  40a722:	47a0      	blx	r4
-  40a724:	4b1a      	ldr	r3, [pc, #104]	; (40a790 <task_stateMachineHandler+0x80>)
-  40a726:	4601      	mov	r1, r0
-  40a728:	6018      	str	r0, [r3, #0]
-  40a72a:	b328      	cbz	r0, 40a778 <task_stateMachineHandler+0x68>
-  40a72c:	200a      	movs	r0, #10
-  40a72e:	2104      	movs	r1, #4
-  40a730:	4b18      	ldr	r3, [pc, #96]	; (40a794 <task_stateMachineHandler+0x84>)
-  40a732:	4c19      	ldr	r4, [pc, #100]	; (40a798 <task_stateMachineHandler+0x88>)
-  40a734:	4798      	blx	r3
-  40a736:	6020      	str	r0, [r4, #0]
-  40a738:	b1c8      	cbz	r0, 40a76e <task_stateMachineHandler+0x5e>
-  40a73a:	2500      	movs	r5, #0
-  40a73c:	462b      	mov	r3, r5
-  40a73e:	4e17      	ldr	r6, [pc, #92]	; (40a79c <task_stateMachineHandler+0x8c>)
-  40a740:	f88d 500c 	strb.w	r5, [sp, #12]
-  40a744:	a903      	add	r1, sp, #12
-  40a746:	2205      	movs	r2, #5
-  40a748:	f8ad 500e 	strh.w	r5, [sp, #14]
-  40a74c:	4f14      	ldr	r7, [pc, #80]	; (40a7a0 <task_stateMachineHandler+0x90>)
-  40a74e:	4d15      	ldr	r5, [pc, #84]	; (40a7a4 <task_stateMachineHandler+0x94>)
-  40a750:	47b0      	blx	r6
-  40a752:	4e15      	ldr	r6, [pc, #84]	; (40a7a8 <task_stateMachineHandler+0x98>)
-  40a754:	e001      	b.n	40a75a <task_stateMachineHandler+0x4a>
-  40a756:	2032      	movs	r0, #50	; 0x32
-  40a758:	47a8      	blx	r5
-  40a75a:	6820      	ldr	r0, [r4, #0]
-  40a75c:	a903      	add	r1, sp, #12
-  40a75e:	2264      	movs	r2, #100	; 0x64
-  40a760:	2300      	movs	r3, #0
-  40a762:	47b0      	blx	r6
-  40a764:	2801      	cmp	r0, #1
-  40a766:	d1f6      	bne.n	40a756 <task_stateMachineHandler+0x46>
-  40a768:	9803      	ldr	r0, [sp, #12]
-  40a76a:	47b8      	blx	r7
-  40a76c:	e7f3      	b.n	40a756 <task_stateMachineHandler+0x46>
-  40a76e:	480f      	ldr	r0, [pc, #60]	; (40a7ac <task_stateMachineHandler+0x9c>)
-  40a770:	4b0f      	ldr	r3, [pc, #60]	; (40a7b0 <task_stateMachineHandler+0xa0>)
-  40a772:	4798      	blx	r3
-  40a774:	b005      	add	sp, #20
-  40a776:	bdf0      	pop	{r4, r5, r6, r7, pc}
-  40a778:	4b0e      	ldr	r3, [pc, #56]	; (40a7b4 <task_stateMachineHandler+0xa4>)
-  40a77a:	480f      	ldr	r0, [pc, #60]	; (40a7b8 <task_stateMachineHandler+0xa8>)
-  40a77c:	4798      	blx	r3
-  40a77e:	e7d5      	b.n	40a72c <task_stateMachineHandler+0x1c>
-  40a780:	00409c15 	.word	0x00409c15
-  40a784:	000493e0 	.word	0x000493e0
+  40a71c:	f64e 2160 	movw	r1, #60000	; 0xea60
+  40a720:	4819      	ldr	r0, [pc, #100]	; (40a788 <task_stateMachineHandler+0x78>)
+  40a722:	4c1a      	ldr	r4, [pc, #104]	; (40a78c <task_stateMachineHandler+0x7c>)
+  40a724:	47a0      	blx	r4
+  40a726:	4b1a      	ldr	r3, [pc, #104]	; (40a790 <task_stateMachineHandler+0x80>)
+  40a728:	4601      	mov	r1, r0
+  40a72a:	6018      	str	r0, [r3, #0]
+  40a72c:	b328      	cbz	r0, 40a77a <task_stateMachineHandler+0x6a>
+  40a72e:	200a      	movs	r0, #10
+  40a730:	2104      	movs	r1, #4
+  40a732:	4b18      	ldr	r3, [pc, #96]	; (40a794 <task_stateMachineHandler+0x84>)
+  40a734:	4c18      	ldr	r4, [pc, #96]	; (40a798 <task_stateMachineHandler+0x88>)
+  40a736:	4798      	blx	r3
+  40a738:	6020      	str	r0, [r4, #0]
+  40a73a:	b1c8      	cbz	r0, 40a770 <task_stateMachineHandler+0x60>
+  40a73c:	2500      	movs	r5, #0
+  40a73e:	462b      	mov	r3, r5
+  40a740:	4e16      	ldr	r6, [pc, #88]	; (40a79c <task_stateMachineHandler+0x8c>)
+  40a742:	f88d 500c 	strb.w	r5, [sp, #12]
+  40a746:	a903      	add	r1, sp, #12
+  40a748:	2205      	movs	r2, #5
+  40a74a:	f8ad 500e 	strh.w	r5, [sp, #14]
+  40a74e:	4f14      	ldr	r7, [pc, #80]	; (40a7a0 <task_stateMachineHandler+0x90>)
+  40a750:	4d14      	ldr	r5, [pc, #80]	; (40a7a4 <task_stateMachineHandler+0x94>)
+  40a752:	47b0      	blx	r6
+  40a754:	4e14      	ldr	r6, [pc, #80]	; (40a7a8 <task_stateMachineHandler+0x98>)
+  40a756:	e001      	b.n	40a75c <task_stateMachineHandler+0x4c>
+  40a758:	2032      	movs	r0, #50	; 0x32
+  40a75a:	47a8      	blx	r5
+  40a75c:	6820      	ldr	r0, [r4, #0]
+  40a75e:	a903      	add	r1, sp, #12
+  40a760:	2264      	movs	r2, #100	; 0x64
+  40a762:	2300      	movs	r3, #0
+  40a764:	47b0      	blx	r6
+  40a766:	2801      	cmp	r0, #1
+  40a768:	d1f6      	bne.n	40a758 <task_stateMachineHandler+0x48>
+  40a76a:	9803      	ldr	r0, [sp, #12]
+  40a76c:	47b8      	blx	r7
+  40a76e:	e7f3      	b.n	40a758 <task_stateMachineHandler+0x48>
+  40a770:	480e      	ldr	r0, [pc, #56]	; (40a7ac <task_stateMachineHandler+0x9c>)
+  40a772:	4b0f      	ldr	r3, [pc, #60]	; (40a7b0 <task_stateMachineHandler+0xa0>)
+  40a774:	4798      	blx	r3
+  40a776:	b005      	add	sp, #20
+  40a778:	bdf0      	pop	{r4, r5, r6, r7, pc}
+  40a77a:	4b0e      	ldr	r3, [pc, #56]	; (40a7b4 <task_stateMachineHandler+0xa4>)
+  40a77c:	480e      	ldr	r0, [pc, #56]	; (40a7b8 <task_stateMachineHandler+0xa8>)
+  40a77e:	4798      	blx	r3
+  40a780:	e7d5      	b.n	40a72e <task_stateMachineHandler+0x1e>
+  40a782:	bf00      	nop
+  40a784:	00409c15 	.word	0x00409c15
   40a788:	0041dba8 	.word	0x0041dba8
   40a78c:	0040f959 	.word	0x0040f959
   40a790:	2000333c 	.word	0x2000333c
@@ -34303,8 +34303,8 @@ Disassembly of section .text:
   41d2bc:	0d3f 000a 4548 4444 4b4f 204f 5242 4941     ?...HEDDOKO BRAI
   41d2cc:	204e 4150 4b43 2520 0d73 000a 3056 342e     N PACK %s...V0.4
   41d2dc:	006d 0000 5542 4c49 2044 4144 4554 203a     m...BUILD DATE: 
-  41d2ec:	7325 2520 0d73 000a 7541 2067 3332 3220     %s %s...Aug 23 2
-  41d2fc:	3130 0036 3731 313a 3a37 3532 0000 0000     016.17:17:25....
+  41d2ec:	7325 2520 0d73 000a 7541 2067 3432 3220     %s %s...Aug 24 2
+  41d2fc:	3130 0036 3131 353a 3a37 3733 0000 0000     016.11:57:37....
   41d30c:	5553 5449 4e20 4d55 4542 3a52 2520 0d73     SUIT NUMBER: %s.
   41d31c:	000a 0000 5553 5449 5420 4d49 3a45 2520     ....SUIT TIME: %
   41d32c:	2073 0a0d 0000 0000 6c66 7375 5568 7261     s ......flushUar

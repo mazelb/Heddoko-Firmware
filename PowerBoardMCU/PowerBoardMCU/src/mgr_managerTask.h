@@ -26,7 +26,8 @@ typedef enum
 	SYS_EVENT_POWER_UP_COMPLETE,
 	SYS_EVENT_USB_CONNECTED,
 	SYS_EVENT_USB_DISCONNECTED,
-	SYS_EVENT_POWER_DOWN_COMPLETE
+	SYS_EVENT_POWER_DOWN_COMPLETE,
+	SYS_EVENT_AUTO_POWER_DOWN
 }mgr_systemEvents_t;
 
 //structure of event message
@@ -39,5 +40,6 @@ typedef struct
 
 
 void mgr_managerTask(void *pvParameters);
+mgr_systemStates_t mgr_getSystemState(void);
 
 #endif /* MGR_MANAGERTASK_H_ */
