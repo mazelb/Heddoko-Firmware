@@ -18,7 +18,7 @@
 #ifndef COMMON_H_
 #define COMMON_H_
 
-#define VERSION "V0.4l"
+#define VERSION "V0.4m"
 /*
 * Changes from previous version:
 * @brief: see VersionNotes.txt for details
@@ -96,7 +96,7 @@ typedef enum
 #define WAKEUP_DELAY							(1 * SECONDS)
 #define FORCED_SYSTEM_RESET_TIMEOUT				(10 * SECONDS)
 #define SLEEP_ENTRY_WAIT_TIME					(4 * SECONDS)
-#define MAX_IDLE_TIMEOUT						(5 * MINS)	
+#define MAX_IDLE_TIMEOUT						(10 * MINS)	
 #define SD_INSERT_WAIT_TIMEOUT					(5 * SECONDS)	
 #define RESET_SW_LONG_PRESS_DELAY				(1 * SECONDS)
 

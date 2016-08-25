@@ -1,101 +1,101 @@
 <?xml version="1.0" encoding="us-ascii"?>
 
-<fileSet version="1" anchorPath="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp" xsi:schemaLocation="http://cypress.com/xsd/cypathdictionary cypathdictionary.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://cypress.com/xsd/cypathdictionary">
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyfitter_cfg.h" value="NONE;" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyfitter_cfg.c" value="ARM_C_FILE;" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\protect.hex" value="NONE;" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cymetadata.c" value="ARM_C_FILE;" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cydevice_trm.h" value="NONE;" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cydevicegnu_trm.inc" value="NONE;" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cydevicerv_trm.inc" value="NONE;" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cydeviceiar_trm.inc" value="NONE;" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyfittergnu.inc" value="NONE;" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyfitterrv.inc" value="NONE;" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyfitteriar.inc" value="NONE;" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyfitter.h" value="NONE;" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cydisabledsheets.h" value="NONE;" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART.c" value="ARM_C_FILE;UART" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART.h" value="NONE;UART" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SPI_UART.h" value="NONE;UART" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SPI_UART.c" value="ARM_C_FILE;UART" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SPI_UART_INT.c" value="ARM_C_FILE;UART" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_PM.c" value="ARM_C_FILE;UART" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_UART.c" value="ARM_C_FILE;UART" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_BOOT.c" value="ARM_C_FILE;UART" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_UART_BOOT.c" value="ARM_C_FILE;UART" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_PINS.h" value="NONE;UART" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SPI_UART_PVT.h" value="NONE;UART" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_PVT.h" value="NONE;UART" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_BOOT.h" value="NONE;UART" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Adv_led.c" value="ARM_C_FILE;Adv_led" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Adv_led.h" value="NONE;Adv_led" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Adv_led_aliases.h" value="NONE;Adv_led" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Adv_led_PM.c" value="ARM_C_FILE;Adv_led" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Conn_Led.c" value="ARM_C_FILE;Conn_Led" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Conn_Led.h" value="NONE;Conn_Led" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Conn_Led_aliases.h" value="NONE;Conn_Led" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Conn_Led_PM.c" value="ARM_C_FILE;Conn_Led" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_gatt.h" value="NONE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE.h" value="NONE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE.c" value="ARM_C_FILE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_gatt.c" value="ARM_C_FILE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_eventHandler.c" value="ARM_C_FILE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_HAL_INT.c" value="ARM_C_FILE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_HAL_PVT.c" value="ARM_C_FILE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_HAL_PVT.h" value="NONE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_STACK_PVT.h" value="NONE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_StackGap.h" value="NONE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_StackGatt.h" value="NONE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_StackGattDb.h" value="NONE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_StackHostMain.h" value="NONE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_StackL2cap.h" value="NONE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_StackGattServer.h" value="NONE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_StackGattClient.h" value="NONE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_Stack.h" value="NONE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_eventHandler.h" value="NONE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_custom.h" value="NONE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_custom.c" value="ARM_C_FILE;BLE" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SCBCLK.c" value="ARM_C_FILE;UART_SCBCLK" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SCBCLK.h" value="NONE;UART_SCBCLK" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_tx.c" value="ARM_C_FILE;UART_tx" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_tx.h" value="NONE;UART_tx" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_tx_aliases.h" value="NONE;UART_tx" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_tx_PM.c" value="ARM_C_FILE;UART_tx" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SCB_IRQ.c" value="ARM_C_FILE;UART_SCB_IRQ" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SCB_IRQ.h" value="NONE;UART_SCB_IRQ" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_rx.c" value="ARM_C_FILE;UART_rx" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_rx.h" value="NONE;UART_rx" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_rx_aliases.h" value="NONE;UART_rx" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_rx_PM.c" value="ARM_C_FILE;UART_rx" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_bless_isr.c" value="ARM_C_FILE;BLE_bless_isr" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_bless_isr.h" value="NONE;BLE_bless_isr" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE.cycsa" value="NONE;" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cycodeshareimport.ld" value="NONE;" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cycodeshareexport.ld" value="NONE;" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cycodeshareimport.scat" value="NONE;" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cm0gcc.ld" value="NONE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Cm0RealView.scat" value="NONE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Cm0Start.c" value="ARM_C_FILE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\core_cm0.h" value="NONE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\core_cm0_psoc4.h" value="NONE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyBootAsmGnu.s" value="GNU_ARM_ASM_FILE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyBootAsmRv.s" value="REALVIEW_ARM_ASM_FILE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyFlash.c" value="ARM_C_FILE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyFlash.h" value="NONE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyLib.c" value="ARM_C_FILE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyLib.h" value="NONE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyPm.c" value="ARM_C_FILE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyPm.h" value="NONE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cytypes.h" value="NONE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyutils.c" value="ARM_C_FILE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cypins.h" value="NONE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\core_cmFunc.h" value="NONE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\core_cmInstr.h" value="NONE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Cm0Iar.icf" value="NONE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyBootAsmIar.s" value="IAR_ASM_FILE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cmsis_armcc.h" value="NONE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cmsis_gcc.h" value="NONE;cy_boot" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyLFClk.c" value="ARM_C_FILE;cy_lfclk" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyLFClk.h" value="NONE;cy_lfclk" />
-  <file name="D:\Qsync\Hriday Mehta\_Documents\Cypress\Heddoko\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\project.h" value="NONE;" />
+<fileSet version="1" anchorPath="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp" xsi:schemaLocation="http://cypress.com/xsd/cypathdictionary cypathdictionary.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://cypress.com/xsd/cypathdictionary">
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyfitter_cfg.h" value="NONE;" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyfitter_cfg.c" value="ARM_C_FILE;" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\protect.hex" value="NONE;" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cymetadata.c" value="ARM_C_FILE;" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cydevice_trm.h" value="NONE;" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cydevicegnu_trm.inc" value="NONE;" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cydevicerv_trm.inc" value="NONE;" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cydeviceiar_trm.inc" value="NONE;" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyfittergnu.inc" value="NONE;" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyfitterrv.inc" value="NONE;" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyfitteriar.inc" value="NONE;" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyfitter.h" value="NONE;" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cydisabledsheets.h" value="NONE;" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART.c" value="ARM_C_FILE;UART" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART.h" value="NONE;UART" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SPI_UART.h" value="NONE;UART" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SPI_UART.c" value="ARM_C_FILE;UART" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SPI_UART_INT.c" value="ARM_C_FILE;UART" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_PM.c" value="ARM_C_FILE;UART" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_UART.c" value="ARM_C_FILE;UART" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_BOOT.c" value="ARM_C_FILE;UART" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_UART_BOOT.c" value="ARM_C_FILE;UART" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_PINS.h" value="NONE;UART" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SPI_UART_PVT.h" value="NONE;UART" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_PVT.h" value="NONE;UART" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_BOOT.h" value="NONE;UART" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Adv_led.c" value="ARM_C_FILE;Adv_led" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Adv_led.h" value="NONE;Adv_led" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Adv_led_aliases.h" value="NONE;Adv_led" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Adv_led_PM.c" value="ARM_C_FILE;Adv_led" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Conn_Led.c" value="ARM_C_FILE;Conn_Led" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Conn_Led.h" value="NONE;Conn_Led" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Conn_Led_aliases.h" value="NONE;Conn_Led" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Conn_Led_PM.c" value="ARM_C_FILE;Conn_Led" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_gatt.h" value="NONE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE.h" value="NONE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE.c" value="ARM_C_FILE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_gatt.c" value="ARM_C_FILE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_eventHandler.c" value="ARM_C_FILE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_HAL_INT.c" value="ARM_C_FILE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_HAL_PVT.c" value="ARM_C_FILE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_HAL_PVT.h" value="NONE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_STACK_PVT.h" value="NONE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_StackGap.h" value="NONE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_StackGatt.h" value="NONE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_StackGattDb.h" value="NONE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_StackHostMain.h" value="NONE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_StackL2cap.h" value="NONE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_StackGattServer.h" value="NONE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_StackGattClient.h" value="NONE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_Stack.h" value="NONE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_eventHandler.h" value="NONE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_custom.h" value="NONE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_custom.c" value="ARM_C_FILE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SCBCLK.c" value="ARM_C_FILE;UART_SCBCLK" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SCBCLK.h" value="NONE;UART_SCBCLK" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_tx.c" value="ARM_C_FILE;UART_tx" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_tx.h" value="NONE;UART_tx" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_tx_aliases.h" value="NONE;UART_tx" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_tx_PM.c" value="ARM_C_FILE;UART_tx" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SCB_IRQ.c" value="ARM_C_FILE;UART_SCB_IRQ" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SCB_IRQ.h" value="NONE;UART_SCB_IRQ" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_rx.c" value="ARM_C_FILE;UART_rx" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_rx.h" value="NONE;UART_rx" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_rx_aliases.h" value="NONE;UART_rx" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_rx_PM.c" value="ARM_C_FILE;UART_rx" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_bless_isr.c" value="ARM_C_FILE;BLE_bless_isr" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_bless_isr.h" value="NONE;BLE_bless_isr" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE.cycsa" value="NONE;" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cycodeshareimport.ld" value="NONE;" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cycodeshareexport.ld" value="NONE;" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cycodeshareimport.scat" value="NONE;" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cm0gcc.ld" value="NONE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Cm0RealView.scat" value="NONE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Cm0Start.c" value="ARM_C_FILE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\core_cm0.h" value="NONE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\core_cm0_psoc4.h" value="NONE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyBootAsmGnu.s" value="GNU_ARM_ASM_FILE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyBootAsmRv.s" value="REALVIEW_ARM_ASM_FILE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyFlash.c" value="ARM_C_FILE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyFlash.h" value="NONE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyLib.c" value="ARM_C_FILE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyLib.h" value="NONE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyPm.c" value="ARM_C_FILE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyPm.h" value="NONE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cytypes.h" value="NONE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cyutils.c" value="ARM_C_FILE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cypins.h" value="NONE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\core_cmFunc.h" value="NONE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\core_cmInstr.h" value="NONE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\Cm0Iar.icf" value="NONE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyBootAsmIar.s" value="IAR_ASM_FILE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cmsis_armcc.h" value="NONE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\cmsis_gcc.h" value="NONE;cy_boot" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyLFClk.c" value="ARM_C_FILE;cy_lfclk" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\CyLFClk.h" value="NONE;cy_lfclk" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\project.h" value="NONE;" />
 </fileSet>

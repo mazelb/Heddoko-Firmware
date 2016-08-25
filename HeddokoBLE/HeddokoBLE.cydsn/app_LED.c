@@ -42,7 +42,7 @@ void HandleLeds(void)
             if(--advLedTimer == 0u) 
             {
                 advLedTimer = ADV_LED_TIMEOUT;
-                ledState ^= LED_OFF;
+                ledState = LED_ON;
                 
                 Adv_led_Write(ledState);
             }
@@ -56,7 +56,7 @@ void HandleLeds(void)
             if(--connLedTimer == 0u) 
             {
                 connLedTimer = CONN_LED_TIMEOUT;
-                ledState    ^= LED_OFF;
+                ledState    = LED_ON;
                 
                 Conn_Led_Write(ledState);
             }

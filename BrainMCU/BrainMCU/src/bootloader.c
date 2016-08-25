@@ -41,6 +41,7 @@ typedef struct
 	uint32_t crc; 
 	uint32_t length; 	
 }firmwareHeader_t;
+
 /**
  * runBootloader(void)
  * @brief This is the bootloader program, it is run only when the binary is compiled in bootloader mode. 
@@ -196,6 +197,7 @@ static status_t initializeSDCard()
 	}
 	return status;	
 }
+
 /*
  * compute_crc(void)
  * @brief computes the CRC using the built in CRCCU hardware on processor. 

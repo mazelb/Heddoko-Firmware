@@ -318,7 +318,7 @@
         <InterfaceName>SWD</InterfaceName>
       </ToolOptions>
       <ToolType>com.atmel.avrdbg.tool.atmelice</ToolType>
-      <ToolNumber>J41800006052</ToolNumber>
+      <ToolNumber>J41800029774</ToolNumber>
       <ToolName>Atmel-ICE</ToolName>
     </com_atmel_avrdbg_tool_atmelice>
   </PropertyGroup>
@@ -1597,6 +1597,9 @@
       <SubType>compile</SubType>
     </None>
     <None Include="src\ASF\thirdparty\CMSIS\README.txt">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="src\VersionNotes.txt">
       <SubType>compile</SubType>
     </None>
   </ItemGroup>

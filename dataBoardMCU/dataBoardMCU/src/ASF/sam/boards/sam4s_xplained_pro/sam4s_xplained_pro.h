@@ -99,10 +99,10 @@
 //@{
 #define BOARD_FREQ_SLCK_XTAL      (32768U)
 #define BOARD_FREQ_SLCK_BYPASS    (32768U)
-#define BOARD_FREQ_MAINCK_XTAL    (12000000U)
-#define BOARD_FREQ_MAINCK_BYPASS  (12000000U)
+#define BOARD_FREQ_MAINCK_XTAL    (16000000UL)
+#define BOARD_FREQ_MAINCK_BYPASS  (16000000UL)
 #define BOARD_MCK                 CHIP_FREQ_CPU_MAX
-#define BOARD_OSC_STARTUP_US      15625
+#define BOARD_OSC_STARTUP_US      45000//15625
 //@}
 
 //! \name LED0 definitions
@@ -542,16 +542,16 @@
 
 //! \name SD Card
 //@{
-#define SD_MMC_0_CD_GPIO            (PIO_PC12_IDX)
-#define SD_MMC_0_CD_PIO_ID          ID_PIOC
+#define SD_MMC_0_CD_GPIO            (PIO_PA17_IDX)  //TODO add ifdef for HW Changed from PIO_PC12_IDX
+#define SD_MMC_0_CD_PIO_ID          ID_PIOA			//TODO add ifdef for HW Changed from ID_PIOC
 #define SD_MMC_0_CD_FLAGS           (PIO_INPUT | PIO_PULLUP)
 
-#define SD_MMC_0_CD_DETECT_VALUE    0
+#define SD_MMC_0_CD_DETECT_VALUE    1				//TODO add ifdef for HW Changed from 0
 
-#define SD_MMC_0_CD    {PIO_PC12, PIOC, ID_PIOC, PIO_INPUT, PIO_PULLUP | PIO_DEBOUNCE | PIO_IT_RISE_EDGE}
-#define SD_MMC_0_CD_MASK PIO_PC12
-#define SD_MMC_0_CD_PIO PIOC
-#define SD_MMC_0_CD_ID ID_PIOC
+#define SD_MMC_0_CD    {PIO_PA17, PIOA, ID_PIOA, PIO_INPUT, PIO_PULLUP | PIO_DEBOUNCE | PIO_IT_RISE_EDGE}
+#define SD_MMC_0_CD_MASK PIO_PA17
+#define SD_MMC_0_CD_PIO PIOA
+#define SD_MMC_0_CD_ID ID_PIOA
 #define SD_MMC_0_CD_TYPE PIO_INPUT
 #define SD_MMC_0_CD_ATTR (PIO_PULLUP | PIO_DEBOUNCE | PIO_IT_EDGE)
 

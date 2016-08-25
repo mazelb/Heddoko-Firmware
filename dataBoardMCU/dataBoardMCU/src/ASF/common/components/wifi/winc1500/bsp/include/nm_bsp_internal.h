@@ -87,7 +87,7 @@
 #include "bsp/include/nm_bsp_samd21.h"
 #endif
 
-#if (defined __SAM4S16C__) || (defined __SAM4SD32C__)
+#if (defined __SAM4S16C__) || (defined __SAM4SD32C__) || (defined __SAM4S16B__)
 #include "bsp/include/nm_bsp_sam4s.h"
 #endif
 

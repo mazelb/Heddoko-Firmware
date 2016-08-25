@@ -9,8 +9,10 @@
 #include "subp_subProcessor.h"
 #include "common.h"
 #include "msg_messenger.h"
+#include "sys_systemManager.h"
 #include "drv_uart.h"
 #include "dbg_debugManager.h"
+#include "net_wirelessNetwork.h"
 #include "heddokoPacket.pb-c.h"
 #include "pkt_packetParser.h"
 
@@ -19,6 +21,11 @@ static void processMessage(msg_message_t message);
 static void processRawPacket(pkt_rawPacket_t* packet);
 status_t convertFullFrameToProtoBuff(subp_fullImuFrameSet_t* rawFullFrame, Heddoko__Packet* protoPacket);
 static void sendGetStatusMessage(drv_uart_config_t* uartConfig);
+void protoPacketInit();
+//state change event functions
+static status_t recordingStateEntry();
+static status_t recordingStateExit();
+
 /*	Local variables	*/
 xQueueHandle queue_subp = NULL;
 drv_uart_config_t uart0Config =
@@ -84,7 +91,7 @@ void subp_subProcessorTask(void *pvParameters)
 	//initialize the uart packet receiver
 	if(drv_uart_init(&uart0Config) != STATUS_PASS)
 	{
-		dbg_printString("failed to open UART0 for subc\r\n"); 
+		dbg_printString(DBG_LOG_LEVEL_ERROR,"failed to open UART0 for subc\r\n"); 
 	}
 	//send get status command
 	sendGetStatusMessage(&uart0Config);
@@ -132,18 +139,25 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 			case PACKET_COMMAND_ID_SUBP_FULL_FRAME:
 				//this is a frame, cast the payload to the rawFrame type. 
 				rawFullFrame = (subp_fullImuFrameSet_t*) (&packet->payload[2]);
-				//convertFullFrameToProtoBuff(rawFullFrame,&dataFrameProtoPacket);	
-				//Serialize protobuf packet				
-				//serializedProtoPacketLength = heddoko__packet__pack(&dataFrameProtoPacket,serializedProtoBuf);		
-				//now encode the packet for saving/transmission	
-				//if(pkt_serializeRawPacket(serializedDataBuffer, MAX_SERIALIZED_DATA_LENGTH,&serializedLength,
-					//serializedProtoBuf,serializedProtoPacketLength) == STATUS_PASS)
-				//{
-					////
-				//}
-				if(rawFullFrame->timeStamp > lastTimeStamp)
+				protoPacketInit();
+				convertFullFrameToProtoBuff(rawFullFrame,&dataFrameProtoPacket);	
+				//Serialize protobuf packet		
+				serializedProtoBuf[0] = PACKET_TYPE_PROTO_BUF;		
+				serializedProtoPacketLength = heddoko__packet__pack(&dataFrameProtoPacket,serializedProtoBuf+1);//offset by 1 to account for packet type. 	
+				serializedProtoPacketLength += 1; //length plus 1 to account for packet type
+				//now encode the packet for saving/transmission	 
+				if(pkt_serializeRawPacket(serializedDataBuffer, MAX_SERIALIZED_DATA_LENGTH,&serializedLength,
+					serializedProtoBuf,serializedProtoPacketLength) == STATUS_PASS)					
 				{
-					
+					//the packet has been serialized...					
+					if(dataLogFile.fileOpen)
+					{					
+						sdc_writeToFile(&dataLogFile, serializedDataBuffer, serializedLength); 
+					}
+					net_sendPacket(serializedDataBuffer, serializedLength);
+				}
+				if(rawFullFrame->timeStamp > lastTimeStamp)
+				{					
 					if(rawFullFrame->frames[8].Rotation_z == 13)
 					{
 						result = 1;	//everything is good
@@ -151,16 +165,14 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 					else
 					{
 						result = 2; 	//corrupt frame
-					}
-					 
+					}					 
 				}
 				else
 				{
 					result = 0; //out of sequence frame
 				}
 				lastTimeStamp = rawFullFrame->timeStamp;
-				snprintf(tempString,200,"%d,%d,%d,%d,%d\r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,drv_uart_getDroppedBytes(&uart0Config));
-				dbg_printString(tempString); 
+				dgb_printf(DBG_LOG_LEVEL_DEBUG,"%d,%d,%d,%d,%d\r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,drv_uart_getDroppedBytes(&uart0Config));
 				
 			break;
 			default:
@@ -179,24 +191,27 @@ void protoPacketInit()
 	heddoko__packet__init(&dataFrameProtoPacket);
 	heddoko__full_data_frame__init(&dataFrame);
 	dataFrameProtoPacket.type = HEDDOKO__PACKET_TYPE__DataFrame;
+	heddoko__full_data_frame__init(dataFrameProtoPacket.fulldataframe);
 	dataFrameProtoPacket.fulldataframe = &dataFrame;
 	dataFrameProtoPacket.fulldataframe->imudataframe = frameArrayPtr;
-	heddoko__full_data_frame__init(dataFrameProtoPacket.fulldataframe);
+	
 	for(i=0;i<MAX_NUMBER_OF_IMU_SENSORS;i++)
 	{
 		heddoko__imu_data_frame__init(&frameArray[i]);
 		frameArrayPtr[i] = &frameArray[i];	
 	}
+	
 }
 status_t convertFullFrameToProtoBuff(subp_fullImuFrameSet_t* rawFullFrame, Heddoko__Packet* protoPacket)
 {
 	int i = 0;
 	protoPacket->fulldataframe->timestamp = rawFullFrame->timeStamp;	
 	protoPacket->fulldataframe->n_imudataframe = rawFullFrame->sensorCount;
-	for(i=0;i<MAX_NUMBER_OF_IMU_SENSORS;i++)
+	for(i=0;i<rawFullFrame->sensorCount;i++)
 	{	
 		//initialize all the frames
-		heddoko__imu_data_frame__init(&protoPacket->fulldataframe->imudataframe[i]);
+		//heddoko__imu_data_frame__init(&protoPacket->fulldataframe->imudataframe[i]);
+		//frameArrayPtr[i] = &frameArray[i];
 		//only copy over the data if it's there		
 		if(i<rawFullFrame->sensorCount)
 		{		
@@ -241,11 +256,31 @@ static void processMessage(msg_message_t message)
 {
 	switch(message.type)
 	{
-		case MSG_TYPE_ENTERING_NEW_STATE:			
+		case MSG_TYPE_ENTERING_NEW_STATE:					
+		{
+			if(message.data == SYSTEM_STATE_RECORDING)
+			{
+				if(recordingStateEntry() == STATUS_PASS)
+				{
+					msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL); 
+				}
+				else
+				{
+					msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_ERROR, NULL); 
+				}				
+			}
+		}
 		break;
-		case MSG_TYPE_READY:
-		break;
-		case MSG_TYPE_ERROR:
+		case MSG_TYPE_LEAVING_STATE:
+		{
+			if(message.data == SYSTEM_STATE_RECORDING)
+			{
+				recordingStateExit();
+				msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL); 
+			}
+		}
+		break;	
+		case MSG_TYPE_STATE:
 		break;
 		default:
 		break;
@@ -253,8 +288,34 @@ static void processMessage(msg_message_t message)
 	}
 }
 
+
 static void sendGetStatusMessage(drv_uart_config_t* uartConfig)
 {
 	uint8_t getStatusBytes[2] = {0x01,0x51};
 	drv_uart_sendPacket(uartConfig,getStatusBytes, sizeof(getStatusBytes));	
 }
+
+static status_t recordingStateEntry()
+{
+	status_t status = STATUS_PASS;
+	//check for valid calibration file (the name of the last calibration file should be populated)
+	
+	//open/create recording data file
+	status =  sdc_openFile(&dataLogFile, dataLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DATA_LOG);		
+	//write file header to log	
+	//send config to power board
+	
+	//send stream start command to power board. 
+	
+	return status;
+}
+
+static status_t recordingStateExit()
+{
+	//send stop streaming command to power board
+	
+	//close file
+	
+	
+}
+
