@@ -27,7 +27,7 @@ typedef enum
 	SYS_EVENT_USB_CONNECTED,
 	SYS_EVENT_USB_DISCONNECTED,
 	SYS_EVENT_POWER_DOWN_COMPLETE,
-	SYS_EVENT_AUTO_POWER_DOWN
+	SYS_EVENT_AUTO_POWER_DOWN		// when it receives an auto power down indication from data board
 }mgr_systemEvents_t;
 
 //structure of event message

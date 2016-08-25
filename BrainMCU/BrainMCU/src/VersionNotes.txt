@@ -77,4 +77,5 @@
  5. Changed the printf to debugPrint for the line "debug sync failed with code %d\r\n" .
 
  VERSION 0.4m (for makeup!)
- 1. Added in GPIO call to set the PB_PIN high so as to indicate wakeup
+ 1. Added in GPIO call to set the PB_PIN high so as to indicate wakeup. This is added for auto power down feature.
+ 2. Changed the max idle timeout to 10 mins.
