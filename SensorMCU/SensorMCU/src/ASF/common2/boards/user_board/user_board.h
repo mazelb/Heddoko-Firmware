@@ -144,7 +144,7 @@ void system_board_init(void);
 #define GPIO_RS485_DATA_RECEIVE false
 #define GPIO_RS485_DATA_TRANSMIT true
 
-#define GPIO_EM_MICRO_INT_PIN   PIN_PA11
+#define GPIO_EM_MICRO_INT_PIN   PIN_PA05
 
 #endif
 

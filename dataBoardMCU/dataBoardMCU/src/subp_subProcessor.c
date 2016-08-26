@@ -20,7 +20,12 @@
 static void processMessage(msg_message_t message);
 static void processRawPacket(pkt_rawPacket_t* packet);
 status_t convertFullFrameToProtoBuff(subp_fullImuFrameSet_t* rawFullFrame, Heddoko__Packet* protoPacket);
+//message senders
 static void sendGetStatusMessage(drv_uart_config_t* uartConfig);
+static void sendStreamMessage(drv_uart_config_t* uartConfig, uint8_t enable);
+static void sendGetTimeRequestMessage(drv_uart_config_t* uartConfig);
+static void sendConfigtMessage(drv_uart_config_t* uartConfig, uint8_t rate, uint32_t sensorMask);
+
 void protoPacketInit();
 //state change event functions
 static status_t recordingStateEntry();
@@ -28,7 +33,21 @@ static status_t recordingStateExit();
 
 /*	Local variables	*/
 xQueueHandle queue_subp = NULL;
-drv_uart_config_t uart0Config =
+subp_config_t subp_config = 
+{
+	.rate = 20,
+	.sensorMask = 0x000001FF
+};
+subp_status_t subp_CurrentStatus = 
+{
+	.chargeLevel = 0,
+	.chargerState = 0,
+	.jackDetectState = 0x00,
+	.sensorMask = 0x00000000,
+	.streamState = 0,
+	.usbCommState = 0
+};
+drv_uart_config_t subpUart =
 {
 	.p_usart = UART0,
 	.mem_index = 0,
@@ -89,15 +108,15 @@ void subp_subProcessorTask(void *pvParameters)
 		msg_registerForMessages(MODULE_SUB_PROCESSOR, 0xff, queue_subp);
 	}
 	//initialize the uart packet receiver
-	if(drv_uart_init(&uart0Config) != STATUS_PASS)
+	if(drv_uart_init(&subpUart) != STATUS_PASS)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"failed to open UART0 for subc\r\n"); 
 	}
 	//send get status command
-	sendGetStatusMessage(&uart0Config);
+	sendGetStatusMessage(&subpUart);
 	
 	//send the get time command to the power board
-	
+	sendGetTimeRequestMessage(&subpUart);
 	//start the main thread where we listen for packets and messages	
 	while (1)
 	{
@@ -105,12 +124,12 @@ void subp_subProcessorTask(void *pvParameters)
 		{
 			processMessage(receivedMessage);
 		}
-		if(pkt_getPacketTimed(&uart0Config,&rawPacket,10) == STATUS_PASS)
+		if(pkt_getPacketTimed(&subpUart,&rawPacket,10) == STATUS_PASS)
 		{
 			//we have a full packet	
 			processRawPacket(&rawPacket);
 		}					
-		vTaskDelay(3);		// carefully assign the delay as one packet can be as fast as 1.85ms
+		vTaskDelay(3);		// carefully assign the delay as one packet can be as fast as 10ms
 	}
 }
 char tempString[200] = {0};
@@ -131,7 +150,7 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 		switch(packet->payload[1])
 		{
 			case PACKET_COMMAND_ID_SUBP_GET_STATUS_RESP:
-			
+				
 			
 			
 			
@@ -172,7 +191,7 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 					result = 0; //out of sequence frame
 				}
 				lastTimeStamp = rawFullFrame->timeStamp;
-				dgb_printf(DBG_LOG_LEVEL_DEBUG,"%d,%d,%d,%d,%d\r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,drv_uart_getDroppedBytes(&uart0Config));
+				dgb_printf(DBG_LOG_LEVEL_DEBUG,"%d,%d,%d,%d,%d\r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,drv_uart_getDroppedBytes(&subpUart));
 				
 			break;
 			default:
@@ -288,12 +307,16 @@ static void processMessage(msg_message_t message)
 	}
 }
 
-
-static void sendGetStatusMessage(drv_uart_config_t* uartConfig)
+void processStatusMessage(uint8_t* packet)
 {
-	uint8_t getStatusBytes[2] = {0x01,0x51};
-	drv_uart_sendPacket(uartConfig,getStatusBytes, sizeof(getStatusBytes));	
+	//copy the packet to the local structure
+	memcpy(&subp_CurrentStatus,packet, sizeof(subp_status_t));
+	//do something with this status... should we send it around everywhere, or just leave it for other modules to grab?
+	
 }
+
+
+
 
 static status_t recordingStateEntry()
 {
@@ -303,19 +326,47 @@ static status_t recordingStateEntry()
 	//open/create recording data file
 	status =  sdc_openFile(&dataLogFile, dataLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DATA_LOG);		
 	//write file header to log	
+	
 	//send config to power board
-	
+	sendConfigtMessage(&subpUart,subp_config.rate,subp_config.sensorMask);
 	//send stream start command to power board. 
-	
+	sendStreamMessage(&subpUart, 0x01);
 	return status;
 }
 
 static status_t recordingStateExit()
 {
-	//send stop streaming command to power board
-	
+	status_t status = STATUS_PASS;
+	//send stop streaming command to power board	
+	sendStreamMessage(&subpUart, 0x00);
 	//close file
-	
-	
+	status =  sdc_closeFile(&dataLogFile);
+	return status; 
 }
 
+//message sending functions
+static void sendGetStatusMessage(drv_uart_config_t* uartConfig)
+{
+	uint8_t getStatusBytes[2] = {0x01,PACKET_COMMAND_ID_SUBP_GET_STATUS};
+	pkt_sendRawPacket(uartConfig,getStatusBytes, sizeof(getStatusBytes));
+}
+
+static void sendStreamMessage(drv_uart_config_t* uartConfig, uint8_t enable)
+{
+	uint8_t streamMessageBytes[] = {0x01,PACKET_COMMAND_ID_SUBP_STREAMING,enable};
+	pkt_sendRawPacket(uartConfig,streamMessageBytes, sizeof(streamMessageBytes));
+}
+
+static void sendGetTimeRequestMessage(drv_uart_config_t* uartConfig)
+{
+	uint8_t getTimeBytes[] = {0x01,PACKET_COMMAND_ID_SUBP_GET_DATE_TIME};
+	pkt_sendRawPacket(uartConfig,getTimeBytes, sizeof(getTimeBytes));
+}
+
+static void sendConfigtMessage(drv_uart_config_t* uartConfig, uint8_t rate, uint32_t sensorMask)
+{
+	uint8_t configBytes[] = {0x01,PACKET_COMMAND_ID_SUBP_CONFIG,0x00,0x00,0x00,0x00,0x00};
+	configBytes[2] = rate;
+	memcpy(&configBytes[3],&sensorMask,4); //copy the sensor mask to the config bytes.  
+	pkt_sendRawPacket(uartConfig,configBytes, sizeof(configBytes));
+}

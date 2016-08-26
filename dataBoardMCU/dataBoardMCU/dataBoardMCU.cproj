@@ -1274,6 +1274,9 @@
     <Compile Include="src\net_wirelessNetwork.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\pkt_packetCommandsList.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\pkt_packetParser.c">
       <SubType>compile</SubType>
     </Compile>

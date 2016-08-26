@@ -68,6 +68,13 @@ typedef struct
 }subp_status_t;
 #pragma	pack(pop)
 
+/* subprocessor configuration Structure */
+typedef struct  
+{
+	uint8_t rate;
+	uint32_t sensorMask; 
+}subp_config_t;
+
 
 void subp_subProcessorTask(void *pvParameters);
 

@@ -276,7 +276,8 @@ static void sendPacket(uint8_t *data, uint8_t length)
  ************************************************************************/
 static void disableRs485Transmit()
 {
-	drv_gpio_setPinState(GPIO_RS485_DATA_DIRECTION_RE,  DRV_GPIO_PIN_STATE_LOW);
+	drv_gpio_setPinState(DRV_GPIO_PIN_RS485_D_EN,  DRV_GPIO_PIN_STATE_LOW);
+	drv_gpio_setPinState(DRV_GPIO_PIN_RS485_R_EN,  DRV_GPIO_PIN_STATE_LOW);
 }
 
 /************************************************************************
@@ -287,7 +288,8 @@ static void disableRs485Transmit()
  ************************************************************************/
 static void enableRs485Transmit()
 {
-	drv_gpio_setPinState(GPIO_RS485_DATA_DIRECTION_RE,  DRV_GPIO_PIN_STATE_HIGH);
+	drv_gpio_setPinState(DRV_GPIO_PIN_RS485_D_EN,  DRV_GPIO_PIN_STATE_HIGH);
+	drv_gpio_setPinState(DRV_GPIO_PIN_RS485_R_EN,  DRV_GPIO_PIN_STATE_HIGH);
 }
 
 /************************************************************************

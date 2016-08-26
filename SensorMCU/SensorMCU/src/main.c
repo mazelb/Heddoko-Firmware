@@ -271,7 +271,7 @@ __attribute__((optimize("O0"))) int main(void)
 	
 	//turn on the LED
 	port_pin_set_output_level(LED_BLUE_PIN,LED_ACTIVE);
-	
+	port_pin_set_output_level(LED_GREEN_PIN,LED_ACTIVE);
 	port_pin_set_output_level(LED_RED_PIN,LED_ACTIVE);
 	//delay_ms(500); 
 	sendButtonPressEvent();

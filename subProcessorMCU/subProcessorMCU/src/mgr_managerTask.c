@@ -97,12 +97,16 @@ void mgr_managerTask(void *pvParameters)
 	{
 		printf("Failed to create SEN task code %d\r\n", retCode);
 	}
-	
+	supc_disable_brownout_detector(SUPC);
+	supc_disable_brownout_reset(SUPC);
+	supc_disable_monitor_reset(SUPC);
 	drv_led_set(DRV_LED_GREEN, DRV_LED_FLASH);
 	//enable power to the data board
+	drv_gpio_setPinState(DRV_GPIO_PIN_CHRG_SEL, DRV_GPIO_PIN_STATE_LOW);	
 	drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_HIGH);
 	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
 	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);	
+	
 	//drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_PULLED_LOW);
 	currentSystemState = SYS_STATE_POWER_ON;
 	//by default enable fast charging
@@ -325,7 +329,7 @@ static void enterSleepMode()
 		//Processor wakes up from sleep
 		delay_ms(WAKEUP_DELAY);
 		drv_gpio_getPinState(DRV_GPIO_PIN_PWR_BTN, &pwSwState);	//poll the power switch
-		drv_gpio_getPinState(DRV_GPIO_ID_PIN_CHRG_PG, &chargingDetect); //
+		drv_gpio_getPinState(DRV_GPIO_PIN_CHRG_PG, &chargingDetect); //
 		if(pwSwState == DRV_GPIO_PIN_STATE_LOW)	//check if it is a false wakeup
 		{
 			//The power button has been held long enough, break the loop and power on. 

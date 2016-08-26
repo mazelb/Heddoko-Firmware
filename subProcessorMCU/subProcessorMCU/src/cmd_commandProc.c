@@ -144,20 +144,41 @@ void cmd_task_commandProcesor(void *pvParameters)
 					drv_gpio_setPinState(DRV_GPIO_PIN_CHRG_SEL, DRV_GPIO_PIN_STATE_LOW);
 					forwardCommand = false; 	
 				}
-				else if (strncmp(packet.packetData,"jacksEn1",9)==0)
+				else if (strncmp(packet.packetData,"jacksEn1",8)==0)
 				{
 					dat_sendDebugMsgToDataBoard("PwrBrdMsg:Jacks Enabled\r\n");
 					drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
 					drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);
 					forwardCommand = false; 	
 				}
-				else if (strncmp(packet.packetData,"jacksEn0",9)==0)
+				else if (strncmp(packet.packetData,"pwrEn1",6)==0)
 				{
-					dat_sendDebugMsgToDataBoard("PwrBrdMsg:Jacks Disabled\r\n");
+					//dat_sendDebugMsgToDataBoard("PwrBrdMsg:Jacks Enabled\r\n");
+					sprintf(tempString,"pwr enable set high\r\n");
+					if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+					{
+						dat_sendStringToUsb(tempString);
+					}
+					drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_HIGH);
+					forwardCommand = false;
+				}				
+				else if (strncmp(packet.packetData,"pwrEn0",6)==0)
+				{
+					sprintf(tempString,"pwr enable set low\r\n");
+					if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+					{
+						dat_sendStringToUsb(tempString);
+					}
+					drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_LOW);
+					forwardCommand = false; 	
+				}
+				else if (strncmp(packet.packetData,"jacksEn0",8)==0)
+				{
+					dat_sendDebugMsgToDataBoard("PwrBrdMsg:Jacks Enabled\r\n");
 					drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_HIGH);
 					drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
-					forwardCommand = false; 	
-				}				
+					forwardCommand = false;
+				}								
 				else if (strncmp(packet.packetData,"crashSystem",11)==0)
 				{
 					//sprintf(1234213,"crashity crash crash!%s\r\n",NULL);
@@ -175,6 +196,17 @@ void cmd_task_commandProcesor(void *pvParameters)
 					//restart the processor, so we enter the ROM bootloader. 
 					rstc_start_software_reset(RSTC);								
 				}
+				else if (strncmp(packet.packetData,"getJackStatus",13)==0)
+				{
+					drv_gpio_pin_state_t jack1, jack2; 
+					drv_gpio_getPinState(DRV_GPIO_PIN_JC1_DET, &jack1);
+					drv_gpio_getPinState(DRV_GPIO_PIN_JC2_DET, &jack2);
+					sprintf(tempString,"JackStatus:%d %d\r\n",jack1,jack2);
+					if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+					{
+						dat_sendStringToUsb(tempString);
+					}							
+				}				
 				else if(strncmp(packet.packetData,"pbVersion",9)==0)
 				{
 					sprintf(tempString," PB VERSION %s\r\n", VERSION);

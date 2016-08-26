@@ -14,8 +14,7 @@
 
 //#define ENABLE_SENSORS_DEBUG_MODE		//enable this define to switch to the debug packet and check the integrity of data
 
-#define GPIO_RS485_DATA_DIRECTION_RE	DRV_GPIO_PIN_RS485
-#define GPIO_RS485_DATA_DIRECTION_DE	DRV_GPIO_PIN_RS485
+
 
 #define SENSOR_BUS_SPEED_HIGH			921600
 #define SENSOR_BUS_SPEED_LOW			460800

@@ -123,6 +123,9 @@
 // From module: RTC - Real Time Clock
 #include <rtc.h>
 
+// From module: SUPC - Supply Controller
+#include <supc.h>
+
 // From module: Sleep manager - SAM implementation
 #include <sam/sleepmgr.h>
 #include <sleepmgr.h>

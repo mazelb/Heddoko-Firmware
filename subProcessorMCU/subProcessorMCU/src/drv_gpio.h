@@ -29,6 +29,8 @@
 #define DRV_GPIO_ID_PIN_LED_BLUE	PIO_PB0_IDX /*	Blue LED (active low)*/
 #define DRV_GPIO_ID_PIN_LED_GREEN	PIO_PB1_IDX /*	Green LED	*/
 #define DRV_GPIO_ID_PIN_LED_RED		PIO_PA20_IDX /*	Red LED	*/
+#define DRV_GPIO_ID_PIN_RS485_D_EN	PIO_PA12_IDX /*	RS485 Driver enable	*/
+#define DRV_GPIO_ID_PIN_RS485_R_EN	PIO_PB4_IDX /*	RS485 Receiver enable	*/
 
 
 typedef enum
@@ -47,7 +49,9 @@ typedef enum
 	DRV_GPIO_PIN_USB_DET,
 	DRV_GPIO_PIN_LED_BLUE,
 	DRV_GPIO_PIN_LED_GREEN,
-	DRV_GPIO_PIN_LED_RED	
+	DRV_GPIO_PIN_LED_RED,
+	DRV_GPIO_PIN_RS485_D_EN,
+	DRV_GPIO_PIN_RS485_R_EN	
 }drv_gpio_pins_t;
 	
 typedef enum 
