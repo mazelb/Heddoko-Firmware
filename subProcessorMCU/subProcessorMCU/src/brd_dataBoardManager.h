@@ -29,7 +29,7 @@ typedef struct
 }subp_dateTime_t;
 #pragma pack(pop)
 
-void dat_dataBoardManager(void *pvParameters);
-void dat_sendPowerDownReq();
+void brd_dataBoardManager(void *pvParameters);
+void brd_sendPowerDownReq();
 
 #endif /* BRD_DATABOARDMANAGER_H_ */

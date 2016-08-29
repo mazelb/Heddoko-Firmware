@@ -16,6 +16,7 @@
 #include "common.h" 
 #include "twi.h"
  
+/*	Local defines	*/
 #define TWI0_DATA_GPIO   PIO_PA3_IDX
 #define TWI0_DATA_FLAGS  (PIO_PERIPH_A | PIO_DEFAULT)
 #define TWI0_CLK_GPIO    PIO_PA4_IDX
@@ -26,11 +27,20 @@
 #define TWI1_CLK_GPIO    PIO_PB5_IDX
 #define TWI1_CLK_FLAGS   (PIO_PERIPH_B | PIO_DEFAULT)
 
+#define DRV_I2C_MAX_BUS_ERR_CNT	100
+
+/*	extern variables	*/
 extern unsigned long sgSysTickCount;
 
+/*	Static function declarations	*/
 static uint32_t twi_mk_addr(const uint8_t *addr, int len);
 uint32_t twi_write(Twi *p_twi, twi_packet_t *p_packet);
 uint32_t twi_read(Twi *p_twi, twi_packet_t *p_packet);
+static void assertBusError(drv_twi_config_t* twi_config);
+static void assertBusHealthy(drv_twi_config_t* twi_config);
+
+/*	Local variables	*/
+uint32_t busErrorCount[2] = {0};	// for both TWI0 and TWI1
 
 typedef struct
 {
@@ -53,6 +63,7 @@ typedef struct
 //global variables
 volatile drv_i2c_memory_buf_t twiMemBuf[2]; //2 TWIs, 2 buffers
  
+/*	Function definitions	*/
 int drv_i2c_init(drv_twi_config_t* twi_config)
 {
 	int status = STATUS_PASS;
@@ -124,6 +135,7 @@ int drv_i2c_write(slave_twi_config_t* slave_twi_config, uint8_t reg, uint8_t dat
 	#ifdef USE_FREE_RTOS_DRV
 	if(freertos_twi_write_packet(slave_twi_config->drv_twi_options->freertos_twi, &packet, MAX_TWI_BLOCK_TIME) != STATUS_OK)
 	{
+		assertBusError(slave_twi_config->drv_twi_options);
 		return STATUS_FAIL;
 	}
 	
@@ -136,10 +148,11 @@ int drv_i2c_write(slave_twi_config_t* slave_twi_config, uint8_t reg, uint8_t dat
 	status = twi_write(slave_twi_config->drv_twi_options->p_i2c, &packet);
 	if (status != TWI_SUCCESS)
 	{
+		assertBusError(slave_twi_config->drv_twi_options);
 		return STATUS_FAIL;
 	}
 	#endif
-	
+	assertBusHealthy(slave_twi_config->drv_twi_options);
 	return STATUS_PASS;
 }
 
@@ -188,6 +201,7 @@ int drv_i2c_read(slave_twi_config_t* slave_twi_config, uint8_t reg, uint8_t* dat
 	#ifdef USE_FREE_RTOS_DRV
 	if (freertos_twi_read_packet(slave_twi_config->drv_twi_options->freertos_twi, &packet, MAX_TWI_BLOCK_TIME) != STATUS_OK)
 	{
+		assertBusError(slave_twi_config->drv_twi_options);
 		return STATUS_FAIL;
 	}
 	
@@ -196,6 +210,7 @@ int drv_i2c_read(slave_twi_config_t* slave_twi_config, uint8_t reg, uint8_t* dat
 	status = twi_read(slave_twi_config->drv_twi_options->p_i2c, &packet);
 	if (status != TWI_SUCCESS)
 	{
+		assertBusError(slave_twi_config->drv_twi_options);
 		return STATUS_FAIL;
 	}
 	#else
@@ -209,11 +224,13 @@ int drv_i2c_read(slave_twi_config_t* slave_twi_config, uint8_t reg, uint8_t* dat
 		status = twi_read(slave_twi_config->drv_twi_options->p_i2c, &packet);
 		if (status != TWI_SUCCESS)
 		{
+			assertBusError(slave_twi_config->drv_twi_options);
 			return STATUS_FAIL;
 		}
 	}
 	#endif
 	#endif
+	assertBusHealthy(slave_twi_config->drv_twi_options);
 	return STATUS_PASS;
 }
 
@@ -398,4 +415,89 @@ uint32_t twi_read(Twi *p_twi, twi_packet_t *p_packet)
 	p_twi->TWI_SR;
 
 	return TWI_SUCCESS;
+}
+
+static void assertBusError(drv_twi_config_t* twi_config)
+{	
+	int breakCount = 10;
+	if (twi_config->mem_index > 2)
+	{
+		return;	// a safety check to make sure incorrect drv_config is not passed
+	}
+	
+	busErrorCount[twi_config->mem_index]++;
+	
+	if (busErrorCount[twi_config->mem_index] > DRV_I2C_MAX_BUS_ERR_CNT)
+	{
+		// the bus has been in error state for too long, reset it
+		
+		/*
+			The method used to release the bus from hang is by toggling the SCL 
+			line manually so as to generate clock and let the slave send out remaining data. 
+			Steps are:
+			1. Master tries to assert logic 1 on SDA.
+			2. Master still sees logic 0 on SDA, master generates a clock pulse.
+			3. Master examines SDA. If SDA = 0, go to step 2; if SDA = 1, go to step 4.
+			4. Generate STOP conditions.
+		*/
+		
+		if (twi_config->p_i2c == TWI0)
+		{
+			gpio_configure_pin(TWI0_CLK_GPIO, (PIO_PERIPH_A | PIO_OUTPUT_0));	// set the pins as output first
+			gpio_configure_pin(TWI0_DATA_GPIO, (PIO_PERIPH_A | PIO_OUTPUT_0));
+			
+			gpio_set_pin_high(TWI0_DATA_GPIO);	// step 1
+			gpio_configure_pin(TWI0_DATA_GPIO, TWI0_DATA_FLAGS);	// set the pin as input again to monitor it
+			
+			while (gpio_pin_is_low(TWI0_DATA_GPIO))	//step 2
+			{
+				for (int i = 0; i < 10; i++)	//step 3
+				{
+					gpio_set_pin_high(TWI0_CLK_GPIO);
+					delay_us(10);
+					gpio_set_pin_low(TWI0_CLK_GPIO);
+				}
+				vTaskDelay(10);
+				if (--breakCount == 0)
+				{
+					break;
+				}
+			}
+			gpio_configure_pin(TWI0_DATA_GPIO, TWI0_DATA_FLAGS);	// set the pins back to their original configuration
+			gpio_configure_pin(TWI0_CLK_GPIO, TWI0_CLK_FLAGS);
+			twi_config->p_i2c->TWI_CR = TWI_CR_START | TWI_CR_STOP;	// generate stop condition
+		}
+		else
+		{
+			gpio_configure_pin(TWI1_CLK_GPIO, (PIO_PERIPH_B | PIO_OUTPUT_0));	// set the pins as output first
+			gpio_configure_pin(TWI1_DATA_GPIO, (PIO_PERIPH_B | PIO_OUTPUT_0));
+			
+			gpio_set_pin_high(TWI1_DATA_GPIO);	// step 1
+			gpio_configure_pin(TWI1_DATA_GPIO, TWI1_DATA_FLAGS);	// set the pin as input again to monitor it
+			
+			while (gpio_pin_is_low(TWI1_DATA_GPIO))	//step 2
+			{
+				for (int i = 0; i < 10; i++)	//step 3
+				{
+					gpio_set_pin_high(TWI1_CLK_GPIO);
+					delay_us(10);
+					gpio_set_pin_low(TWI1_CLK_GPIO);
+				}
+				vTaskDelay(10);
+				if (--breakCount == 0)
+				{
+					break;
+				}
+			}
+			gpio_configure_pin(TWI1_DATA_GPIO, TWI1_DATA_FLAGS);	// set the pins back to their original configuration
+			gpio_configure_pin(TWI1_CLK_GPIO, TWI1_CLK_FLAGS);
+			twi_config->p_i2c->TWI_CR = TWI_CR_START | TWI_CR_STOP;	// generate stop condition
+		}
+	}
+}
+
+static void assertBusHealthy(drv_twi_config_t* twi_config)
+{
+	// the bus has returned to healthy state, reset the error count
+	busErrorCount[twi_config->mem_index] = 0;
 }

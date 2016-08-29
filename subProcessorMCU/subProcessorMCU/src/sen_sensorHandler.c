@@ -114,7 +114,6 @@ imuFrame_t imuFrameData =
  * @param void *pvParameters
  * @return void                      
  ************************************************************************/
-__attribute__((optimize("O0")))
 void sen_sensorHandlerTask(void *pvParameters)
 {
 	UNUSED(pvParameters);
@@ -148,9 +147,6 @@ void sen_sensorHandlerTask(void *pvParameters)
 				}
 				else
 				{
-					// reconfigure the baud rate (in case sensors were disconnected, default speed is LOW)
-					sendCommand(COMMAND_ID_CHANGE_BAUD, NULL, SENSOR_BUS_SPEED_LOW);	// NOTE: the call to these two functions is removed with optimization.
-					sendCommand(COMMAND_ID_CHANGE_BAUD, NULL, SENSOR_BUS_SPEED_HIGH);
 					// change the sensor state to streaming
 					changeSensorState(SENSOR_STREAMING);
 					#ifdef ENABLE_SENSORS_DEBUG_MODE
@@ -161,22 +157,18 @@ void sen_sensorHandlerTask(void *pvParameters)
 				clearFullFrame();
 				
 				// control the data rate
-				vTaskDelay(1);
+				vTaskDelay(2);
 				if (dataRate > SEN_LOOP_PERIOD)
 				{
 					vTaskDelay(dataRate - SEN_LOOP_PERIOD);
 				}
 				else
 				{
-					// compensate for the loss of packets caused by small delay	which we get from sendFullFrame and vTaskDelay(1)
+					// if the number of requested sensors is less then the time taken to execute the loop plus the delay is not enough
 					// it needs more time to update the data in the sensors.				 
-					if (numReqSensors < 3)
+					if (numReqSensors < 7)
 					{
 						vTaskDelay(2);
-					}
-					else if (numReqSensors < 7)
-					{
-						vTaskDelay(1);
 					}
 				}
 				
@@ -199,7 +191,7 @@ void sen_sensorHandlerTask(void *pvParameters)
 				   each sensor has 35 bytes + 7 bytes are for main header minus 2 bytes to remove current header */
 				
 				bufferOffset = ((SEN_MAX_SENSOR_ID - number_FramesReceived) * SEN_DEFAULT_DATA_SIZE) + SEN_SENSOR_FULL_FRAME_HEADER_SIZE - SEN_SENSOR_FRAME_HEADER_SIZE;
-				tempPacket.p_payload = &sensorFullFrame[bufferOffset]; 						// set the pointer to the set offset in the full frame array
+				tempPacket.p_payload = sensorFullFrame + bufferOffset; 						// set the pointer to the set offset in the full frame array
 				pkt_getPacketTimedNew(sensorPortConfig, &tempPacket, 1);					// NOTE: needs a pointer to the packet and not the packet.payload
 			
 				// perform a short check to verify the integrity of the packet
@@ -225,6 +217,7 @@ void sen_sensorHandlerTask(void *pvParameters)
 					{
 						changeSensorState(SENSOR_STREAMING);
 					}
+					tempPacket.payloadSize = 0;	// reset the payload size as it will be reused for next packet
 					number_FramesReceived++;	// set the count for the number of frames received
 				}
 			}
@@ -297,14 +290,15 @@ static void enableRs485Transmit()
  * @param sensor_commands_t commandId, uint8_t sensorId, uint32_t data - data to be passed
  * @return void                      
  ************************************************************************/
-static void sendCommand(sensor_commands_t commandId, uint8_t sensorId, uint32_t data)
+static void __attribute__((Optimize("O0"))) sendCommand(sensor_commands_t commandId, uint8_t sensorId, uint32_t data)
 {
+	uint8_t outputDataBuffer[6] = {0};
+	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
+	
 	switch (commandId)
 	{
 		case COMMAND_ID_GET_FRAME:
 		{
-			uint8_t outputDataBuffer[3] = {0};
-			outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 			outputDataBuffer[1] = PACKET_COMMAND_ID_GET_FRAME;
 			outputDataBuffer[2] = sensorId;
 			sendPacket(outputDataBuffer, 3);
@@ -312,16 +306,12 @@ static void sendCommand(sensor_commands_t commandId, uint8_t sensorId, uint32_t 
 		break;
 		case COMMAND_ID_UPDATE:
 		{
-			uint8_t outputDataBuffer[3] = {0};
-			outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 			outputDataBuffer[1] = PACKET_COMMAND_ID_UPDATE;
 			sendPacket(outputDataBuffer, 2);
 		}
 		break;
 		case COMMAND_ID_SETUP_MODE:
 		{
-			uint8_t outputDataBuffer[3] = {0};
-			outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 			outputDataBuffer[1] = PACKET_COMMAND_ID_SETUP_MODE;
 			outputDataBuffer[2] = 0x01;
 			sendPacket(outputDataBuffer, 3);
@@ -329,8 +319,6 @@ static void sendCommand(sensor_commands_t commandId, uint8_t sensorId, uint32_t 
 		break;
 		case COMMAND_ID_GET_STATUS:
 		{
-			uint8_t outputDataBuffer[3] = {0};
-			outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 			outputDataBuffer[1] = PACKET_COMMAND_ID_GET_STATUS;
 			outputDataBuffer[2] = 0x00;
 			sendPacket(outputDataBuffer, 3);
@@ -338,8 +326,6 @@ static void sendCommand(sensor_commands_t commandId, uint8_t sensorId, uint32_t 
 		break;
 		case COMMAND_ID_ENABLE_HPR:
 		{
-			uint8_t outputDataBuffer[3] = {0};
-			outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 			outputDataBuffer[1] = PACKET_COMMAND_ID_ENABLE_HPR;
 			outputDataBuffer[2] = (uint8_t)data;
 			sendPacket(outputDataBuffer, 3);
@@ -347,8 +333,6 @@ static void sendCommand(sensor_commands_t commandId, uint8_t sensorId, uint32_t 
 		break;
 		case COMMAND_ID_CHANGE_BAUD:
 		{
-			uint8_t outputDataBuffer[6] = {0};
-			outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 			outputDataBuffer[1] = PACKET_COMMAND_ID_CHANGE_BAUD;
 			//send out the baud rate in 8bits, LSB first (Little endian)
 			outputDataBuffer[2] = (uint8_t)(data & 0x000000ff);
@@ -363,8 +347,6 @@ static void sendCommand(sensor_commands_t commandId, uint8_t sensorId, uint32_t 
 		break;
 		case COMMAND_ID_CHANGE_PADDING:
 		{
-			uint8_t outputDataBuffer[4] = {0};
-			outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 			outputDataBuffer[1] = PACKET_COMMAND_ID_CHANGE_PADDING;
 			
 			if (sensorPortConfig->mode == DRV_UART_MODE_DMA)		//padding is only used in interrupt driven DMA mode
@@ -545,22 +527,22 @@ static void sendFullFrame()
 {
 	uint32_t frameSize = 0;
 	long sysTickCount = xTaskGetTickCount();
-	uint32_t bufferOffset = ((SEN_MAX_NUM_SENSORS - number_FramesReceived) * SEN_DEFAULT_DATA_SIZE);
+	uint32_t buffOffset = ((SEN_MAX_NUM_SENSORS - number_FramesReceived) * SEN_DEFAULT_DATA_SIZE);
 	// send all sensors data to the data board
 	if (xSemaphoreTake(semaphore_dataBoardUart, 1) == TRUE)
 	{
-		sensorFullFrame[bufferOffset] = PACKET_TYPE_SUB_PROCESSOR;		// TODO: make this shit neat
-		sensorFullFrame[bufferOffset + 1] = PACKET_COMMAND_ID_SUBP_FULL_FRAME;
-		sensorFullFrame[bufferOffset + 2] = number_FramesReceived;
+		sensorFullFrame[buffOffset] = PACKET_TYPE_SUB_PROCESSOR;		// TODO: make this shit neat
+		sensorFullFrame[buffOffset + 1] = PACKET_COMMAND_ID_SUBP_FULL_FRAME;
+		sensorFullFrame[buffOffset + 2] = number_FramesReceived;
 		// assign the sys tick, little endian
-		sensorFullFrame[bufferOffset + 3] = (sysTickCount >> 0) & 0xff;
-		sensorFullFrame[bufferOffset + 4] = (sysTickCount >> 8) & 0xff;
-		sensorFullFrame[bufferOffset + 5] = (sysTickCount >> 16) & 0xff;
-		sensorFullFrame[bufferOffset + 6] = (sysTickCount >> 24) & 0xff;
+		sensorFullFrame[buffOffset + 3] = (sysTickCount >> 0) & 0xff;
+		sensorFullFrame[buffOffset + 4] = (sysTickCount >> 8) & 0xff;
+		sensorFullFrame[buffOffset + 5] = (sysTickCount >> 16) & 0xff;
+		sensorFullFrame[buffOffset + 6] = (sysTickCount >> 24) & 0xff;
 		// calculate the frame size, keep 7 bytes for the main frame header
 		frameSize = (number_FramesReceived * SEN_DEFAULT_DATA_SIZE) + SEN_SENSOR_FULL_FRAME_HEADER_SIZE;
 		// send the packet out.
-		pkt_sendRawPacket(dataRouterConfiguration.dataBoardUart, &sensorFullFrame[bufferOffset], frameSize);	// TODO: reduce the packet size according to the number of sensors present
+		pkt_sendRawPacket(dataRouterConfiguration.dataBoardUart, &sensorFullFrame[buffOffset], frameSize);	// TODO: reduce the packet size according to the number of sensors present
 		xSemaphoreGive(semaphore_dataBoardUart);
 	}
 }
@@ -635,6 +617,12 @@ void sen_enableSensorStream(bool enable)
 	if (reqSensorMask != 0)
 	{
 		enableStream = enable;	// only enable the stream if any sensors are requested
+		if (enableStream)
+		{
+			// reconfigure the baud rate (in case sensors were disconnected, default speed is LOW)
+			changeUartBaud(SENSOR_BUS_SPEED_LOW);	// NOTE: these functions do not work with optimization.
+			sendCommand(COMMAND_ID_CHANGE_BAUD, NULL, SENSOR_BUS_SPEED_HIGH);
+		}
 	}
 }
 
