@@ -31,6 +31,7 @@ static void sendDateTime();
 static uint8_t convertToBcd(uint32_t twoDigitNumber);
 static uint32_t convertFromBcd(uint8_t bcdNumber);
 static void sendStatus(subp_status_t status);
+void getSystemStatus(subp_status_t *sys_status);
 
 /*	Extern variables	*/
 extern xQueueHandle mgr_eventQueue;
@@ -41,6 +42,7 @@ pkt_rawPacket_t dataBoardPacket;
 xQueueHandle queue_dataBoard = NULL;		// queue to pass data to the data router
 xSemaphoreHandle semaphore_dataBoardUart = NULL;
 
+static bool usbCommState;	// indicates whether comm is detected on USB
 static drv_uart_config_t *dataBoardPortConfig;
 
 /*	Function definitions	*/
@@ -83,7 +85,7 @@ void brd_dataBoardManager(void *pvParameters)
 		// send the heart beat at the set interval
 		if ((statusMsgDelay % DATA_BOARD_STATUS_MSG_DELAY) == 0)
 		{
-			sts_getSystemStatus(&systemStatus);
+			getSystemStatus(&systemStatus);
 			if (xSemaphoreTake(semaphore_dataBoardUart, 1000) == pdTRUE)	// wait for one second to make sure we send out status every time
 			{
 				sendStatus(systemStatus);
@@ -123,7 +125,7 @@ void processPacket(pkt_rawPacket_t *packet)
 			case PACKET_COMMAND_ID_SUBP_GET_STATUS:
 				// return current status of Power board
 				// use semaphore to access the UART
-				sts_getSystemStatus(&systemStatus);
+				getSystemStatus(&systemStatus);
 				if (xSemaphoreTake(semaphore_dataBoardUart, 100) == pdTRUE)
 				{
 					sendStatus(systemStatus);
@@ -163,6 +165,10 @@ void processPacket(pkt_rawPacket_t *packet)
 				status = setDateTimeFromPacket(packet);
 				sendDateTimeResp(status);
 			break;
+			case PACKET_COMMAND_ID_SUBP_AUTO_POWER_DOWN_REQ:
+				// send out power down request to the data board
+				brd_sendPowerDownReq();
+			break;
 			default:
 			break;
 		}
@@ -182,6 +188,7 @@ void brd_sendPowerDownReq()
 	response[0] = PACKET_TYPE_SUB_PROCESSOR;
 	response[1] = PACKET_COMMAND_ID_SUBP_POWER_DOWN_REQ;
 	pkt_sendRawPacket(dataBoardPortConfig, response, 0x02);
+	// put sensor handler to sleep
 	sen_preSleepProcess();
 }
 
@@ -348,4 +355,30 @@ static void sendStatus(subp_status_t status)
 	memcpy(&response[2], &status, 9);
 		
 	pkt_sendRawPacket(dataBoardPortConfig, response, sizeof(response));
+}
+
+/*	Status Heart beat	*/
+void getSystemStatus(subp_status_t *sys_status)
+{
+	// populate the system status structure and return the pointer to data.
+	drv_gpio_pin_state_t jcDc1, jcDc2;
+	
+	sys_status->chargeLevel = (uint8_t) chrg_getBatteryPercentage();
+	sys_status->chargerState = (uint8_t) chrg_getChargeState();
+	sys_status->usbCommState = (uint8_t)(usbCommState);	// should be 1 when connected to a comm port.
+	drv_gpio_getPinState(DRV_GPIO_PIN_JC1_DET, &jcDc1);	//DRV_GPIO_PIN_STATE_HIGH
+	drv_gpio_getPinState(DRV_GPIO_PIN_JC2_DET, &jcDc2);	//DRV_GPIO_PIN_STATE_HIGH
+	sys_status->jackDetectState = (((jcDc1 == DRV_GPIO_PIN_STATE_HIGH ? 1:0) << 1) | (jcDc2 == DRV_GPIO_PIN_STATE_HIGH ? 1:0));
+	sys_status->streamState = (uint8_t) sen_getSensorState();
+	sys_status->sensorMask = sen_getDetectedSensors();
+}
+
+void user_callback_suspend_action(void)
+{
+	usbCommState = false;	// no comm detected on USB
+}
+
+void user_callback_resume_action(void)
+{
+	usbCommState = true;	// comm detected on USB
 }

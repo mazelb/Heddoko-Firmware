@@ -56,7 +56,7 @@ status_t pkt_sendRawPacket(drv_uart_config_t* uartConfig, uint8_t* payload, uint
 }
 
 /***********************************************************************************************
- * drv_uart_getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* packet, uint32_t maxTime)
+ * pkt_getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* packet, uint32_t maxTime)
  * @brief returns a raw packet that is processed successfully.
  * @param uartConfig the configuration structure for the uart
  * @param packet the pointer to the packet where the bytes will be stored
@@ -82,7 +82,7 @@ status_t pkt_getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* pack
 		if(result == STATUS_PASS)
 		{
 			//process the byte as it comes in
-			if(pkt_processIncomingByte(packet,val) == STATUS_PASS)
+			if(pkt_processIncomingByte(packet, packet->payload, val) == STATUS_PASS)
 			{
 				//the packet is complete
 				result = STATUS_PASS;
@@ -103,7 +103,8 @@ status_t pkt_getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* pack
 	}
 	return result; 
 }
-status_t pkt_processIncomingByte(pkt_rawPacket_t* rawPacket, uint8_t byte)
+
+status_t pkt_processIncomingByte(pkt_rawPacket_t* rawPacket, uint8_t* payload, uint8_t byte)
 {
 	status_t status = STATUS_EAGAIN;
 	//if byte is start byte
@@ -168,7 +169,7 @@ status_t pkt_processIncomingByte(pkt_rawPacket_t* rawPacket, uint8_t byte)
 		if(rawPacket->inError == false)
 		{		
 			//copy byte to payload at point receivedBytes - 2
-			rawPacket->payload[rawPacket->bytesReceived - 2] = byte;
+			payload[rawPacket->bytesReceived - 2] = byte;
 			//check if we received the whole packet.
 			if(rawPacket->bytesReceived-1 == rawPacket->payloadSize)
 			{
@@ -228,7 +229,15 @@ static void sendByteWithEscape(uint8_t byte, drv_uart_config_t* uartConfig)
 	}
 }
 
-status_t pkt_getPacketTimedNew(drv_uart_config_t* uartConfig, pkt_rawPacketNew_t* packet, uint32_t maxTime)
+/***********************************************************************************************
+ * pkt_getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacketNew_t* packet, uint32_t maxTime)
+ * @brief returns a new raw packet that is processed successfully.
+ * @param uartConfig the configuration structure for the uart
+ * @param packet the pointer to the packet where the bytes will be stored
+ * @param maxTime the maximum time in ticks the function should wait for the response. 
+ * @return STATUS_PASS if a string is returned,	STATUS_FAIL if the string found is larger than the buffer, or timed out
+ ***********************************************************************************************/	
+status_t pkt_getPacketTimedNew(drv_uart_config_t* uartConfig, pkt_rawPacketVarSize_t* packet, uint32_t maxTime)
 {
 	status_t result = STATUS_PASS;
 	char val;
@@ -247,7 +256,7 @@ status_t pkt_getPacketTimedNew(drv_uart_config_t* uartConfig, pkt_rawPacketNew_t
 		if(result == STATUS_PASS)
 		{
 			//process the byte as it comes in
-			if(pkt_processIncomingByteNew(packet,val) == STATUS_PASS)
+			if(pkt_processIncomingByte(packet, packet->p_payload, val) == STATUS_PASS)
 			{
 				//the packet is complete
 				result = STATUS_PASS;
@@ -268,87 +277,87 @@ status_t pkt_getPacketTimedNew(drv_uart_config_t* uartConfig, pkt_rawPacketNew_t
 	}
 	return result;
 }
-
-status_t pkt_processIncomingByteNew(pkt_rawPacketNew_t* rawPacket, uint8_t byte)
-{
-	status_t status = STATUS_EAGAIN;
-	//if byte is start byte
-	if(byte == RAW_PACKET_START_BYTE)
-	{
-		if(rawPacket->bytesReceived > 0)
-		{
-			//this means there was an error receiving a packet
-			//debugStructure.receiveErrorCount++;
-			errorCount++; //not sure what this will do...
-		}
-		//reset the counts and everything for reception of the packet
-		rawPacket->bytesReceived = 0;
-		rawPacket->escapeFlag = false;
-		rawPacket->payloadSize = 0;
-		rawPacket->inError = false;
-		return STATUS_EAGAIN;
-	}
-	//if byte is escape byte
-	if(byte == RAW_PACKET_ESCAPE_BYTE)
-	{
-		//set escape flag, so the next byte is properly offset.
-		rawPacket->escapeFlag = true;
-		return STATUS_EAGAIN;
-	}
-	//if escape byte flag is set
-	if(rawPacket->escapeFlag == true)
-	{
-		//un-escape the byte and process it as any other byte.
-		byte = byte - RAW_PACKET_ESCAPE_OFFSET;
-		//unset the flag
-		rawPacket->escapeFlag = false;
-	}
-	
-	//if receive count is  0
-	if(rawPacket->bytesReceived == 0)
-	{
-		//this is the first byte of the payload size
-		//copy byte to LSB of the payload size
-		rawPacket->payloadSize |= (uint16_t)byte;
-		//increment received count
-		rawPacket->bytesReceived++;
-	}
-	else if(rawPacket->bytesReceived == 1)
-	{
-		//this is the second byte of the payload size
-		//copy byte to MSB of the payload size
-		rawPacket->payloadSize |= (uint16_t)(byte<<8);
-		//increment received count
-		rawPacket->bytesReceived++;
-		if(rawPacket->payloadSize > RAW_PACKET_MAX_SIZE)
-		{
-			//set the error flag, something weird is going on...
-			rawPacket->inError = true;
-			errorCount++;
-		}
-	}
-	else
-	{
-		//only process the bytes if not in error
-		if(rawPacket->inError == false)
-		{
-			//copy byte to payload at point receivedBytes - 2
-			rawPacket->p_payload[rawPacket->bytesReceived - 2] = byte;
-			//check if we received the whole packet.
-			if(rawPacket->bytesReceived-1 == rawPacket->payloadSize)
-			{
-				//We have the packet!
-				//set the return code to PASS to let the app know we have a packet.
-				status = STATUS_PASS;
-				//reset everything to zero
-				rawPacket->bytesReceived = 0;
-			}
-			else
-			{
-				rawPacket->bytesReceived++;
-			}
-		}
-	}
-	return status;
-	
-}
+//
+//status_t pkt_processIncomingByteNew(pkt_rawPacketVarSize_t* rawPacket, uint8_t byte)
+//{
+	//status_t status = STATUS_EAGAIN;
+	////if byte is start byte
+	//if(byte == RAW_PACKET_START_BYTE)
+	//{
+		//if(rawPacket->bytesReceived > 0)
+		//{
+			////this means there was an error receiving a packet
+			////debugStructure.receiveErrorCount++;
+			//errorCount++; //not sure what this will do...
+		//}
+		////reset the counts and everything for reception of the packet
+		//rawPacket->bytesReceived = 0;
+		//rawPacket->escapeFlag = false;
+		//rawPacket->payloadSize = 0;
+		//rawPacket->inError = false;
+		//return STATUS_EAGAIN;
+	//}
+	////if byte is escape byte
+	//if(byte == RAW_PACKET_ESCAPE_BYTE)
+	//{
+		////set escape flag, so the next byte is properly offset.
+		//rawPacket->escapeFlag = true;
+		//return STATUS_EAGAIN;
+	//}
+	////if escape byte flag is set
+	//if(rawPacket->escapeFlag == true)
+	//{
+		////un-escape the byte and process it as any other byte.
+		//byte = byte - RAW_PACKET_ESCAPE_OFFSET;
+		////unset the flag
+		//rawPacket->escapeFlag = false;
+	//}
+	//
+	////if receive count is  0
+	//if(rawPacket->bytesReceived == 0)
+	//{
+		////this is the first byte of the payload size
+		////copy byte to LSB of the payload size
+		//rawPacket->payloadSize |= (uint16_t)byte;
+		////increment received count
+		//rawPacket->bytesReceived++;
+	//}
+	//else if(rawPacket->bytesReceived == 1)
+	//{
+		////this is the second byte of the payload size
+		////copy byte to MSB of the payload size
+		//rawPacket->payloadSize |= (uint16_t)(byte<<8);
+		////increment received count
+		//rawPacket->bytesReceived++;
+		//if(rawPacket->payloadSize > RAW_PACKET_MAX_SIZE)
+		//{
+			////set the error flag, something weird is going on...
+			//rawPacket->inError = true;
+			//errorCount++;
+		//}
+	//}
+	//else
+	//{
+		////only process the bytes if not in error
+		//if(rawPacket->inError == false)
+		//{
+			////copy byte to payload at point receivedBytes - 2
+			//rawPacket->p_payload[rawPacket->bytesReceived - 2] = byte;
+			////check if we received the whole packet.
+			//if(rawPacket->bytesReceived-1 == rawPacket->payloadSize)
+			//{
+				////We have the packet!
+				////set the return code to PASS to let the app know we have a packet.
+				//status = STATUS_PASS;
+				////reset everything to zero
+				//rawPacket->bytesReceived = 0;
+			//}
+			//else
+			//{
+				//rawPacket->bytesReceived++;
+			//}
+		//}
+	//}
+	//return status;
+	//
+//}

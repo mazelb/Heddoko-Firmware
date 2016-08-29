@@ -49,6 +49,7 @@ static void powerButtonHandler_HighEdge();
 static void powerButtonHandler_LowEdge();
 static void powerButtonTimerCallback();
 static void enterSleepMode();
+static void enterSleep();
 static void PostSleepProcess();
 static void PreSleepProcess();
 static bool UsbConnected();
@@ -67,7 +68,7 @@ void mgr_managerTask(void *pvParameters)
 	//initialize the board
 	
 	brd_board_init(); 
-	printf("startApplication!\r\n");
+	printf("startApplication!\r\n");	// TODO: replace with print to memory function
 	//initialize power button listener. 	
 	drv_gpio_config_interrupt_handler(DRV_GPIO_PIN_PWR_BTN, DRV_GPIO_INTERRUPT_LOW_EDGE,powerButtonHandler_LowEdge);
 	mgr_eventQueue = xQueueCreate( 10, sizeof(mgr_eventMessage_t));
@@ -104,8 +105,7 @@ void mgr_managerTask(void *pvParameters)
 	//enable power to the data board
 	drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_HIGH);
 	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
-	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);	
-	//drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_PULLED_LOW);
+	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);
 	currentSystemState = SYS_STATE_POWER_ON;
 	//by default enable fast charging
 	drv_gpio_setPinState(DRV_GPIO_PIN_CHRG_SEL, DRV_GPIO_PIN_STATE_HIGH);	
@@ -148,8 +148,8 @@ void mgr_managerTask(void *pvParameters)
 				break;
 				case SYS_EVENT_LOW_BATTERY:
 				{
-					vTaskDelay(200);
-					enterSleepMode();
+					// we don't directly go to sleep. Pass message to data board.
+					brd_sendPowerDownReq();
 				}
 				break; 
 				case SYS_EVENT_JACK_DETECT:
@@ -172,7 +172,7 @@ void mgr_managerTask(void *pvParameters)
 					//if we're currently charging with the power off, then go to sleep mode
 					if(currentSystemState == SYS_STATE_POWER_OFF_CHARGING)
 					{
-						enterSleepMode();
+						enterSleep();
 					}
 					dat_sendDebugMsgToDataBoard("PwrBrdMsg:USB Disconnected\r\n");
 				}
@@ -262,41 +262,15 @@ static void powerButtonHandler_LowEdge(uint32_t ul_id, uint32_t ul_mask)
 
 static void __attribute__((Optimize("O0"))) enterSleepMode()
 {
+	// the power down response has been received, move to sleep mode.
 	cmd_commandPacket_t packet;
 	uint32_t powerOnFlag = FALSE, chargeFlag = FALSE;
 	drv_gpio_pin_state_t pwSwState = DRV_GPIO_PIN_STATE_HIGH;  
 	drv_gpio_pin_state_t chargingDetect = DRV_GPIO_PIN_STATE_HIGH; 
-	strncpy(packet.packetData,"Power\r\n",CMD_INCOMING_CMD_SIZE_MAX); 
 	uint32_t loopCount = 0;
-	packet.packetSize = strlen(packet.packetData); 
-	//Send power down message to data board
-	if(cmd_queue_commandQueue != NULL)
-	{
-		if(xQueueSendToBack(cmd_queue_commandQueue,( void * ) &packet,5) != TRUE)
-		{
-			//this is an error, we should log it.
-		}
-	}	
 	//turn off power to both Jacks
 	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_HIGH);
 	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
-	//wait for GPIO to go low (indication that data board is ready to sleep)
-	loopCount = 0;
-	uint32_t startTime = xTaskGetTickCount(); 
-	drv_gpio_pin_state_t gpioPinState = DRV_GPIO_PIN_STATE_HIGH;  
-	vTaskDelay(2000);
-	while(loopCount < 30)
-	{		
-		//drv_gpio_getPinState(DRV_GPIO_PIN_GPIO,&gpioPinState);
-		//if(gpioPinState == DRV_GPIO_PIN_STATE_LOW)
-		//{
-			//the data board is ready to shutdown, leave the loop. 
-			//break;
-		//}
-		vTaskDelay(10);
-		loopCount++;
-	}
-	
 	//turn off power to the data board
 	drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_LOW);
 	//wait for the button to go high
@@ -314,24 +288,31 @@ static void __attribute__((Optimize("O0"))) enterSleepMode()
 		loopCount++;
 	}	
 	//go to sleep, and wait for power button press again. 
+	enterSleep();
+}
+
+static void enterSleep()
+{
+	uint32_t powerOnFlag = FALSE, chargeFlag = FALSE;
+	drv_gpio_pin_state_t pwSwState = DRV_GPIO_PIN_STATE_HIGH;
+	drv_gpio_pin_state_t chargingDetect = DRV_GPIO_PIN_STATE_HIGH;
+	uint32_t loopCount = 0;
+	
 	PreSleepProcess();
 	while ((powerOnFlag == FALSE) && (chargeFlag == FALSE))	//Stay in sleep mode until wakeup
 	{
-		//cpu_irq_disable();
-		//pmc_enable_sleepmode(0);
-		uint32_t startupInput = (1<<4 | 1<<14); //WKUP14 and WKUP4 (power button and USB detect) 
+		uint32_t startupInput = (1<<4 | 1<<14); //WKUP14 and WKUP4 (power button and USB detect)
 		pmc_set_fast_startup_input(startupInput);
-		//uint32_t regVal = SUPC->SUPC_SR;  
+		//uint32_t regVal = SUPC->SUPC_SR;
 		pmc_sleep(SAM_PM_SMODE_WAIT);
-		//drv_gpio_togglePin(DRV_GPIO_PIN_LED_BLUE);
 		//Processor wakes up from sleep
 		delay_ms(WAKEUP_DELAY);
 		drv_gpio_getPinState(DRV_GPIO_PIN_PWR_BTN, &pwSwState);	//poll the power switch
 		drv_gpio_getPinState(DRV_GPIO_PIN_CHRG_PG, &chargingDetect); //
 		if(pwSwState == DRV_GPIO_PIN_STATE_LOW)	//check if it is a false wakeup
 		{
-			//The power button has been held long enough, break the loop and power on. 
-			powerOnFlag = TRUE; 
+			//The power button has been held long enough, break the loop and power on.
+			powerOnFlag = TRUE;
 		}
 		else
 		{
@@ -339,50 +320,32 @@ static void __attribute__((Optimize("O0"))) enterSleepMode()
 		}
 		if(chargingDetect == DRV_GPIO_PIN_STATE_LOW)
 		{
-			chargeFlag = TRUE; 
+			chargeFlag = TRUE;
 		}
 		else
 		{
-			chargeFlag = FALSE; 
+			chargeFlag = FALSE;
 		}
 	}
 	PostSleepProcess();
 	if(powerOnFlag == TRUE)
-	{	
-		//set the GPIO pin to be an input. 
-		//drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_PULLED_LOW);
+	{
 		//enable power to the data board
 		drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_HIGH);
-		//wait for brain mcu to start up
-		gpioPinState = DRV_GPIO_PIN_STATE_LOW; 
-		loopCount = 0;
-		//set the count over the threshold so it needs to be reset by it going high again. 
-		powerButtonLowCount = 16;
-		while(loopCount < 30)
-		{
-			//drv_gpio_getPinState(DRV_GPIO_PIN_GPIO,&gpioPinState);
-			//if(gpioPinState == DRV_GPIO_PIN_STATE_HIGH)
-			//{
-				//the data board is powered up, break loop
-				//break;
-			//}
-			vTaskDelay(50);
-			loopCount++;
-		}
 		//invalidate the current charger state so that it is re-evaluated
-		chrg_currentChargerState = CHRG_CHARGER_STATE_INVALID_CODE; 
-		//send the date time command to the brain MCU. 	
+		chrg_currentChargerState = CHRG_CHARGER_STATE_INVALID_CODE;
+		//send the date time command to the brain MCU.
 		vTaskDelay(2000);
-		cmd_sendDateTimeCommand(); 
+		cmd_sendDateTimeCommand();
 		//enable power to both Jacks
 		vTaskDelay(100);
-		//TODO add switching auto-enabling to this code. 
+		//TODO add switching auto-enabling to this code.
 		drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
-		drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);	
-	
+		drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);
+		
 		//clear the events
 		clearAllEvents();
-		currentSystemState = SYS_STATE_POWER_ON; 
+		currentSystemState = SYS_STATE_POWER_ON;
 	}
 	else if(chargeFlag == TRUE)
 	{
@@ -390,7 +353,7 @@ static void __attribute__((Optimize("O0"))) enterSleepMode()
 		chrg_currentChargerState = CHRG_CHARGER_STATE_INVALID_CODE;
 		//clear the events
 		clearAllEvents();
-		currentSystemState = SYS_STATE_POWER_OFF_CHARGING;		
+		currentSystemState = SYS_STATE_POWER_OFF_CHARGING;
 	}
 }
 
@@ -451,39 +414,12 @@ static bool UsbConnected()
 
 static void enterPowerDownChargeState()
 {
+	// the power down response has already been received
 	cmd_commandPacket_t packet;
 	drv_gpio_pin_state_t pwSwState = DRV_GPIO_PIN_STATE_HIGH;
-	strncpy(packet.packetData,"Power\r\n",CMD_INCOMING_CMD_SIZE_MAX);
-	packet.packetSize = strlen(packet.packetData);
-	//Send power down message to data board
-	if(cmd_queue_commandQueue != NULL)
-	{
-		if(xQueueSendToBack(cmd_queue_commandQueue,( void * ) &packet,5) != TRUE)
-		{
-			//this is an error, we should log it.
-		}
-	}
 	//turn off power to both Jacks
 	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_HIGH);
 	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
-	//wait for GPIO to go low (indication that data board is ready to sleep)
-	uint32_t startTime = xTaskGetTickCount();
-	drv_gpio_pin_state_t gpioPinState = DRV_GPIO_PIN_STATE_HIGH;
-	uint32_t loopCount = 0;	
-	vTaskDelay(2000);
-	while(loopCount < 30)
-	{
-		//drv_gpio_getPinState(DRV_GPIO_PIN_GPIO,&gpioPinState);
-		if(gpioPinState == DRV_GPIO_PIN_STATE_LOW)
-		{
-			//the data board is ready to shutdown, leave the loop.
-			break;
-		}
-		vTaskDelay(100);
-		loopCount++;
-	}	
-	//drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_LOW);
-	//turn off power to the data board
 	drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_LOW);
 	
 	currentSystemState = SYS_STATE_POWER_OFF_CHARGING; 
@@ -491,28 +427,10 @@ static void enterPowerDownChargeState()
 }
 static void exitPowerDownChargeState()
 {
-	//set the GPIO pin to be an input.
-	//drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_PULLED_LOW);
 	//enable power to the data board
 	drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_HIGH);
-	//wait for brain mcu to start up
-	drv_gpio_pin_state_t gpioPinState = DRV_GPIO_PIN_STATE_LOW;
-	uint32_t loopCount = 0;
-	while(loopCount < 30)
-	{
-		//drv_gpio_getPinState(DRV_GPIO_PIN_GPIO,&gpioPinState);
-		//if(gpioPinState == DRV_GPIO_PIN_STATE_HIGH)
-		//{
-			//the data board is ready to shutdown, leave the loop.
-			//break;
-		//}
-		vTaskDelay(100);
-		loopCount++;
-	}	
 	//invalidate the current charger state so that it is re-evaluated
 	chrg_currentChargerState = CHRG_CHARGER_STATE_INVALID_CODE;
-	//send the date time command to the brain MCU.
-	cmd_sendDateTimeCommand();
 	//enable power to both Jacks
 	vTaskDelay(100);
 	//TODO add switching auto-enabling to this code.

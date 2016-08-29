@@ -29,6 +29,18 @@ typedef struct
 }subp_dateTime_t;
 #pragma pack(pop)
 
+#pragma pack(push, 1)
+typedef struct
+{
+	uint8_t chargeLevel;	// battery percentage
+	uint8_t chargerState;
+	uint8_t usbCommState;	// 0 - no comm; 1 - comm detected
+	uint8_t jackDetectState;		// detected jacks mask
+	uint8_t streamState;
+	uint32_t sensorMask;		// detected sensor mask
+}subp_status_t;
+#pragma pack(pop)
+
 void brd_dataBoardManager(void *pvParameters);
 void brd_sendPowerDownReq();
 
