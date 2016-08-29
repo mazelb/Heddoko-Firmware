@@ -15,11 +15,12 @@
 
 typedef enum
 {
-	MSG_TYPE_ENTERING_NEW_STATE = 0,
-	MSG_TYPE_READY,	
+	MSG_TYPE_ENTERING_NEW_STATE = 0, //sent before a change state event
+	MSG_TYPE_LEAVING_STATE,			 //sent before the entering new state message is sent. 
+	MSG_TYPE_READY,					 //sent after a manager deems itself ready for the state change
+	MSG_TYPE_STATE,					 //sent when the actual change takes place. 
 	MSG_TYPE_ERROR,
 	MSG_TYPE_SDCARD_STATE,
-	MSG_TYPE_SDCARD_SETTINGS,
 	MSG_TYPE_WIFI_STATE,
 	MSG_TYPE_WIFI_SETTINGS,
 	MSG_TYPE_USB_CONNECTED,
@@ -43,26 +44,6 @@ typedef struct
 }msg_messageBox_t;
 
 /*	Message types	*/
-typedef struct  
-{
-	bool mounted;
-	sd_card_status_t message;
-	uint8_t errorCode;
-}msg_sd_card_state_t;		//sd card module response to system manager
-
-typedef struct
-{
-	bool unmountSD;
-	bool mountSD;
-	bool enableSensorStream;
-	sys_manager_systemState_t systemState;
-}msg_sys_manager_t;			//system manager command struct common to all modules
-
-typedef struct
-{
-	bool sensorInitialized;
-	uint8_t errorCode;
-}msg_sensor_state_t;		//sensor module response to system manager
 
 /***********************************************************************************************
  * msg_registerForMessages(modules_t module, uint32_t messageMask,xQueueHandle messageQueue)
@@ -81,11 +62,32 @@ status_t msg_registerForMessages(modules_t module, uint32_t messageMask,xQueueHa
  ***********************************************************************************************/
 status_t msg_sendBroadcastMessage(msg_message_t* message);
 /***********************************************************************************************
- * msg_sendMessage(modules_t module, msg_message_t* message)
- * @brief Sends a message to a specific module   
- * @param module: message: a pointer to the message that's being sent 
+ * msg_sendMessage(modules_t destModule, modules_t sourceModule, msg_messageType_t type, void* data)
+ * @brief Sends a message to a specific module
+ * @param destmodule: the module where the message is being directed
+ * @param sourceModule: the module where the message is from
+ * @param type: the message type (from enumeration)
+ * @param data: a void pointer to the payload of the message
  * @return STATUS_PASS or STATUS_FAIL
  ***********************************************************************************************/
 status_t msg_sendMessage(modules_t destModule, modules_t sourceModule, msg_messageType_t type, void* data);
-
+/***********************************************************************************************
+ * msg_sendMessageSimple(modules_t destModule, modules_t sourceModule, msg_messageType_t type, uint32_t data)
+ * @brief Sends a message to a specific module   
+ * @param destmodule: the module where the message is being directed
+ * @param sourceModule: the module where the message is from
+ * @param type: the message type (from enumeration)
+ * @param data: a 32 bit integer representing the payload of the message. (casted enum)
+ * @return STATUS_PASS or STATUS_FAIL
+ ***********************************************************************************************/
+status_t msg_sendMessageSimple(modules_t destModule, modules_t sourceModule, msg_messageType_t type, uint32_t data);
+/***********************************************************************************************
+ * msg_sendBroadcastMessageSimple(modules_t sourceModule, msg_messageType_t type, uint32_t data)
+ * @brief Sends a simple message to all modules 
+ * @param sourceModule: the module where the message is from
+ * @param type: the message type (from enumeration)
+ * @param data: a 32 bit integer representing the payload of the message. (casted enum)
+ * @return STATUS_PASS or STATUS_FAIL
+ ***********************************************************************************************/
+status_t msg_sendBroadcastMessageSimple(modules_t sourceModule, msg_messageType_t type, uint32_t data);
 #endif /* MSG_MESSENGER_H_ */

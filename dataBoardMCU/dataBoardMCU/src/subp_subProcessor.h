@@ -13,6 +13,8 @@
 
 #define PACKET_QUEUE_LENGTH 10
 #define MAX_NUMBER_OF_IMU_SENSORS 9
+
+#define DATALOG_MAX_BUFFER_SIZE		8000
 //Sub processor messages
 
 #define PACKET_COMMAND_ID_SUBP_GET_STATUS 0x51
@@ -65,6 +67,13 @@ typedef struct
 	uint32_t sensorMask; //mask of which sensors have been detected.
 }subp_status_t;
 #pragma	pack(pop)
+
+/* subprocessor configuration Structure */
+typedef struct  
+{
+	uint8_t rate;
+	uint32_t sensorMask; 
+}subp_config_t;
 
 
 void subp_subProcessorTask(void *pvParameters);

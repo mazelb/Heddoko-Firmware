@@ -71,6 +71,9 @@ static void init_chip_pins(void)
 	pio_configure_pin(CONF_WINC_PIN_RESET, PIO_TYPE_PIO_OUTPUT_0);
 	pio_configure_pin(CONF_WINC_PIN_CHIP_ENABLE, PIO_TYPE_PIO_OUTPUT_0);
 	pio_configure_pin(CONF_WINC_PIN_WAKE, PIO_TYPE_PIO_OUTPUT_0);
+	//SMC EDIT
+	pio_configure_pin(CONF_WINC_SPI_CS_GPIO, PIO_DEFAULT|PIO_PULLUP);
+	pio_set_pin_high(CONF_WINC_SPI_CS_GPIO);
 #endif
 }
 

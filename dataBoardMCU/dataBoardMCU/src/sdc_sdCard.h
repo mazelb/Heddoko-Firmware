@@ -13,10 +13,9 @@
 #include <asf.h>
 #include "common.h"
 
-#define SD_CD_PIN					PIO_PC12_IDX
-#define DATALOG_MAX_BUFFER_SIZE		8000
-#define DEBUGLOG_MAX_BUFFER_SIZE	100
-#define DEBUG_LOG_MAX_FILE_SIZE		2000000ul
+#define SD_CD_PIN					PIO_PA17_IDX //TODO add ifdef for new HW 
+
+
 #define SD_CARD_FILENAME_LENGTH		150
 #define MAX_OPEN_FILES				10
 
@@ -29,9 +28,9 @@ typedef enum
 
 typedef enum
 {
-	SD_CARD_REMOVED=0x01,
-	SD_CARD_INSERTED,
-	SD_CARD_INITIALIZED
+	SD_CARD_REMOVED = 0, //There is no SD Card Present (based on CD pin)
+	SD_CARD_MOUNTED,	 //The SD card has been inserted and mounted
+	SD_CARD_MOUNT_ERROR	 //An error has occurred during the mounting process on the SD card. 
 }sd_card_status_t;
 
 typedef struct 

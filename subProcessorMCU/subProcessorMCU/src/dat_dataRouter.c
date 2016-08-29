@@ -68,7 +68,7 @@ void dat_task_dataRouter(void *pvParameters)
 		{
 			if (xQueueReceive(queue_dataBoard, dataBoardRxBuffer, 10) == pdPASS)
 			{
-				// data received should be passed to the USB
+				// data received should be passed to the daughter board and USB
 				dat_sendStringToUsb(dataBoardRxBuffer);
 			}
 		}

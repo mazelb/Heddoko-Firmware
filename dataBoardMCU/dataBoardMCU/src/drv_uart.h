@@ -20,7 +20,7 @@
 
 #ifndef DRV_UART_H_
 #define DRV_UART_H_
-#define FIFO_BUFFER_SIZE 1024
+#define FIFO_BUFFER_SIZE 2048
 
 #define UART0_IDX			0
 #define UART1_IDX			1
