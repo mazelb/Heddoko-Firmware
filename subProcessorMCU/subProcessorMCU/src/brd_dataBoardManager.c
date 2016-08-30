@@ -22,6 +22,7 @@
 #define DATA_BOARD_STATUS_MSG_DELAY		30	// actual delay is 200 times this value in milliseconds
 #define DATA_BOARD_TERMINAL_MSG_LENGTH	200 // the maximum length of the string that can go out in OUTPUT_DATA message
 #define DATA_BOARD_TERMINAL_MSG_FREQ	2	// this also controls the size of queue to data router
+#define DATA_BOARD_PWR_DWN_RESP_TIMEOUT	(30* SECONDS)
 
 /*	Static functions forward declaration	*/
 static void processPacket(pkt_rawPacket_t *packet);
@@ -32,6 +33,7 @@ static uint8_t convertToBcd(uint32_t twoDigitNumber);
 static uint32_t convertFromBcd(uint8_t bcdNumber);
 static void sendStatus(subp_status_t status);
 void getSystemStatus(subp_status_t *sys_status);
+void vPwrDwnRspTimerCallback(xTimerHandle xTimer);
 
 /*	Extern variables	*/
 extern xQueueHandle mgr_eventQueue;
@@ -41,7 +43,8 @@ extern drv_uart_config_t uart0Config, uart1Config;
 pkt_rawPacket_t dataBoardPacket;
 xQueueHandle queue_dataBoard = NULL;		// queue to pass data to the data router
 xSemaphoreHandle semaphore_dataBoardUart = NULL;
-
+xTimerHandle pwrDwnRspTimeoutTimer = NULL;
+static bool pwrDwnRspTimerActive = false;
 static bool usbCommState;	// indicates whether comm is detected on USB
 static drv_uart_config_t *dataBoardPortConfig;
 
@@ -66,7 +69,14 @@ void brd_dataBoardManager(void *pvParameters)
 	queue_dataBoard = xQueueCreate(DATA_BOARD_TERMINAL_MSG_FREQ, DATA_BOARD_TERMINAL_MSG_LENGTH);
 	if (queue_dataBoard == NULL)
 	{
-		puts("Failed to create data board terminal message queue\r\n");
+		puts("Failed to create data board terminal message queue\r\n");		// TODO: puts will be removed after adding in debug prints
+	}
+	
+	// create a timer for the timeout on power down resp
+	pwrDwnRspTimeoutTimer = xTimerCreate("TT", (DATA_BOARD_PWR_DWN_RESP_TIMEOUT / portTICK_RATE_MS), pdFALSE, NULL, vPwrDwnRspTimerCallback);
+	if (pwrDwnRspTimeoutTimer == NULL)
+	{
+		puts("Failed to create the power down response timer\r\n");
 	}
 	
 	semaphore_dataBoardUart = xSemaphoreCreateMutex();
@@ -190,6 +200,12 @@ void brd_sendPowerDownReq()
 	pkt_sendRawPacket(dataBoardPortConfig, response, 0x02);
 	// put sensor handler to sleep
 	sen_preSleepProcess();
+	// set the response timer 
+	if (!pwrDwnRspTimerActive)
+	{
+		xTimerReset(pwrDwnRspTimeoutTimer, 0);
+		pwrDwnRspTimerActive = true;
+	}
 }
 
 /************************************************************************
@@ -355,6 +371,20 @@ static void sendStatus(subp_status_t status)
 	memcpy(&response[2], &status, 9);
 		
 	pkt_sendRawPacket(dataBoardPortConfig, response, sizeof(response));
+}
+
+void vPwrDwnRspTimerCallback(xTimerHandle xTimer)
+{
+	mgr_eventMessage_t eventMessage;
+	pwrDwnRspTimerActive = false;
+	eventMessage.sysEvent = SYS_EVENT_POWER_SWITCH;
+	if(mgr_eventQueue != NULL)
+	{
+		if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
+		{
+			//this is an error, we should log it.
+		}
+	}
 }
 
 /*	Status Heart beat	*/
