@@ -54,15 +54,12 @@ void sys_systemManagerTask(void* pvParameters)
 	drv_led_init(&ledConfiguration);
 	drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
 	drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_HIGH);
-	playSound(800,900);
-	playSound(800,2500);
-	playSound(800,4000);
 	drv_led_set(DRV_LED_RED,DRV_LED_SOLID);
-	playSound(400,1047);
+	playSound(200,900);
 	drv_led_set(DRV_LED_WHITE,DRV_LED_SOLID);
-	playSound(400,1244);
+	playSound(200,2500);
 	drv_led_set(DRV_LED_BLUE,DRV_LED_SOLID);
-	playSound(400,1568);
+	playSound(200,4000);
 	//drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_LOW);
 	vTaskDelay(200);
 	queue_systemManager = xQueueCreate(10, sizeof(msg_message_t));

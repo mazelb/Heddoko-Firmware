@@ -7,12 +7,10 @@
 #include <asf.h>
 #include <string.h>
 #include "common.h"
-#include "common/include/nm_common.h"
-#include "bus_wrapper/include/nm_bus_wrapper.h"
-#include "driver/source/nmbus.h"
-#include "driver/include/m2m_wifi.h"
+
 #include "net_wirelessNetwork.h"
 #include "dbg_debugManager.h"
+#include "msg_messenger.h"
 #include "socket/include/socket.h"
 /* Global Variables */
 
@@ -43,6 +41,8 @@ static void wifi_cb(uint8 msg_type, void *msg_data);
 static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg);
 uint8_t receiveBuffer[512] = {0};
 	
+net_wifiState_t currentWifiState = NET_WIFI_STATE_DISCONNECTED; 	
+	
 struct sockaddr_in udpAddr = 
 {
 	.sin_family = AF_INET,
@@ -53,6 +53,7 @@ void net_wirelessNetworkTask(void *pvParameters)
 {
 	tstrWifiInitParam param;
 	int8_t ret;
+	currentWifiState = NET_WIFI_STATE_INIT;
 	semaphore_wifiAccess = xSemaphoreCreateMutex();
 	/* Initialize WINC IOs. */
 	nm_bsp_init();
@@ -63,60 +64,63 @@ void net_wirelessNetworkTask(void *pvParameters)
 	param.pfAppWifiCb = wifi_cb;
 	ret = m2m_wifi_init(&param);
 	
-	tstrM2MAPConfig strM2MAPConfig;
-	memset(&strM2MAPConfig, 0x00, sizeof(tstrM2MAPConfig));
-	strcpy((char *)&strM2MAPConfig.au8SSID, "Virus");
-	strM2MAPConfig.u8ListenChannel = 6;
-	strM2MAPConfig.u8SecType = M2M_WIFI_SEC_OPEN;
-	strM2MAPConfig.au8DHCPServerIP[0] = 0xC0; /* 192 */
-	strM2MAPConfig.au8DHCPServerIP[1] = 0xA8; /* 168 */
-	strM2MAPConfig.au8DHCPServerIP[2] = 0x02; /* 2 */
-	strM2MAPConfig.au8DHCPServerIP[3] = 0x01; /* 1 */
-	m2m_wifi_enable_ap(&strM2MAPConfig);	
+	//tstrM2MAPConfig strM2MAPConfig;
+	//memset(&strM2MAPConfig, 0x00, sizeof(tstrM2MAPConfig));
+	//strcpy((char *)&strM2MAPConfig.au8SSID, "Virus");
+	//strM2MAPConfig.u8ListenChannel = 6;
+	//strM2MAPConfig.u8SecType = M2M_WIFI_SEC_OPEN;
+	//strM2MAPConfig.au8DHCPServerIP[0] = 0xC0; /* 192 */
+	//strM2MAPConfig.au8DHCPServerIP[1] = 0xA8; /* 168 */
+	//strM2MAPConfig.au8DHCPServerIP[2] = 0x02; /* 2 */
+	//strM2MAPConfig.au8DHCPServerIP[3] = 0x01; /* 1 */
+	//m2m_wifi_enable_ap(&strM2MAPConfig);	
 	/* Initialize socket interface. */
 	socketInit();
 	registerSocketCallback(socket_cb, NULL);
+	currentWifiState = NET_WIFI_STATE_DISCONNECTED;
 	
 	while(1)
 	{
 		//check the command queue
 		
-		if (wifi_connected == M2M_WIFI_CONNECTED && tcp_server_socket < 0)
-		{
-			struct sockaddr_in addr;
-			if(xSemaphoreTake(semaphore_wifiAccess, 100) == true)
-			{
-				/* Create TCP server socket. */
-				if ((tcp_server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) //SOCK_STREAM
-				{
-					dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create TCP server socket!\r\n");
-					continue;
-				}
-				/* Initialize socket address structure and bind service. */
-				addr.sin_family = AF_INET;
-				addr.sin_port = _htons(6666);
-				addr.sin_addr.s_addr = 0;
-				bind(tcp_server_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
-				/* Create socket for Tx UDP */
-				if (udp_socket < 0) 
-				{
-					uint32 u32EnableCallbacks = 0;
-					if ((udp_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
-					{
-						dbg_printString(DBG_LOG_LEVEL_DEBUG,"Failed to create TX UDP client socket error!\r\n");
-						continue;
-					}
-					setsockopt(udp_socket, SOL_SOCKET, SO_SET_UDP_SEND_CALLBACK, &u32EnableCallbacks , 0);
-				}				
-				xSemaphoreGive(semaphore_wifiAccess);						
-			}			
-		}			
+		//if (wifi_connected == M2M_WIFI_CONNECTED && tcp_server_socket < 0)
+		//{
+			//struct sockaddr_in addr;
+			//if(xSemaphoreTake(semaphore_wifiAccess, 100) == true)
+			//{
+				///* Create TCP server socket. */
+				//if ((tcp_server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) //SOCK_STREAM
+				//{
+					//dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create TCP server socket!\r\n");
+					//continue;
+				//}
+				///* Initialize socket address structure and bind service. */
+				//addr.sin_family = AF_INET;
+				//addr.sin_port = _htons(6666);
+				//addr.sin_addr.s_addr = 0;
+				//bind(tcp_server_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+				///* Create socket for Tx UDP */
+				//if (udp_socket < 0) 
+				//{
+					//uint32 u32EnableCallbacks = 0;
+					//if ((udp_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
+					//{
+						//dbg_printString(DBG_LOG_LEVEL_DEBUG,"Failed to create TX UDP client socket error!\r\n");
+						//continue;
+					//}
+					//setsockopt(udp_socket, SOL_SOCKET, SO_SET_UDP_SEND_CALLBACK, &u32EnableCallbacks , 0);
+				//}				
+				//xSemaphoreGive(semaphore_wifiAccess);						
+			//}			
+		//}			
 		if(xSemaphoreTake(semaphore_wifiAccess, 100) == true)
 		{
 			//handle the wifi process
 			m2m_wifi_handle_events(NULL);
 			xSemaphoreGive(semaphore_wifiAccess);
 		}
+		
+		
 		vTaskDelay(1); 
 	}
 }
@@ -145,9 +149,57 @@ status_t net_sendPacket(uint8_t* packetBuf, uint32_t packetBufLength)
 		}		
 	}
 	
-	
-	
 }
+
+status_t net_connectToNetwork(net_wirelessConfig_t* wirelessConfig)
+{
+	status_t status = STATUS_PASS;
+	sint8 retVal = 0;
+	if(currentWifiState != NET_WIFI_STATE_DISCONNECTED)
+	{
+		//The wifi module must be disconnected before another connection is made
+		return STATUS_FAIL;
+	}
+	//set the state to connecting
+	currentWifiState = NET_WIFI_STATE_CONNECTING;
+	if(xSemaphoreTake(semaphore_wifiAccess, 100) == true)
+	{
+		retVal = m2m_wifi_connect(wirelessConfig->ssid, strlen(wirelessConfig->ssid), wirelessConfig->securityType,
+			wirelessConfig->passphrase, wirelessConfig->channel);
+		if(retVal != M2M_SUCCESS)
+		{
+			dgb_printf(DBG_LOG_LEVEL_ERROR, "Failed to execute wifi connect with error\r\n");
+			currentWifiState = NET_WIFI_STATE_DISCONNECTED;
+			status = STATUS_FAIL;
+		}
+		xSemaphoreGive(semaphore_wifiAccess);
+	}
+	else
+	{
+		status = STATUS_FAIL;
+		currentWifiState = NET_WIFI_STATE_DISCONNECTED;		
+	}
+
+	return status;
+}
+status_t net_disconnectFromNetwork()
+{
+	status_t status = STATUS_PASS;
+	sint8 retVal = 0;
+	if(currentWifiState == NET_WIFI_STATE_CONNECTED || currentWifiState == NET_WIFI_STATE_CONNECTING)
+	{
+		retVal = m2m_wifi_disconnect();
+		if(retVal != M2M_SUCCESS)
+		{
+			status = STATUS_FAIL;
+		}
+	}
+	return status;
+}
+
+
+
+
 //static function declarations
 
 /**
@@ -184,18 +236,19 @@ static void wifi_cb(uint8 msg_type, void *msg_data)
 		if (msg_wifi_state->u8CurrState == M2M_WIFI_CONNECTED) 
 		{
 			/* If Wi-Fi is connected. */
-			dbg_printString(DBG_LOG_LEVEL_ERROR,"Wi-Fi connected.\r\n");
-			m2m_wifi_request_dhcp_client();
+			dbg_printString(DBG_LOG_LEVEL_DEBUG,"Wi-Fi connected.\r\n");
+			currentWifiState = NET_WIFI_STATE_CONNECTED;
 		}
 		 else if (msg_wifi_state->u8CurrState == M2M_WIFI_DISCONNECTED) 
 		 {
 			/* If Wi-Fi is disconnected. */
-			dbg_printString(DBG_LOG_LEVEL_ERROR,"Wi-Fi disconnected!\r\n");
-			wifi_connected = M2M_WIFI_DISCONNECTED;
-			
+			dbg_printString(DBG_LOG_LEVEL_DEBUG,"Wi-Fi disconnected!\r\n");
+			currentWifiState = NET_WIFI_STATE_DISCONNECTED;
 			//m2m_wifi_connect((char *)MAIN_WLAN_SSID, sizeof(MAIN_WLAN_SSID),
 					//MAIN_WLAN_AUTH, (char *)MAIN_WLAN_PSK, M2M_WIFI_CH_ALL);
 		}
+		msg_sendBroadcastMessageSimple(MODULE_WIFI, MSG_TYPE_WIFI_STATE, currentWifiState);
+		
 	}
 	break;
 

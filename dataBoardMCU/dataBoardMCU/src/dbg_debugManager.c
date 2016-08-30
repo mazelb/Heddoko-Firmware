@@ -5,7 +5,9 @@
  *  Author: sean
  */ 
 #include "dbg_debugManager.h"
+#include "asf.h"
 #include "sdc_sdCard.h"
+#include "net_wirelessNetwork.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include "drv_uart.h"
@@ -53,6 +55,14 @@ drv_uart_config_t debugUartConfig =
 		.stopbits   = CONF_STOPBITS
 	},
 	.mode = DRV_UART_MODE_INTERRUPT
+};
+
+net_wirelessConfig_t wirelessConfig = 
+{
+	.securityType = M2M_WIFI_SEC_WPA_PSK,
+	.passphrase = "heddoko123",
+	.ssid = "heddokoTestNet",	
+	.channel = 255, //default to 255 so it searches all channels for the signal	
 };
 
 void dbg_debugTask(void* pvParameters)
@@ -136,6 +146,14 @@ static status_t processCommand(char* command, size_t cmdSize)
 	{
 		printString("Brain pack alive!\r\n");
 	}
+	else if(strncmp(command, "wifiConnect\r\n",cmdSize) == 0)
+	{
+		net_connectToNetwork(&wirelessConfig);
+	}
+	else if(strncmp(command, "wifiDisconnect\r\n",cmdSize) == 0)
+	{
+		net_disconnectFromNetwork();
+	}
 	return status;	
 }
 static void processEvent(msg_message_t* message)
@@ -143,8 +161,14 @@ static void processEvent(msg_message_t* message)
 	switch(message->type)
 	{
 		case MSG_TYPE_ENTERING_NEW_STATE:
-			printString("Received Entering New State event\r\n");
+			printString("Received Entering New State event\r\n");			
 		break; 
+		case MSG_TYPE_SDCARD_STATE:
+			printString("Received Entering SD Card state Event\r\n");
+		break;
+		case MSG_TYPE_WIFI_STATE:
+			printString("Received Wifi state event\r\n");
+		break;
 	}
 } 
 static void printString(char* str)
