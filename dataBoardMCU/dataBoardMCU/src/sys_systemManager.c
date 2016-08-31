@@ -22,10 +22,23 @@
 #include "dbg_debugManager.h"
 #include "net_wirelessNetwork.h"
 #include "ble_bluetoothManager.h"
+#include "drv_piezo.h"
 
 /* Global Variables */
 xQueueHandle queue_systemManager = NULL;
 sys_manager_systemState_t currentState = SYSTEM_STATE_INIT; 
+drv_piezo_noteElement_t noteElementsArray[4] = 
+{
+	{392, 500},
+	{262, 500},
+	{311, 250},
+	{349, 250}
+};
+drv_piezo_notePattern_t notePattern = 
+{
+	.p_noteElementArray = noteElementsArray,
+	.totalArrayElements = 4
+};
 
 /*	Local static functions	*/
 static void sendStateChangeMessage(sys_manager_systemState_t state);
