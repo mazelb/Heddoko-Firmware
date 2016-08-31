@@ -72,7 +72,7 @@ void brd_dataBoardManager(void *pvParameters)
 		puts("Failed to create data board terminal message queue\r\n");		// TODO: puts will be removed after adding in debug prints
 	}
 	
-	// create a timer for the timeout on power down resp
+	// create a timer for timeout on power down resp
 	pwrDwnRspTimeoutTimer = xTimerCreate("TT", (DATA_BOARD_PWR_DWN_RESP_TIMEOUT / portTICK_RATE_MS), pdFALSE, NULL, vPwrDwnRspTimerCallback);
 	if (pwrDwnRspTimeoutTimer == NULL)
 	{
@@ -200,11 +200,10 @@ void brd_sendPowerDownReq()
 	pkt_sendRawPacket(dataBoardPortConfig, response, 0x02);
 	// put sensor handler to sleep
 	sen_preSleepProcess();
-	// set the response timer 
-	if (!pwrDwnRspTimerActive)
+	// set the response timer
+	if (xTimerIsTimerActive(pwrDwnRspTimeoutTimer) == pdFALSE)
 	{
 		xTimerReset(pwrDwnRspTimeoutTimer, 0);
-		pwrDwnRspTimerActive = true;
 	}
 }
 
@@ -376,7 +375,6 @@ static void sendStatus(subp_status_t status)
 void vPwrDwnRspTimerCallback(xTimerHandle xTimer)
 {
 	mgr_eventMessage_t eventMessage;
-	pwrDwnRspTimerActive = false;
 	eventMessage.sysEvent = SYS_EVENT_POWER_SWITCH;
 	if(mgr_eventQueue != NULL)
 	{

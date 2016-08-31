@@ -68,7 +68,7 @@ void dat_task_dataRouter(void *pvParameters)
 			if (xQueueReceive(queue_dataBoard, dataBoardRxBuffer, 10) == pdPASS)
 			{
 				// data received should be passed to the USB
-				dat_sendStringToUsb(dataBoardRxBuffer);	// TODO: verify that it is a string
+				dat_sendStringToUsb(dataBoardRxBuffer);	// TODO: can we verify that it is a string
 			}
 		}
 						
