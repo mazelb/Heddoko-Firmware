@@ -13,6 +13,8 @@
 #include <sam4sa16b.h>
 #include "common.h"
 
+#define ENABLE_TC_DEBUG_PRINTS
+
 #define TC_ALL_INTERRUPT_MASK	0xff
 //! [tc_define_peripheral]
 /* Use TC Peripheral 0. */
@@ -22,16 +24,16 @@
 
 //! [tc_define_ch1]
 /* Configure TC0 channel 1 as waveform output. */
-#define TC_CHANNEL_WAVEFORM 1
-#define ID_TC_WAVEFORM      ID_TC1
+#define DRV_TC_CHANNEL_WAVEFORM 1
+#define DRV_TC_ID_TC_WAVEFORM      ID_TC1
 #define PIN_TC_WAVEFORM     PIN_TC0_TIOA1
 #define PIN_TC_WAVEFORM_MUX PIN_TC0_TIOA1_MUX
 //! [tc_define_ch1]
 
 //! [tc_define_ch2]
 /* Configure TC0 channel 2 as capture input. */
-#define TC_CHANNEL_CAPTURE 2
-#define ID_TC_CAPTURE ID_TC2
+#define DRV_TC_CHANNEL_CAPTURE 2
+#define DRV_TC_ID_TC_CAPTURE ID_TC2
 #define PIN_TC_CAPTURE PIN_TC0_TIOA2
 #define PIN_TC_CAPTURE_MUX PIN_TC0_TIOA2_MUX
 //! [tc_define_ch2]
@@ -88,6 +90,16 @@
 #define PIN_TC1_TIOB5			PIO_PC30_IDX
 #define PIN_TC1_TIOB5_FLAGS		(PIO_PERIPH_B | PIO_DEFAULT)
 
+/*	Interrupt sources	*/
+#define DRV_TC_COVFS TC_IER_COVFS // Counter Overflow
+#define DRV_TC_LOVRS TC_IER_LOVRS // Load Overrun
+#define DRV_TC_CPAS  TC_IER_CPAS // RA Compare
+#define DRV_TC_CPBS  TC_IER_CPBS // RB Compare
+#define DRV_TC_CPCS  TC_IER_CPCS // RC Compare
+#define DRV_TC_LDRAS TC_IER_LDRAS // RA Loading
+#define DRV_TC_LDRBS TC_IER_LDRBS // RB Loading
+#define DRV_TC_ETRGS TC_IER_ETRGS // External Trigger
+
 typedef void (* voidFunction_t)(void);
 
 typedef enum
@@ -114,8 +126,9 @@ Status_t drv_tc_init	(drv_tc_config_t *tc_config);
 Status_t drv_tc_config	(drv_tc_config_t *tc_config);
 Status_t drv_tc_start	(drv_tc_config_t *tc_config);
 Status_t drv_tc_stop	(drv_tc_config_t *tc_config);
+Status_t drv_tc_changeFrequency		(drv_tc_config_t *tc_config, uint16_t frequency);
 Status_t drv_tc_enableInterrupt		(drv_tc_config_t *tc_config);
 Status_t drv_tc_disableInterrupt	(drv_tc_config_t *tc_config);
-Status_t drv_tc_changeFrequency		(drv_tc_config_t *tc_config, uint16_t frequency);
+Status_t drv_tc_isInterruptGenerated (drv_tc_config_t *tc_config, uint32_t interruptSource);
 
 #endif /* DRV_TC_H_ */

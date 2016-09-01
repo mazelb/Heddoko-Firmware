@@ -27,6 +27,10 @@
 /* Global Variables */
 xQueueHandle queue_systemManager = NULL;
 sys_manager_systemState_t currentState = SYSTEM_STATE_INIT; 
+drv_piezo_config_t piezoConfig = 
+{
+	.gpioPin = DRV_GPIO_PIN_PIEZO_OUT
+};
 drv_piezo_noteElement_t noteElementsArray[4] = 
 {
 	{392, 500},

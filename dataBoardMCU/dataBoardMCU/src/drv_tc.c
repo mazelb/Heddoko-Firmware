@@ -93,17 +93,21 @@ Status_t drv_tc_config(drv_tc_config_t *tc_config)
 		tc_disable_interrupt(tc_config->p_tc, tc_config->tc_channelNumber, TC_ALL_INTERRUPT_MASK);
 		
 		status = tc_find_mck_divisor(tc_config->frequency, sysclk_get_cpu_hz(), &clk_divisor, &clk_index, sysclk_get_main_hz());
+		#ifdef ENABLE_TC_DEBUG_PRINTS
 		printf("Frequency: %d\r\n Divisor: %d\r\n Clock index: %d\r\n", tc_config->frequency, clk_divisor, clk_index);
+		#endif
 		
 		if (status == 1)
 		{
 			tc_init(tc_config->p_tc, tc_config->tc_channelNumber, (clk_index << 0) | TC_CMR_WAVE | tc_config->channel_mode);
 			
-			rc = ((sysclk_get_peripheral_bus_hz(TC) - 1) / (2*clk_divisor) /tc_config->frequency);			printf("Rc value set to be: %d\r\n", rc);			tc_write_rc(TC, TC_CHANNEL_WAVEFORM, rc);
+			rc = ((sysclk_get_peripheral_bus_hz(TC) - 1) / (2*clk_divisor) /tc_config->frequency);			#ifdef ENABLE_TC_DEBUG_PRINTS			printf("Rc value set to be: %d\r\n", rc);			#endif			tc_write_rc(TC, DRV_TC_CHANNEL_WAVEFORM, rc);
 			
 			ra = ((100 - tc_config->duty_cycle)*rc)/100;
+			#ifdef ENABLE_TC_DEBUG_PRINTS
 			printf("Ra value set to be: %d\r\n", ra);
-			tc_write_ra(TC, TC_CHANNEL_WAVEFORM, ra);
+			#endif
+			tc_write_ra(TC, DRV_TC_CHANNEL_WAVEFORM, ra);
 			
 			if (tc_config->enable_interrupt)
 			{
@@ -189,4 +193,13 @@ Status_t drv_tc_changeFrequency(drv_tc_config_t *tc_config, uint16_t frequency)
 {
 	tc_config->frequency = frequency;
 	drv_tc_config(tc_config);
+}
+
+Status_t drv_tc_isInterruptGenerated(drv_tc_config_t *tc_config, uint32_t interruptSource)
+{
+	if ((tc_get_status(tc_config->p_tc, tc_config->tc_channelNumber) & interruptSource) == interruptSource)
+	{
+		return STATUS_PASS;
+	}
+	return STATUS_FAIL;
 }

@@ -11,12 +11,12 @@ drv_piezo_config_t* p_PeizoConfig;	// pointer to the external piezo configuratio
 drv_tc_config_t peizoTcConfig =
 {
 	.p_tc = TC0,	// use Timer 0
-	.tc_channelId = ID_TC1,	// channel 1 ID of timer 0
-	.tc_channelNumber = 1,	// channel number 1 for timer 0
+	.tc_channelId = DRV_TC_ID_TC_WAVEFORM,	// channel 1 ID of timer 0
+	.tc_channelNumber = DRV_TC_CHANNEL_WAVEFORM,	// channel number 1 for timer 0
 	.tc_mode = DRV_TC_WAVEFORM,	// Waveform output
 	.tc_handler = TC1_Handler,	// interrupt handler for the timer counter
 	.enable_interrupt = true,
-	.interrupt_sources = TC_IER_CPAS,	// interrupt on RA compare
+	.interrupt_sources = DRV_TC_CPAS,	// interrupt on RA compare
 	.channel_mode = (TC_CMR_CPCTRG | TC_CMR_ACPC_TOGGLE | TC_CMR_WAVSEL_UP), //use UPDOWN mode for duty cycle
 	.frequency = 5000,
 	.duty_cycle = NULL
@@ -24,17 +24,17 @@ drv_tc_config_t peizoTcConfig =
 
 void TC1_Handler()
 {
-	if ((tc_get_status(TC, TC_CHANNEL_WAVEFORM) & TC_SR_CPAS) == TC_SR_CPAS)	// RA Compare Status (cleared on read)
+	if (drv_tc_isInterruptGenerated(&peizoTcConfig, DRV_TC_CPAS) == STATUS_PASS)	// RA Compare Status (cleared on read)
 	{
-		ioport_toggle_pin_level(p_PeizoConfig->gpioPin);
+		drv_gpio_togglePin(p_PeizoConfig->gpioPin);
 	}
 	
-	if ((tc_get_status(TC, TC_CHANNEL_WAVEFORM) & TC_SR_CPCS) == TC_SR_CPCS)	// RC Compare Status (cleared on read)
+	if ((tc_get_status(TC, DRV_TC_CHANNEL_WAVEFORM) & TC_SR_CPCS) == TC_SR_CPCS)	// RC Compare Status (cleared on read)
 	{
 		// 
 	}
 	
-	if ((tc_get_status(TC, TC_CHANNEL_WAVEFORM) & TC_SR_LOVRS) == TC_SR_LOVRS)	// Load Overrun Status (cleared on read)
+	if ((tc_get_status(TC, DRV_TC_CHANNEL_WAVEFORM) & TC_SR_LOVRS) == TC_SR_LOVRS)	// Load Overrun Status (cleared on read)
 	{
 		//
 	}
