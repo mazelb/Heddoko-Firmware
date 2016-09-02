@@ -173,7 +173,7 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 					{					
 						sdc_writeToFile(&dataLogFile, serializedDataBuffer, serializedLength); 
 					}
-					net_sendPacket(serializedDataBuffer, serializedLength);
+					//net_sendPacket(serializedDataBuffer, serializedLength);
 				}
 				if(rawFullFrame->timeStamp > lastTimeStamp)
 				{					

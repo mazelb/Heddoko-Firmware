@@ -164,7 +164,7 @@ static void processEvent(msg_message_t* message)
 			printString("Received Entering New State event\r\n");			
 		break; 
 		case MSG_TYPE_SDCARD_STATE:
-			printString("Received Entering SD Card state Event\r\n");
+			printString("Received SD Card state Event\r\n");
 		break;
 		case MSG_TYPE_WIFI_STATE:
 			printString("Received Wifi state event\r\n");

@@ -6,18 +6,34 @@
  */ 
 #include <asf.h>
 #include <string.h>
-#include "common.h"
 
 #include "net_wirelessNetwork.h"
 #include "dbg_debugManager.h"
-#include "msg_messenger.h"
-#include "socket/include/socket.h"
+#include "heddokoPacket.pb-c.h"
+#include "pkt_packetParser.h"
+
 /* Global Variables */
 
 /*	Static function forward declarations	*/
-
+static void wifi_cb(uint8 msg_type, void *msg_data);
+static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg);
+static void processEvent(msg_message_t* message);
+static status_t registerSocket(net_socketConfig_t* socket);
+static status_t deRegisterSocket(net_socketConfig_t* socket);
+static status_t sendAdvertisingPacket(net_socketConfig_t* advertisingSocket);
 /*	Local variables	*/
-
+xSemaphoreHandle semaphore_wifiAccess = NULL;
+xQueueHandle queue_netManager = NULL;
+net_socketConfig_t* registeredSockets[MAX_NUMBER_OF_SOCKETS] = {0};
+//advertising socket lives here. 
+net_socketConfig_t advertisingSocket =
+{
+	.endpoint.sin_addr = 0xFFFFFFFF, //broadcast Address
+	.endpoint.sin_family = AF_INET,
+	.endpoint.sin_port = _htons(6668),
+	.sourceModule = MODULE_WIFI
+};
+	
 /*	Extern functions	*/
 
 /*	Extern variables	*/
@@ -26,7 +42,7 @@
 
 
 
-xSemaphoreHandle semaphore_wifiAccess = NULL;
+
 static uint8_t wifi_connected = M2M_WIFI_DISCONNECTED;
 static uint8_t tcp_connected = 0;
 /** TCP server socket. */
@@ -37,8 +53,7 @@ static SOCKET tcp_client_socket = -1;
 //UDP socket
 static SOCKET udp_socket = -1;
 //static function forward declarations
-static void wifi_cb(uint8 msg_type, void *msg_data);
-static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg);
+
 uint8_t receiveBuffer[512] = {0};
 	
 net_wifiState_t currentWifiState = NET_WIFI_STATE_DISCONNECTED; 	
@@ -53,8 +68,15 @@ void net_wirelessNetworkTask(void *pvParameters)
 {
 	tstrWifiInitParam param;
 	int8_t ret;
+	msg_message_t eventMessage;
 	currentWifiState = NET_WIFI_STATE_INIT;
 	semaphore_wifiAccess = xSemaphoreCreateMutex();
+	queue_netManager = xQueueCreate(10, sizeof(msg_message_t));
+	if (queue_netManager != 0)
+	{
+		msg_registerForMessages(MODULE_WIFI, 0xff, queue_netManager);
+	}	
+	uint32_t advertisingPacketLastSentTime = xTaskGetTickCount(); 
 	/* Initialize WINC IOs. */
 	nm_bsp_init();
 	/* Initialize Wi-Fi parameters structure. */
@@ -63,6 +85,8 @@ void net_wirelessNetworkTask(void *pvParameters)
 	/* Initialize Wi-Fi driver with data and status callbacks. */
 	param.pfAppWifiCb = wifi_cb;
 	ret = m2m_wifi_init(&param);
+	
+	
 	
 	//tstrM2MAPConfig strM2MAPConfig;
 	//memset(&strM2MAPConfig, 0x00, sizeof(tstrM2MAPConfig));
@@ -119,7 +143,19 @@ void net_wirelessNetworkTask(void *pvParameters)
 			m2m_wifi_handle_events(NULL);
 			xSemaphoreGive(semaphore_wifiAccess);
 		}
+		if(xQueueReceive(queue_netManager, &(eventMessage), 1) == true)
+		{
+			processEvent(&eventMessage);
+		}
 		
+		if(currentWifiState == NET_WIFI_STATE_CONNECTED)
+		{
+			if(xTaskGetTickCount() > (advertisingPacketLastSentTime +5000))
+			{
+				advertisingPacketLastSentTime = xTaskGetTickCount();
+				sendAdvertisingPacket(&advertisingSocket);
+			}
+		}
 		
 		vTaskDelay(1); 
 	}
@@ -136,7 +172,7 @@ status_t net_sendPacket(uint8_t* packetBuf, uint32_t packetBufLength)
 			xSemaphoreGive(semaphore_wifiAccess);					
 		}
 	}
-	else if(wifi_connected == 1 && udp_socket > -1)
+	else if(udp_socket > -1)
 	{
 		if(xSemaphoreTake(semaphore_wifiAccess, 100) == true)
 		{
@@ -154,7 +190,7 @@ status_t net_sendPacket(uint8_t* packetBuf, uint32_t packetBufLength)
 status_t net_connectToNetwork(net_wirelessConfig_t* wirelessConfig)
 {
 	status_t status = STATUS_PASS;
-	sint8 retVal = 0;
+	int8_t retVal = 0;
 	if(currentWifiState != NET_WIFI_STATE_DISCONNECTED)
 	{
 		//The wifi module must be disconnected before another connection is made
@@ -185,7 +221,7 @@ status_t net_connectToNetwork(net_wirelessConfig_t* wirelessConfig)
 status_t net_disconnectFromNetwork()
 {
 	status_t status = STATUS_PASS;
-	sint8 retVal = 0;
+	int8_t retVal = 0;
 	if(currentWifiState == NET_WIFI_STATE_CONNECTED || currentWifiState == NET_WIFI_STATE_CONNECTING)
 	{
 		retVal = m2m_wifi_disconnect();
@@ -197,7 +233,170 @@ status_t net_disconnectFromNetwork()
 	return status;
 }
 
+status_t net_createUdpSocket(net_socketConfig_t* sock, size_t bufferSize)
+{
+	status_t status = STATUS_PASS;	
+	uint32_t enableCallBacks = 0;
+	//make sure we're connected to the wifi network
+	if(currentWifiState != NET_WIFI_STATE_CONNECTED)
+	{
+		return STATUS_FAIL;
+	}
+	if(xSemaphoreTake(semaphore_wifiAccess, 50) == true)
+	{	
+		//register the socket with the handler
+		//this must be done first to make sure there's room in the array.
+		status = registerSocket(sock);
+		if(status == STATUS_PASS)
+		{
+			//create the socket
+			if ((sock->socketId = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+			{
+				dbg_printString(DBG_LOG_LEVEL_DEBUG,"Failed to create UDP client socket error!\r\n");
+				status = STATUS_FAIL;
+			}
+			else
+			{
+				//set the socket options, we don't want call backs on the UDP streaming socket. 
+				setsockopt(sock->socketId, SOL_SOCKET, SO_SET_UDP_SEND_CALLBACK, &enableCallBacks , 0);
+				//allocate a buffer for the socket. 
+				sock->buffer = malloc(bufferSize); 
+				sock->bufferLength = bufferSize;
+				if(sock->buffer == NULL)
+				{
+					status = STATUS_FAIL;
+				}
+			}
+			if(status == STATUS_FAIL)
+			{
+				//remove the socket from the handler list.
+				deRegisterSocket(sock);				
+			}		
+		}
+		xSemaphoreGive(semaphore_wifiAccess);
+	}
+	return status;
+}
+status_t net_sendUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength)
+{
+	status_t status = STATUS_FAIL;	
+	
+	if(currentWifiState == NET_WIFI_STATE_CONNECTED && sock->socketId > -1)
+	{
+		//TODO: add validation of socket endpoint
+		//don't wait very long for the wifi access, only 5ms for now. 		
+		if(xSemaphoreTake(semaphore_wifiAccess, 5) == true)
+		{
+			int ret = sendto(sock->socketId, packetBuf, packetBufLength, 0, (struct sockaddr *)&sock->endpoint, sizeof(struct sockaddr));
+			if (ret == M2M_SUCCESS)
+			{
+				status = STATUS_PASS;
+			}
+			else
+			{
+				dbg_printString(DBG_LOG_LEVEL_ERROR,"main: failed to send packet!\r\n");
+			}
+			xSemaphoreGive(semaphore_wifiAccess);
+		}
+	}
+	return status;	
+}
+status_t net_closeSocket(net_socketConfig_t* sock)
+{
+	status_t status = STATUS_PASS;	
+	if(sock->socketId < 0)
+	{
+		return STATUS_FAIL;
+	}
+	if(xSemaphoreTake(semaphore_wifiAccess, 50) == true)
+	{
+		deRegisterSocket(sock);
+		close(sock->socketId);	
+		if(sock->buffer != NULL)
+		{
+			free(sock->buffer);
+		}
+		sock->socketId = -1; 	
+		xSemaphoreGive(semaphore_wifiAccess);	
+	}
+	return status;	
+}
 
+static void processEvent(msg_message_t* message)
+{
+	switch(message->type)
+	{
+		case MSG_TYPE_WIFI_STATE:
+			if(message->data == NET_WIFI_STATE_CONNECTED)
+			{
+				dbg_printString(DBG_LOG_LEVEL_DEBUG, "Creating advertising socket\r\n");
+				net_createUdpSocket(&advertisingSocket, 255); 
+			}
+			else if(message->data == NET_WIFI_STATE_DISCONNECTED)
+			{
+				dbg_printString(DBG_LOG_LEVEL_DEBUG, "Closing advertising socket\r\n");				
+				net_closeSocket(&advertisingSocket);
+			}			
+		break;
+		default:
+		break;
+	}
+}
+
+static status_t registerSocket(net_socketConfig_t* newSocket)
+{
+	status_t status = STATUS_FAIL;
+	int i = 0;
+	//go through the registered socket list and look for an empty location.
+	for(i=0;i<MAX_NUMBER_OF_SOCKETS;i++)
+	{
+		if(registeredSockets[i] == NULL)
+		{
+			registeredSockets[i] = newSocket;
+			status = STATUS_PASS;
+		}
+	}
+	return status;
+}
+
+static status_t deRegisterSocket(net_socketConfig_t* socket)
+{
+	status_t status = STATUS_FAIL;
+	int i = 0;
+	//find the socket in the list and set it to NULL to clear it.  
+	for(i=0;i<MAX_NUMBER_OF_SOCKETS;i++)
+	{		
+		if(registeredSockets[i] == socket)
+		{
+			registeredSockets[i] = NULL;
+			status = STATUS_PASS;
+		}		
+	}
+	return status;
+}
+
+static status_t sendAdvertisingPacket(net_socketConfig_t* advertisingSocket)
+{
+	char firmwareVersion[] = "V2.0"; 
+	char serialNumber[] = "BP00001";
+	uint8_t serializedPacket[255]; 	
+	Heddoko__Packet advertisingProtoPacket;
+	heddoko__packet__init(&advertisingProtoPacket);
+	//TODO Fill this information with the real stuff that is sent on boot. 
+	advertisingProtoPacket.type = HEDDOKO__PACKET_TYPE__AdvertisingPacket;
+	advertisingProtoPacket.firmwareversion = firmwareVersion; 
+	advertisingProtoPacket.serialnumber = serialNumber;
+	advertisingProtoPacket.has_configurationport = true;
+	advertisingProtoPacket.configurationport = 6666; 
+	serializedPacket[0] = PACKET_TYPE_PROTO_BUF;
+	size_t packetLength = heddoko__packet__pack(&advertisingProtoPacket, serializedPacket+1); //increment packet pointer by one for packet type
+	packetLength += 1; //increment length to account for the packet type.
+	uint16_t encodedLength = 0;
+	//encode the serialized packet
+	pkt_serializeRawPacket(advertisingSocket->buffer, advertisingSocket->bufferLength, &encodedLength, 
+		serializedPacket, packetLength);
+	net_sendUdpPacket(advertisingSocket,advertisingSocket->buffer, encodedLength); 	
+}
 
 
 //static function declarations
@@ -284,18 +483,19 @@ static void wifi_cb(uint8 msg_type, void *msg_data)
 static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 {
 	
-	if(sock == udp_socket)
+	int i =0; 
+	net_socketConfig_t* socketConfig = NULL; 
+	//go through all socket configurations and find which one is used for this socket.
+	for(int i = 0; i < MAX_NUMBER_OF_SOCKETS; i++)
 	{
-		if (u8Msg == SOCKET_MSG_SENDTO) 
+		if(registeredSockets[i]->socketId == sock)
 		{
-			dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: sendto success!\r\n");
-			//recvfrom(rx_socket, gau8SocketTestBuffer, MAIN_WIFI_M2M_BUFFER_SIZE, 0);
+			socketConfig = registeredSockets[i];	
 		}		
 	}
-	else
+
+	switch (u8Msg) 
 	{
-		switch (u8Msg) 
-		{
 		/* Socket bind. */
 		case SOCKET_MSG_BIND:
 		{
@@ -319,7 +519,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			if (pstrListen && pstrListen->status == 0) 
 			{
 				dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: listen success.\r\n");
-				accept(tcp_server_socket, NULL, NULL);
+				accept(sock, NULL, NULL);
 			}
 			else 
 			{
@@ -339,7 +539,9 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 				tcp_client_socket = pstrAccept->sock;
 				tcp_connected = 1;
 				recv(tcp_client_socket, receiveBuffer, sizeof(receiveBuffer), 0);
-			} else {
+			} 
+			else 
+			{
 				dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: accept error!\r\n");
 				close(tcp_server_socket);
 				tcp_server_socket = -1;
@@ -369,7 +571,12 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			recv(tcp_client_socket, receiveBuffer, sizeof(receiveBuffer), 0);
 		}
 		break;
-
+		/* Message send to */
+		case SOCKET_MSG_SENDTO:
+		{
+			dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: sendto success!\r\n");
+		}
+		break;
 		/* Message receive. */
 		case SOCKET_MSG_RECV:
 		{
@@ -399,9 +606,10 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			recv(tcp_client_socket, receiveBuffer, sizeof(receiveBuffer), 0);
 		}
 		break;
+		
 
 		default:
 			break;
-		}
 	}
+	
 }
