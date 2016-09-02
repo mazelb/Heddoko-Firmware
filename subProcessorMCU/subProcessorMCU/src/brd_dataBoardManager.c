@@ -22,7 +22,7 @@
 #define DATA_BOARD_STATUS_MSG_DELAY		30	// actual delay is 200 times this value in milliseconds
 #define DATA_BOARD_TERMINAL_MSG_LENGTH	200 // the maximum length of the string that can go out in OUTPUT_DATA message
 #define DATA_BOARD_TERMINAL_MSG_FREQ	2	// this also controls the size of queue to data router
-#define DATA_BOARD_PWR_DWN_RESP_TIMEOUT	(30* SECONDS)
+#define DATA_BOARD_PWR_DWN_RESP_TIMEOUT	(5* SECONDS)
 
 /*	Static functions forward declaration	*/
 static void processPacket(pkt_rawPacket_t *packet);

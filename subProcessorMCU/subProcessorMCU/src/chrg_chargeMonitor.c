@@ -119,7 +119,21 @@ void chrg_task_chargeMonitor(void *pvParameters)
 		if(powerButtonLowCount == 10) //approximately 3.5 seconds
 		{			
 			//should be we reset the power board? or just power off
-			brd_sendPowerDownReq();	// send command to the data board manager
+			if (mgr_getState() == SYS_STATE_POWER_ON)
+			{
+				brd_sendPowerDownReq();	// send command to the data board manager
+			}
+			else
+			{
+				eventMessage.sysEvent = SYS_EVENT_POWER_SWITCH;
+				if(mgr_eventQueue != NULL)
+				{
+					if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
+					{
+						//this is an error, we should log it.
+					}
+				}
+			}
 		}
 				
 		//check if the state is new

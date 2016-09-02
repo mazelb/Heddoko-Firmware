@@ -457,3 +457,8 @@ void clearAllEvents()
 		}
 	}		
 }
+
+mgr_systemStates_t mgr_getState()
+{
+	return currentSystemState;
+}
