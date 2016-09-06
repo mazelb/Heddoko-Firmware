@@ -15,14 +15,14 @@
 
 typedef struct  
 {
-	drv_gpio_pins_t gpioPin;	// pin connected to the peizo buzzer
+	drv_gpio_pins_t gpioPin;	// pin connected to the piezo buzzer
 	// add more stuff as required
 }drv_piezo_config_t;
 
 typedef struct 
 {
-	uint16_t noteFrequency;
-	uint16_t postNoteDelay;	// delay in ms after the note is played
+	uint16_t noteFrequency;	// NOTE: use 0Hz for no tone
+	uint16_t postNoteDelay;	// length of the note (how long should it play!)
 }drv_piezo_noteElement_t;
 
 typedef struct  

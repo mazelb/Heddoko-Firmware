@@ -7,6 +7,8 @@
 
 #include "drv_tc.h"
 
+voidFunction_t vCallbackTable[6] = {NULL};
+
 void configureTio(drv_tc_config_t* tc_config)
 {
 	uint32_t channelB_present = 0, channelA_present = 0;
@@ -22,44 +24,134 @@ void configureTio(drv_tc_config_t* tc_config)
 	channelA_present = tc_config->channel_mode & (TC_CMR_ACPA_Msk | TC_CMR_ACPC_Msk | TC_CMR_AEEVT_Msk | TC_CMR_ASWTRG_Msk);
 	channelB_present = tc_config->channel_mode & (TC_CMR_BCPB_Msk | TC_CMR_BCPC_Msk | TC_CMR_BEEVT_Msk | TC_CMR_BSWTRG_Msk);
 	
-	switch (tc_config->tc_channelId)
+	switch (tc_config->tc_channelNumber)
 	{
-		case ID_TC0:
+		case DRV_TC_TC0_CH0:
 			if (channelA_present != NULL)
 				gpio_configure_pin(PIN_TC0_TIOA0, PIN_TC0_TIOA0_FLAGS);
 			if (channelB_present != NULL)
 				gpio_configure_pin(PIN_TC0_TIOB0, PIN_TC0_TIOB0_FLAGS);
 		break;
-		case ID_TC1:
+		
+		case DRV_TC_TC0_CH1:
 			if (channelA_present != NULL)
 				gpio_configure_pin(PIN_TC0_TIOA1, PIN_TC0_TIOA1_FLAGS);
 			if (channelB_present != NULL)
 				gpio_configure_pin(PIN_TC0_TIOB1, PIN_TC0_TIOB1_FLAGS);
 		break;
-		case ID_TC2:
+		
+		case DRV_TC_TC0_CH2:
 			if (channelA_present != NULL)
 				gpio_configure_pin(PIN_TC0_TIOA2, PIN_TC0_TIOA2_FLAGS);
 			if (channelB_present != NULL)
 				gpio_configure_pin(PIN_TC0_TIOB2, PIN_TC0_TIOB2_FLAGS);
 		break;
-		//case ID_TC3:
-			//if (channelA_present != NULL)
-				//gpio_configure_pin(PIN_TC1_TIOA3, PIN_TC1_TIOA3_FLAGS);
-			//if (channelB_present != NULL)
-				//gpio_configure_pin(PIN_TC1_TIOB3, PIN_TC1_TIOB3_FLAGS);
-		//break;
-		//case ID_TC4:
-			//if (channelA_present != NULL)
-				//gpio_configure_pin(PIN_TC1_TIOA4, PIN_TC1_TIOA4_FLAGS);
-			//if (channelB_present != NULL)
-				//gpio_configure_pin(PIN_TC1_TIOB4, PIN_TC1_TIOB4_FLAGS);
-		//break;
-		//case ID_TC5:
-			//if (channelA_present != NULL)
-				//gpio_configure_pin(PIN_TC1_TIOA5, PIN_TC1_TIOA5_FLAGS);
-			//if (channelB_present != NULL)
-				//gpio_configure_pin(PIN_TC1_TIOB5, PIN_TC1_TIOB5_FLAGS);
-		//break;
+		
+		#ifdef ID_TC3
+		case DRV_TC_TC1_CH3:	// TODO: possibly cover it with the ifdef of the the same (ID_TC3).
+			if (channelA_present != NULL)
+			gpio_configure_pin(PIN_TC1_TIOA3, PIN_TC1_TIOA3_FLAGS);
+			if (channelB_present != NULL)
+			gpio_configure_pin(PIN_TC1_TIOB3, PIN_TC1_TIOB3_FLAGS);
+		break;
+		#endif
+		
+		#ifdef ID_TC4
+		case DRV_TC_TC1_CH4:
+			if (channelA_present != NULL)
+			gpio_configure_pin(PIN_TC1_TIOA4, PIN_TC1_TIOA4_FLAGS);
+			if (channelB_present != NULL)
+			gpio_configure_pin(PIN_TC1_TIOB4, PIN_TC1_TIOB4_FLAGS);
+		break;
+		#endif
+		
+		#ifdef ID_TC5
+		case DRV_TC_TC1_CH5:
+			if (channelA_present != NULL)
+			gpio_configure_pin(PIN_TC1_TIOA5, PIN_TC1_TIOA5_FLAGS);
+			if (channelB_present != NULL)
+			gpio_configure_pin(PIN_TC1_TIOB5, PIN_TC1_TIOB5_FLAGS);
+		break;
+		#endif
+		
+		default:
+		break;
+	}
+}
+
+void assign_interruptHandler(drv_tc_config_t *tc_config)
+{
+	switch (tc_config->tc_channelNumber)
+	{
+		case DRV_TC_TC0_CH0:
+			vCallbackTable[0] = tc_config->tc_handler;
+		break;
+		
+		case DRV_TC_TC0_CH1:
+			vCallbackTable[1] = tc_config->tc_handler;
+		break;
+		
+		case DRV_TC_TC0_CH2:
+			vCallbackTable[2] = tc_config->tc_handler;
+		break;
+		
+		#ifdef ID_TC3
+		case DRV_TC_TC1_CH3:
+			vCallbackTable[3] = tc_config->tc_handler;
+		break;
+		#endif
+		
+		#ifdef ID_TC4
+		case DRV_TC_TC1_CH4:
+			vCallbackTable[4] = tc_config->tc_handler;
+		break;
+		#endif
+		
+		#ifdef ID_TC5
+		case DRV_TC_TC1_CH5:
+			vCallbackTable[5] = tc_config->tc_handler;
+		break;
+		#endif
+		
+		default:
+		break;
+	}
+}
+
+void enablePeripheralClock(drv_tc_config_t *tc_config)
+{
+	switch (tc_config->tc_channelNumber)
+	{
+		case DRV_TC_TC0_CH0:
+			sysclk_enable_peripheral_clock(ID_TC0);
+		break;
+		
+		case DRV_TC_TC0_CH1:
+			sysclk_enable_peripheral_clock(ID_TC1);
+		break;
+		
+		case DRV_TC_TC0_CH2:
+			sysclk_enable_peripheral_clock(ID_TC2);
+		break;
+		
+		#ifdef ID_TC3
+		case DRV_TC_TC1_CH3:
+			sysclk_enable_peripheral_clock(ID_TC3);
+		break;
+		#endif
+	
+		#ifdef ID_TC4
+		case DRV_TC_TC1_CH4:
+			sysclk_enable_peripheral_clock(ID_TC4);
+		break;
+		#endif
+	
+		#ifdef ID_TC5
+		case DRV_TC_TC1_CH5:
+			sysclk_enable_peripheral_clock(ID_TC5);
+		break;
+		#endif
+	
 		default:
 		break;
 	}
@@ -72,19 +164,19 @@ Status_t drv_tc_init(drv_tc_config_t *tc_config)
 	tc_disable_interrupt(tc_config->p_tc, tc_config->tc_channelNumber, TC_ALL_INTERRUPT_MASK);
 	
 	//now configure the module
-	sysclk_enable_peripheral_clock(tc_config->tc_channelId);
+	enablePeripheralClock(tc_config);
 	configureTio(tc_config);
 	if ((tc_config->enable_interrupt) && (tc_config->tc_handler != NULL))
 	{
-		tc_config->tc_handler = (void *) TC_Handler;
+		assign_interruptHandler(tc_config);
 	}
 	return 1;
 }
 
 Status_t drv_tc_config(drv_tc_config_t *tc_config)
 {
-	uint16_t ra = 0, rb = 0, rc = 0;
-	uint32_t clk_divisor = 0, clk_index = 0;
+	uint32_t ra = 0, rb = 0, rc = 0;
+	uint32_t clk_divisor = 0, clk_index = 0, timerClock = 0;
 	uint32_t status = 0;
 	
 	if (tc_config->tc_mode == DRV_TC_WAVEFORM)
@@ -92,7 +184,7 @@ Status_t drv_tc_config(drv_tc_config_t *tc_config)
 		tc_stop(tc_config->p_tc, tc_config->tc_channelNumber);
 		tc_disable_interrupt(tc_config->p_tc, tc_config->tc_channelNumber, TC_ALL_INTERRUPT_MASK);
 		
-		status = tc_find_mck_divisor(tc_config->frequency, sysclk_get_cpu_hz(), &clk_divisor, &clk_index, sysclk_get_main_hz());
+		status = tc_find_mck_divisor(tc_config->frequency, sysclk_get_cpu_hz(), &clk_divisor, &clk_index, sysclk_get_cpu_hz());	// sysclk_get_main_hz
 		#ifdef ENABLE_TC_DEBUG_PRINTS
 		printf("Frequency: %d\r\n Divisor: %d\r\n Clock index: %d\r\n", tc_config->frequency, clk_divisor, clk_index);
 		#endif
@@ -101,13 +193,13 @@ Status_t drv_tc_config(drv_tc_config_t *tc_config)
 		{
 			tc_init(tc_config->p_tc, tc_config->tc_channelNumber, (clk_index << 0) | TC_CMR_WAVE | tc_config->channel_mode);
 			
-			rc = ((sysclk_get_peripheral_bus_hz(TC) - 1) / (2*clk_divisor) /tc_config->frequency);			#ifdef ENABLE_TC_DEBUG_PRINTS			printf("Rc value set to be: %d\r\n", rc);			#endif			tc_write_rc(TC, DRV_TC_CHANNEL_WAVEFORM, rc);
+			rc = ((sysclk_get_peripheral_bus_hz(tc_config->p_tc) - 1) / (2*clk_divisor) /tc_config->frequency);			#ifdef ENABLE_TC_DEBUG_PRINTS			printf("Rc value set to be: %d\r\n", rc);			#endif			tc_write_rc(tc_config->p_tc, tc_config->tc_channelNumber, rc);
 			
 			ra = ((100 - tc_config->duty_cycle)*rc)/100;
 			#ifdef ENABLE_TC_DEBUG_PRINTS
 			printf("Ra value set to be: %d\r\n", ra);
 			#endif
-			tc_write_ra(TC, DRV_TC_CHANNEL_WAVEFORM, ra);
+			tc_write_ra(tc_config->p_tc, tc_config->tc_channelNumber, ra);
 			
 			if (tc_config->enable_interrupt)
 			{
@@ -126,26 +218,38 @@ Status_t drv_tc_config(drv_tc_config_t *tc_config)
 Status_t drv_tc_enableInterrupt(drv_tc_config_t *tc_config)
 {
 	tc_enable_interrupt(tc_config->p_tc, tc_config->tc_channelNumber, tc_config->interrupt_sources);
-	switch (tc_config->tc_channelId)
+	switch (tc_config->tc_channelNumber)
 	{
-		case ID_TC0:
+		case DRV_TC_TC0_CH0:
 			NVIC_EnableIRQ(TC0_IRQn);
 		break;
-		case ID_TC1:
+		
+		case DRV_TC_TC0_CH1:
 			NVIC_EnableIRQ(TC1_IRQn);
 		break;
-		case ID_TC2:
+		
+		case DRV_TC_TC0_CH2:
 			NVIC_EnableIRQ(TC2_IRQn);
 		break;
-		//case ID_TC3:
-			//NVIC_EnableIRQ(TC3_IRQn);
-		//break;
-		//case ID_TC4:
-			//NVIC_EnableIRQ(TC4_IRQn);
-		//break;
-		//case ID_TC5:
-			//NVIC_EnableIRQ(TC5_IRQn);
-		//break;
+		
+		#ifdef ID_TC3
+		case DRV_TC_TC1_CH3:
+			NVIC_EnableIRQ(TC3_IRQn);
+		break;
+		#endif
+		
+		#ifdef ID_TC4
+		case DRV_TC_TC1_CH4:
+			NVIC_EnableIRQ(TC4_IRQn);
+		break;
+		#endif
+		
+		#ifdef ID_TC5
+		case DRV_TC_TC1_CH5:
+			NVIC_EnableIRQ(TC5_IRQn);
+		break;
+		#endif
+		
 		default:
 		break;
 	}
@@ -154,26 +258,38 @@ Status_t drv_tc_enableInterrupt(drv_tc_config_t *tc_config)
 Status_t drv_tc_disableInterrupt(drv_tc_config_t *tc_config)
 {
 	tc_disable_interrupt(tc_config->p_tc, tc_config->tc_channelNumber, tc_config->interrupt_sources);
-	switch (tc_config->tc_channelId)
+	switch (tc_config->tc_channelNumber)
 	{
-		case ID_TC0:
+		case DRV_TC_TC0_CH0:
 			NVIC_DisableIRQ(TC0_IRQn);
 		break;
-		case ID_TC1:
+		
+		case DRV_TC_TC0_CH1:
 			NVIC_DisableIRQ(TC1_IRQn);
 		break;
-		case ID_TC2:
+		
+		case DRV_TC_TC0_CH2:
 			NVIC_DisableIRQ(TC2_IRQn);
 		break;
-		//case ID_TC3:
-			//NVIC_DisableIRQ(TC3_IRQn);
-		//break;
-		//case ID_TC4:
-			//NVIC_DisableIRQ(TC4_IRQn);
-		//break;
-		//case ID_TC5:
-			//NVIC_DisableIRQ(TC5_IRQn);
-		//break;
+		
+		#ifdef ID_TC3
+		case DRV_TC_TC1_CH3:
+			NVIC_DisableIRQ(TC3_IRQn);
+		break;
+		#endif
+		
+		#ifdef ID_TC4
+		case DRV_TC_TC1_CH4:
+			NVIC_DisableIRQ(TC4_IRQn);
+		break;
+		#endif
+		
+		#ifdef ID_TC5
+		case DRV_TC_TC1_CH5:
+			NVIC_DisableIRQ(TC5_IRQn);
+		break;
+		#endif
+		
 		default:
 		break;
 	}
@@ -202,4 +318,53 @@ Status_t drv_tc_isInterruptGenerated(drv_tc_config_t *tc_config, uint32_t interr
 		return STATUS_PASS;
 	}
 	return STATUS_FAIL;
+}
+
+// interrupt handlers
+void TC0_Handler()
+{
+	if (vCallbackTable[0] != NULL)
+	{
+		(*vCallbackTable[0])();
+	}
+}
+
+void TC1_Handler()
+{
+	if (vCallbackTable[1] != NULL)
+	{
+		(*vCallbackTable[1])();
+	}
+}
+
+void TC2_Handler()
+{
+	if (vCallbackTable[2] != NULL)
+	{
+		(*vCallbackTable[2])();
+	}
+}
+
+void TC3_Handler()
+{
+	if (vCallbackTable[3] != NULL)
+	{
+		(*vCallbackTable[3])();
+	}
+}
+
+void TC4_Handler()
+{
+	if (vCallbackTable[4] != NULL)
+	{
+		(*vCallbackTable[4])();
+	}
+}
+
+void TC5_Handler()
+{
+	if (vCallbackTable[5] != NULL)
+	{
+		(*vCallbackTable[5])();
+	}
 }

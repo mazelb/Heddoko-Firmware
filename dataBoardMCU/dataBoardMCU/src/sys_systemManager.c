@@ -27,21 +27,28 @@
 /* Global Variables */
 xQueueHandle queue_systemManager = NULL;
 sys_manager_systemState_t currentState = SYSTEM_STATE_INIT; 
-drv_piezo_config_t piezoConfig = 
+
+drv_piezo_config_t piezoConfig =
 {
 	.gpioPin = DRV_GPIO_PIN_PIEZO_OUT
 };
-drv_piezo_noteElement_t noteElementsArray[4] = 
+drv_piezo_noteElement_t noteElementsArray[] =
 {
-	{392, 500},
-	{262, 500},
-	{311, 250},
-	{349, 250}
+	{4000, 500},
+	{000, 250},
+	{4000, 500},
+	{000, 250},
+	{4000, 500},
+	{000, 250},
+	{4000, 500},
+	{000, 250},
+	{4000, 500},
+	{000, 250}
 };
-drv_piezo_notePattern_t notePattern = 
+drv_piezo_notePattern_t notePattern =
 {
 	.p_noteElementArray = noteElementsArray,
-	.totalArrayElements = 4
+	.totalArrayElements = (sizeof(noteElementsArray) / sizeof(drv_piezo_noteElement_t))
 };
 
 /*	Local static functions	*/

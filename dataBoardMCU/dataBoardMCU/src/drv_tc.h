@@ -13,38 +13,12 @@
 #include <sam4sa16b.h>
 #include "common.h"
 
-#define ENABLE_TC_DEBUG_PRINTS
-
+//#define ENABLE_TC_DEBUG_PRINTS
 #define TC_ALL_INTERRUPT_MASK	0xff
-//! [tc_define_peripheral]
-/* Use TC Peripheral 0. */
-#define TC             TC0
-#define TC_PERIPHERAL  0
-//! [tc_define_peripheral]
+#define DRV_TC_TC0				TC0		// pointer to the timer counter 0
+#define DRV_TC_TC1				TC1		// pointer to the timer counter 1
 
-//! [tc_define_ch1]
-/* Configure TC0 channel 1 as waveform output. */
-#define DRV_TC_CHANNEL_WAVEFORM 1
-#define DRV_TC_ID_TC_WAVEFORM      ID_TC1
-#define PIN_TC_WAVEFORM     PIN_TC0_TIOA1
-#define PIN_TC_WAVEFORM_MUX PIN_TC0_TIOA1_MUX
-//! [tc_define_ch1]
-
-//! [tc_define_ch2]
-/* Configure TC0 channel 2 as capture input. */
-#define DRV_TC_CHANNEL_CAPTURE 2
-#define DRV_TC_ID_TC_CAPTURE ID_TC2
-#define PIN_TC_CAPTURE PIN_TC0_TIOA2
-#define PIN_TC_CAPTURE_MUX PIN_TC0_TIOA2_MUX
-//! [tc_define_ch2]
-
-//! [tc_define_irq_handler]
-/* Use TC2_Handler for TC capture interrupt. */
-#define TC_Handler  TC1_Handler
-#define TC_IRQn     TC1_IRQn
-//! [tc_define_irq_handler]
-
-//pins
+/*	TIO GPIO config	*/
 #define PIN_TC0_TIOA0		(PIO_PA0_IDX)
 #define PIN_TC0_TIOA0_MUX   (IOPORT_MODE_MUX_B)
 #define PIN_TC0_TIOA0_FLAGS (PIO_PERIPH_B | PIO_DEFAULT)
@@ -108,18 +82,27 @@ typedef enum
 	DRV_TC_WAVEFORM
 }drv_tc_mode_t;
 
+typedef enum
+{
+	DRV_TC_TC0_CH0 = 0x00,
+	DRV_TC_TC0_CH1,
+	DRV_TC_TC0_CH2,
+	DRV_TC_TC1_CH3,
+	DRV_TC_TC1_CH4,
+	DRV_TC_TC1_CH5
+}drv_tc_channel_t;
+
 typedef struct  
 {
-	voidFunction_t tc_handler;	// pointer to the interrupt handler
-	Tc *p_tc;					// pointer to the Timer/Counter instance
-	drv_tc_mode_t tc_mode;		// capture/waveform mode 
-	uint32_t tc_channelId;		// channel ID corresponding to the TC instance for enabling sysClk
-	uint8_t tc_channelNumber;	// channel number relative to the corresponding instance
-	uint32_t channel_mode;		// the channel config parameters
-	uint32_t frequency;			// frequency of operation
-	uint8_t duty_cycle;			// duty cycle for the wave
-	bool enable_interrupt;		// interrupt enabled/disabled
-	uint32_t interrupt_sources;	// sources of interrupt.
+	voidFunction_t tc_handler;			// pointer to the interrupt handler
+	Tc *p_tc;							// pointer to the Timer/Counter instance
+	drv_tc_mode_t tc_mode;				// capture/waveform mode
+	drv_tc_channel_t tc_channelNumber;	// channel number relative to the corresponding instance
+	uint32_t channel_mode;				// the channel config parameters (use UPDOWN for duty cycle), use TC_CMR_... definitions for configuration
+	uint32_t frequency;					// frequency of operation
+	uint8_t duty_cycle;					// duty cycle for the wave
+	bool enable_interrupt;				// interrupt enabled/disabled
+	uint32_t interrupt_sources;			// sources of interrupt.
 }drv_tc_config_t;
 
 Status_t drv_tc_init	(drv_tc_config_t *tc_config);
