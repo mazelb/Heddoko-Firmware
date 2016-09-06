@@ -48,26 +48,29 @@
  */
 void SysTick_Handler(void)
 {
-	port_pin_toggle_output_level(LED_0_PIN);
+	port_pin_toggle_output_level(LED_BLUE_PIN);
 }
 //declare the configuration for the
 volatile struct usart_module cmd_uart_module;
-/** Configure GPIO, turn it off*/
-#define GPIO_RS485_DATA_DIRECTION_RE PIN_PA02
-#define GPIO_RS485_DATA_DIRECTION_DE PIN_PA04
-#define GPIO_RS485_DATA_RECEIVE false
-#define GPIO_RS485_DATA_TRANSMIT true
+
 static void config_gpio(void)
 {
 	struct port_config pin_conf;
 	port_get_config_defaults(&pin_conf);
 	pin_conf.direction  = PORT_PIN_DIR_OUTPUT;
-	port_pin_set_config(LED_0_PIN, &pin_conf);
-	port_pin_set_output_level(LED_0_PIN, LED_0_INACTIVE);
+	port_pin_set_config(LED_BLUE_PIN, &pin_conf);
+	port_pin_set_config(LED_RED_PIN, &pin_conf);
+	port_pin_set_config(LED_GREEN_PIN, &pin_conf);
+	port_pin_set_output_level(LED_BLUE_PIN, LED_INACTIVE);
+	port_pin_set_output_level(LED_RED_PIN, LED_INACTIVE);
+	port_pin_set_output_level(LED_GREEN_PIN, LED_INACTIVE);
 	port_pin_set_config(GPIO_RS485_DATA_DIRECTION_RE, &pin_conf);
 	port_pin_set_config(GPIO_RS485_DATA_DIRECTION_DE, &pin_conf);
 	port_pin_set_output_level(GPIO_RS485_DATA_DIRECTION_RE, GPIO_RS485_DATA_RECEIVE);
-	port_pin_set_output_level(GPIO_RS485_DATA_DIRECTION_DE, GPIO_RS485_DATA_RECEIVE);	
+	port_pin_set_output_level(GPIO_RS485_DATA_DIRECTION_DE, GPIO_RS485_DATA_RECEIVE);
+	pin_conf.direction  = PORT_PIN_DIR_OUTPUT;
+	//Setup the EM_INT pin as an 	
+	port_pin_set_config(GPIO_EM_MICRO_INT_PIN, &pin_conf);
 }
 sensorSettings_t settings = 
 {
@@ -118,7 +121,11 @@ drv_twi_config_t twiConfig =
 slave_twi_config_t em7180Config= 
 {
 	.emId = 0,
+	#ifdef HW_V1_2 //this may be temporary, it's due to the SA0 pin seems to be floating.
+	.address = 0x28,
+	#else
 	.address = 0x29,
+	#endif  
 	.drv_twi_options = &twiConfig
 };
 
@@ -161,16 +168,16 @@ static void extint_callback(void)
  */
 static void configure_eic_callback(void)
 {
-	//extint_register_callback(extint_callback,
-			//SW1_INT_EIC_LINE,
-			//EXTINT_CALLBACK_TYPE_DETECT);
-	//extint_chan_enable_callback(SW1_INT_EIC_LINE,
-			//EXTINT_CALLBACK_TYPE_DETECT);
 	extint_register_callback(extint_callback,
-			SW2_EIC_LINE,
+			SW1_EIC_LINE,
 			EXTINT_CALLBACK_TYPE_DETECT);
-	extint_chan_enable_callback(SW2_EIC_LINE,
-			EXTINT_CALLBACK_TYPE_DETECT);			
+	extint_chan_enable_callback(SW1_EIC_LINE,
+			EXTINT_CALLBACK_TYPE_DETECT);
+	//extint_register_callback(extint_callback,
+			//SW2_EIC_LINE,
+			//EXTINT_CALLBACK_TYPE_DETECT);
+	//extint_chan_enable_callback(SW2_EIC_LINE,
+			//EXTINT_CALLBACK_TYPE_DETECT);			
 }
 
 /** Configures the External Interrupt Controller to detect changes in the board
@@ -180,15 +187,15 @@ static void configure_extint(void)
 {
 	struct extint_chan_conf eint_chan_conf;
 	extint_chan_get_config_defaults(&eint_chan_conf);
-	eint_chan_conf.gpio_pin           = SW1_INT_PIN;
+	eint_chan_conf.gpio_pin           = SW1_PIN;
 	eint_chan_conf.gpio_pin_pull = SYSTEM_PINMUX_PIN_PULL_UP;
-	eint_chan_conf.gpio_pin_mux       = SW1_INT_EIC_MUX;
+	eint_chan_conf.gpio_pin_mux       = SW1_EIC_MUX;
 	eint_chan_conf.detection_criteria = EXTINT_DETECT_FALLING;
 	eint_chan_conf.filter_input_signal = true;
-	extint_chan_set_config(SW1_INT_EIC_LINE, &eint_chan_conf);	
-	eint_chan_conf.gpio_pin           = SW2_PIN;
-	eint_chan_conf.gpio_pin_mux       = SW2_EIC_MUX;
-	extint_chan_set_config(SW2_EIC_LINE, &eint_chan_conf);	
+	extint_chan_set_config(SW1_EIC_LINE, &eint_chan_conf);	
+	//eint_chan_conf.gpio_pin           = SW2_PIN;
+	//eint_chan_conf.gpio_pin_mux       = SW2_EIC_MUX;
+	//extint_chan_set_config(SW2_EIC_LINE, &eint_chan_conf);	
 }
 
 __attribute__((optimize("O0"))) static void configure_uart(void)
@@ -263,7 +270,9 @@ __attribute__((optimize("O0"))) int main(void)
 	//usart_read_job(&cmd_uart_module,&receivedByte);
 	
 	//turn on the LED
-	port_pin_set_output_level(LED_0_PIN,LED_0_ACTIVE);
+	port_pin_set_output_level(LED_BLUE_PIN,LED_ACTIVE);
+	port_pin_set_output_level(LED_GREEN_PIN,LED_ACTIVE);
+	port_pin_set_output_level(LED_RED_PIN,LED_ACTIVE);
 	//delay_ms(500); 
 	sendButtonPressEvent();
 	
