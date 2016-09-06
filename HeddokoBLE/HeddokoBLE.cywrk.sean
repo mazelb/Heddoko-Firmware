@@ -369,6 +369,32 @@
 <OpenDocs>
 <name v=".\HeddokoBLE.cydsn\Generated_Source\PSoC4\UART_rx.c" />
 <name v=".\HeddokoBLE.cydsn\main.c" />
+<name v=".\HeddokoBLE.cydsn\app_LED.c" />
+<name v=".\HeddokoBLE.cydsn\app_LED.h" />
+<name v=".\HeddokoBLE.cydsn\Generated_Source\PSoC4\Adv_led.h" />
+<name v=".\HeddokoBLE.cydsn\Generated_Source\PSoC4\Adv_led.c" />
+<name v=".\HeddokoBLE.cydsn\app_UART.h" />
+<name v=".\HeddokoBLE.cydsn\main.h" />
+<name v=".\HeddokoBLE.cydsn\Generated_Source\PSoC4\Adv_led_aliases.h" />
+<name v=".\HeddokoBLE.cydsn\Generated_Source\PSoC4\Adv_led_PM.c" />
+<name v=".\HeddokoBLE.cydsn\Generated_Source\PSoC4\Conn_Led.h" />
+<name v=".\HeddokoBLE.cydsn\Generated_Source\PSoC4\Conn_Led.c" />
+<name v=".\HeddokoBLE.cydsn\Generated_Source\PSoC4\cyfitter.h" />
+<name v=".\HeddokoBLE.cydsn\HeddokoBLE.cydwr" />
+<name v=".\HeddokoBLE.cydsn\Generated_Source\PSoC4\UART_SPI_UART_INT.c" />
+<name v=".\HeddokoBLE.cydsn\Generated_Source\PSoC4\cyPm.c" />
+<name v=".\HeddokoBLE.cydsn\Generated_Source\PSoC4\cypins.h" />
+<name v=".\HeddokoBLE.cydsn\pkt_packetParser.h" />
+<name v=".\HeddokoBLE.cydsn\pkt_packetParser.c" />
+<name v=".\HeddokoBLE.cydsn\Generated_Source\PSoC4\UART.h" />
+<name v=".\HeddokoBLE.cydsn\Generated_Source\PSoC4\UART.c" />
+<name v=".\HeddokoBLE.cydsn\Generated_Source\PSoC4\UART_UART.c" />
+<name v=".\HeddokoBLE.cydsn\TopDesign\TopDesign.cysch" />
+<name v=".\HeddokoBLE.cydsn\app_Ble.c" />
+<name v=".\HeddokoBLE.cydsn\cyapicallbacks.h" />
+<name v=".\HeddokoBLE.cydsn\Generated_Source\PSoC4\BLE_custom.h" />
+<name v=".\HeddokoBLE.cydsn\Generated_Source\PSoC4\BLE_eventHandler.c" />
+<name v=".\HeddokoBLE.cydsn\app_UART.c" />
 </OpenDocs>
 <config v="" />
 <AutoUpdate v="true" />

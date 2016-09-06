@@ -54,6 +54,7 @@ static void sendStateChangeMessage(sys_manager_systemState_t state);
 
 //Delete me after testing complete
 void playSound(float duration, float frequency);
+void buzzMotor(uint8_t numberOfTimes);
 
 
 void sys_systemManagerTask(void* pvParameters)
@@ -72,7 +73,6 @@ void sys_systemManagerTask(void* pvParameters)
 	};
 	drv_led_init(&ledConfiguration);
 	drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
-	//drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_HIGH);
 	//playSound(800,900);
 	//playSound(800,2500);
 	//playSound(800,4000);
@@ -84,7 +84,7 @@ void sys_systemManagerTask(void* pvParameters)
 	//playSound(400,1568);
 	drv_piezo_init(&piezoConfig);
 	drv_piezo_playPattern(noteElementsArray, (sizeof(noteElementsArray) / sizeof(drv_piezo_noteElement_t)));
-	//drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_LOW);
+	buzzMotor(5);
 	vTaskDelay(200);
 	queue_systemManager = xQueueCreate(10, sizeof(msg_message_t));
 	if (queue_systemManager != 0)
@@ -160,5 +160,13 @@ void playSound(float duration, float frequency)
 	return;
 }
 
-
-
+void buzzMotor(uint8_t numberOfTimes)
+{
+	for (int i = 0; i < numberOfTimes; i++)
+	{
+		drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_LOW);
+		vTaskDelay(200);
+		drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_HIGH);
+		vTaskDelay(200);
+	}
+}

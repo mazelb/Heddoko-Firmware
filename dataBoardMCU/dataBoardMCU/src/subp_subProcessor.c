@@ -25,6 +25,7 @@ static void sendGetStatusMessage(drv_uart_config_t* uartConfig);
 static void sendStreamMessage(drv_uart_config_t* uartConfig, uint8_t enable);
 static void sendGetTimeRequestMessage(drv_uart_config_t* uartConfig);
 static void sendConfigtMessage(drv_uart_config_t* uartConfig, uint8_t rate, uint32_t sensorMask);
+static void sendPwrDownResponseMessage(drv_uart_config_t* uartConfig);
 
 void protoPacketInit();
 //state change event functions
@@ -53,7 +54,7 @@ drv_uart_config_t subpUart =
 	.mem_index = 0,
 	.uart_options =
 	{
-		.baudrate   = 921600,
+		.baudrate   = 460800,
 		.charlength = CONF_CHARLENGTH,
 		.paritytype = CONF_PARITY,
 		.stopbits   = CONF_STOPBITS
@@ -173,7 +174,7 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 					{					
 						sdc_writeToFile(&dataLogFile, serializedDataBuffer, serializedLength); 
 					}
-					net_sendPacket(serializedDataBuffer, serializedLength);
+					//net_sendPacket(serializedDataBuffer, serializedLength);
 				}
 				if(rawFullFrame->timeStamp > lastTimeStamp)
 				{					
@@ -194,6 +195,11 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 				dgb_printf(DBG_LOG_LEVEL_DEBUG,"%d,%d,%d,%d,%d\r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,drv_uart_getDroppedBytes(&subpUart));
 				
 			break;
+			
+			case PACKET_COMMAND_ID_SUBP_POWER_DOWN_REQ:
+				sendPwrDownResponseMessage(&subpUart);
+			break;
+			
 			default:
 			
 			break;
@@ -369,4 +375,10 @@ static void sendConfigtMessage(drv_uart_config_t* uartConfig, uint8_t rate, uint
 	configBytes[2] = rate;
 	memcpy(&configBytes[3],&sensorMask,4); //copy the sensor mask to the config bytes.  
 	pkt_sendRawPacket(uartConfig,configBytes, sizeof(configBytes));
+}
+
+static void sendPwrDownResponseMessage(drv_uart_config_t* uartConfig)
+{
+	uint8_t bytes[] = {0x01,PACKET_COMMAND_ID_SUBP_POWER_DOWN_RESP};
+	pkt_sendRawPacket(uartConfig,bytes, sizeof(bytes));
 }

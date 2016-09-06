@@ -2768,15 +2768,15 @@ Disassembly of section .text:
   409a8a:	2b01      	cmp	r3, #1
   409a8c:	4666      	mov	r6, ip
   409a8e:	f47f af2d 	bne.w	4098ec <task_sdCardHandler+0x60>
-  409a92:	2500      	movs	r5, #0
-  409a94:	4830      	ldr	r0, [pc, #192]	; (409b58 <task_sdCardHandler+0x2cc>)
-  409a96:	4938      	ldr	r1, [pc, #224]	; (409b78 <task_sdCardHandler+0x2ec>)
-  409a98:	4788      	blx	r1
-  409a9a:	7035      	strb	r5, [r6, #0]
-  409a9c:	4e29      	ldr	r6, [pc, #164]	; (409b44 <task_sdCardHandler+0x2b8>)
-  409a9e:	4a2c      	ldr	r2, [pc, #176]	; (409b50 <task_sdCardHandler+0x2c4>)
-  409aa0:	7833      	ldrb	r3, [r6, #0]
-  409aa2:	7015      	strb	r5, [r2, #0]
+  409a92:	4831      	ldr	r0, [pc, #196]	; (409b58 <task_sdCardHandler+0x2cc>)
+  409a94:	4938      	ldr	r1, [pc, #224]	; (409b78 <task_sdCardHandler+0x2ec>)
+  409a96:	4788      	blx	r1
+  409a98:	2300      	movs	r3, #0
+  409a9a:	7033      	strb	r3, [r6, #0]
+  409a9c:	4a2c      	ldr	r2, [pc, #176]	; (409b50 <task_sdCardHandler+0x2c4>)
+  409a9e:	4e29      	ldr	r6, [pc, #164]	; (409b44 <task_sdCardHandler+0x2b8>)
+  409aa0:	7013      	strb	r3, [r2, #0]
+  409aa2:	7833      	ldrb	r3, [r6, #0]
   409aa4:	2b01      	cmp	r3, #1
   409aa6:	f47f af26 	bne.w	4098f6 <task_sdCardHandler+0x6a>
   409aaa:	4827      	ldr	r0, [pc, #156]	; (409b48 <task_sdCardHandler+0x2bc>)
@@ -34302,9 +34302,9 @@ Disassembly of section .text:
   41d2ac:	252d 2d64 6425 253a 3a64 6425 0a0d 0000     -%d-%d:%d:%d....
   41d2bc:	0d3f 000a 4548 4444 4b4f 204f 5242 4941     ?...HEDDOKO BRAI
   41d2cc:	204e 4150 4b43 2520 0d73 000a 3056 342e     N PACK %s...V0.4
-  41d2dc:	006d 0000 5542 4c49 2044 4144 4554 203a     m...BUILD DATE: 
-  41d2ec:	7325 2520 0d73 000a 7541 2067 3532 3220     %s %s...Aug 25 2
-  41d2fc:	3130 0036 3930 323a 3a33 3032 0000 0000     016.09:23:20....
+  41d2dc:	006e 0000 5542 4c49 2044 4144 4554 203a     n...BUILD DATE: 
+  41d2ec:	7325 2520 0d73 000a 6553 2070 3620 3220     %s %s...Sep  6 2
+  41d2fc:	3130 0036 3531 313a 3a33 3830 0000 0000     016.15:13:08....
   41d30c:	5553 5449 4e20 4d55 4542 3a52 2520 0d73     SUIT NUMBER: %s.
   41d31c:	000a 0000 5553 5449 5420 4d49 3a45 2520     ....SUIT TIME: %
   41d32c:	2073 0a0d 0000 0000 6c66 7375 5568 7261     s ......flushUar
@@ -34375,7 +34375,7 @@ Disassembly of section .text:
   41d828:	2065 706f 6e65 6620 6961 656c 0d64 000a     e open failed...
   41d838:	0a0d 0a0d 0a0d 7250 676f 6172 206d 7473     ......Program st
   41d848:	7261 2074 7242 6961 206e 6150 6b63 5620     art Brain Pack V
-  41d858:	2e30 6d34 0d20 000a 6544 7562 4c67 676f     0.4m ...DebugLog
+  41d858:	2e30 6e34 0d20 000a 6544 7562 4c67 676f     0.4n ...DebugLog
   41d868:	6f20 6570 0d6e 000a 6544 7562 4c67 676f      open...DebugLog
   41d878:	6620 6961 656c 2064 6f74 6f20 6570 0d6e      failed to open.
   41d888:	000a 0000 6143 276e 2074 6567 2074 6573     ....Can't get se
@@ -35062,7 +35062,7 @@ Disassembly of section .relocate:
 2000063c:	000b 0000 0001 0001 046d 0041 0101 0000     ........m.A.....
 2000064c:	002b 0000 0001 0001 0429 0041 0101 0000     +.......).A.....
 2000065c:	000c 0000 0100 0004 0000 0000 0000 0000     ................
-2000066c:	0002 0000 0100 0004 0000 0000 0000 0100     ................
+2000066c:	0002 0000 0000 0004 0000 0000 0000 0100     ................
 
 2000067c <programmingGpioConfig>:
 2000067c:	0023 0000 0001 0004 0000 0000 0101 0000     #...............
