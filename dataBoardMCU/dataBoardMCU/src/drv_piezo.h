@@ -25,14 +25,9 @@ typedef struct
 	uint16_t postNoteDelay;	// length of the note (how long should it play!)
 }drv_piezo_noteElement_t;
 
-typedef struct  
-{
-	drv_piezo_noteElement_t* p_noteElementArray;
-	uint16_t totalArrayElements;
-}drv_piezo_notePattern_t;
-
 void drv_piezo_init(drv_piezo_config_t* peizoConfig);
 void drv_piezo_playTone(uint16_t noteFrequency);
-void drv_piezo_playPattern(drv_piezo_notePattern_t notePattern);
+void drv_piezo_stopPlaying();
+void drv_piezo_playPattern(drv_piezo_noteElement_t *notePattern, uint16_t totalElements);
 
 #endif /* DRV_PIEZO_H_ */

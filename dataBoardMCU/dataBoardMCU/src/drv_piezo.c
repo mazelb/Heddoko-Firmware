@@ -9,7 +9,7 @@
 
 /*	Local variables	*/
 drv_piezo_config_t* p_PeizoConfig;	// pointer to the external piezo configuration
-drv_piezo_notePattern_t vNotePattern;	// local variable to hold note pattern
+drv_piezo_noteElement_t *vNotePattern;	// local variable to hold note pattern
 uint16_t vPlayedNoteCount;	// count to keep track of number of notes played from note pattern
 uint16_t vTotalNoteCount;
 
@@ -21,7 +21,7 @@ static uint32_t changeDelayToFreq(uint32_t requiredDelay);
 drv_tc_config_t peizoTcConfig =
 {
 	.p_tc = DRV_TC_TC0,					// use Timer 0
-	.tc_channelNumber = DRV_TC_TC0_CH1,	// channel number 1 for timer 0
+	.tc_channelNumber = DRV_TC_TC_CH1,	// channel number 1 for timer 0
 	.tc_mode = DRV_TC_WAVEFORM,			// Waveform output
 	.tc_handler = NULL,					// interrupt handler for the timer counter
 	.enable_interrupt = false,
@@ -33,7 +33,7 @@ drv_tc_config_t peizoTcConfig =
 drv_tc_config_t noteLength =
 {
 	.p_tc = DRV_TC_TC0,					// use Timer 0
-	.tc_channelNumber = DRV_TC_TC0_CH0,	// channel number 1 for timer 0
+	.tc_channelNumber = DRV_TC_TC_CH0,	// channel number 1 for timer 0
 	.tc_mode = DRV_TC_WAVEFORM,			// Waveform output
 	.tc_handler = TC_intHandler,		// interrupt handler for the timer counter
 	.enable_interrupt = true,
@@ -61,21 +61,30 @@ void drv_piezo_playTone(uint16_t noteFrequency)
 	drv_tc_changeFrequency(&peizoTcConfig, noteFrequency);
 }
 
-void drv_piezo_playPattern(drv_piezo_notePattern_t notePattern)
+void drv_piezo_stopPlaying()
 {
-	if (notePattern.totalArrayElements == 0)
+	// stop the timer counters.
+	drv_tc_disableInterrupt(&noteLength);
+	drv_tc_disableInterrupt(&peizoTcConfig);
+	drv_tc_stop(&peizoTcConfig);
+	drv_tc_stop(&noteLength);
+}
+
+void drv_piezo_playPattern(drv_piezo_noteElement_t *notePattern, uint16_t totalElements)
+{
+	if (totalElements == 0)
 	{
 		return;
 	}
 	
 	// store the note pattern
 	vNotePattern = notePattern;
-	vTotalNoteCount = notePattern.totalArrayElements;
+	vTotalNoteCount = totalElements;
 	vPlayedNoteCount = 0;
 	
 	// load the first note
-	drv_piezo_playTone(notePattern.p_noteElementArray[vPlayedNoteCount].noteFrequency);
-	drv_tc_changeFrequency(&noteLength, changeDelayToFreq(vNotePattern.p_noteElementArray[vPlayedNoteCount].postNoteDelay));
+	drv_piezo_playTone(vNotePattern[vPlayedNoteCount].noteFrequency);
+	drv_tc_changeFrequency(&noteLength, changeDelayToFreq(vNotePattern[vPlayedNoteCount].postNoteDelay));
 	vPlayedNoteCount++;
 }
 
@@ -94,16 +103,13 @@ static void playNextNote()
 	if (vPlayedNoteCount >= vTotalNoteCount)
 	{
 		// stop the timers if all the notes have been played
-		drv_tc_disableInterrupt(&noteLength);
-		drv_tc_disableInterrupt(&peizoTcConfig);
-		drv_tc_stop(&peizoTcConfig);
-		drv_tc_stop(&noteLength);
+		drv_piezo_stopPlaying();
 		return;
 	}
 	
 	// load the next note
-	drv_piezo_playTone(vNotePattern.p_noteElementArray[vPlayedNoteCount].noteFrequency);
-	drv_tc_changeFrequency(&noteLength, changeDelayToFreq(vNotePattern.p_noteElementArray[vPlayedNoteCount].postNoteDelay));
+	drv_piezo_playTone(vNotePattern[vPlayedNoteCount].noteFrequency);
+	drv_tc_changeFrequency(&noteLength, changeDelayToFreq(vNotePattern[vPlayedNoteCount].postNoteDelay));
 	vPlayedNoteCount++;
 }
 

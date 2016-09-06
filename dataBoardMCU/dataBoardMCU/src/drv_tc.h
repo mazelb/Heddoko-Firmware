@@ -10,14 +10,14 @@
 #define DRV_TC_H_
 
 #include <asf.h>
-#include <sam4sa16b.h>
 #include "common.h"
 
 //#define ENABLE_TC_DEBUG_PRINTS
 #define TC_ALL_INTERRUPT_MASK	0xff
 #define DRV_TC_TC0				TC0		// pointer to the timer counter 0
+#ifdef TC1
 #define DRV_TC_TC1				TC1		// pointer to the timer counter 1
-
+#endif
 /*	TIO GPIO config	*/
 #define PIN_TC0_TIOA0		(PIO_PA0_IDX)
 #define PIN_TC0_TIOA0_MUX   (IOPORT_MODE_MUX_B)
@@ -84,12 +84,9 @@ typedef enum
 
 typedef enum
 {
-	DRV_TC_TC0_CH0 = 0x00,
-	DRV_TC_TC0_CH1,
-	DRV_TC_TC0_CH2,
-	DRV_TC_TC1_CH3,
-	DRV_TC_TC1_CH4,
-	DRV_TC_TC1_CH5
+	DRV_TC_TC_CH0 = 0x00,
+	DRV_TC_TC_CH1 = 0x01,
+	DRV_TC_TC_CH2 = 0x02
 }drv_tc_channel_t;
 
 typedef struct  
