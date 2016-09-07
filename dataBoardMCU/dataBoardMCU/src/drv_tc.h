@@ -74,6 +74,16 @@
 #define DRV_TC_LDRBS TC_IER_LDRBS // RB Loading
 #define DRV_TC_ETRGS TC_IER_ETRGS // External Trigger
 
+/*	Channel modes	*/
+#define DRV_TC_AUTO_RELOAD_RC		TC_CMR_WAVSEL_UP_RC		// auto reload the timer on RC compare
+#define DRV_TC_ENABLE_DUTY_CYCLE	TC_CMR_WAVSEL_UPDOWN	// used when duty cycle is required
+#define DRV_TC_ACPC_TOGGLE			TC_CMR_ACPC_TOGGLE		// toggle TIOA on RC compare
+#define DRV_TC_ACPA_TOGGLE			TC_CMR_ACPA_TOGGLE		// toggle TIOA on RA compare (use for duty cycle)
+#define DRV_TC_BCPC_TOGGLE			TC_CMR_BCPC_TOGGLE		// toggle TIOB on RC compare
+#define DRV_TC_BCPB_TOGGLE			TC_CMR_BCPB_TOGGLE		// toggle TIOB on RB compare (use for duty cycle)
+
+// NOTE: for all other modes use the TC_CMR_... defines from atmel timer counter driver
+
 typedef void (* voidFunction_t)(void);
 
 typedef enum

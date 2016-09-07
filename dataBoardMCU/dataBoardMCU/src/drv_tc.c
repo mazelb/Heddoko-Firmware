@@ -9,6 +9,12 @@
 
 voidFunction_t vCallbackTable[6] = {NULL};
 
+/***********************************************************************************************
+ * configureTio(drv_tc_config_t* tc_config)
+ * @brief Configure the TIO gpios related to specified timer
+ * @param drv_tc_config_t* tc_config: pointer to the tc config
+ * @return void
+ ***********************************************************************************************/
 void configureTio(drv_tc_config_t* tc_config)
 {
 	uint32_t channelB_present = 0, channelA_present = 0;
@@ -89,6 +95,12 @@ void configureTio(drv_tc_config_t* tc_config)
 	}
 }
 
+/***********************************************************************************************
+ * assign_interruptHandler(drv_tc_config_t *tc_config)
+ * @brief Store the pointer to the custom interrupt handlers in local array
+ * @param drv_tc_config_t* tc_config: pointer to the tc config
+ * @return void
+ ***********************************************************************************************/
 void assign_interruptHandler(drv_tc_config_t *tc_config)
 {
 	if (tc_config->p_tc == DRV_TC_TC0)
@@ -138,6 +150,12 @@ void assign_interruptHandler(drv_tc_config_t *tc_config)
 	}
 }
 
+/***********************************************************************************************
+ * enablePeripheralClock(drv_tc_config_t *tc_config)
+ * @brief Enable the peripheral clock to the specified tc channel
+ * @param drv_tc_config_t* tc_config: pointer to the tc config
+ * @return void
+ ***********************************************************************************************/
 void enablePeripheralClock(drv_tc_config_t *tc_config)
 {
 	if (tc_config->p_tc == DRV_TC_TC0)
@@ -187,6 +205,12 @@ void enablePeripheralClock(drv_tc_config_t *tc_config)
 	}
 }
 
+/***********************************************************************************************
+ * drv_tc_init(drv_tc_config_t *tc_config)
+ * @brief Initialize the timer counter driver 
+ * @param drv_tc_config_t* tc_config: pointer to the tc config
+ * @return STATUS_PASS if succedded; STATUS_FAIL if it fails
+ ***********************************************************************************************/
 Status_t drv_tc_init(drv_tc_config_t *tc_config)
 {
 	//stop the timer first
@@ -203,6 +227,12 @@ Status_t drv_tc_init(drv_tc_config_t *tc_config)
 	return STATUS_PASS;
 }
 
+/***********************************************************************************************
+ * drv_tc_config(drv_tc_config_t *tc_config)
+ * @brief Configure the tc channel witht he new updated configuration
+ * @param drv_tc_config_t* tc_config: pointer to the tc config
+ * @return STATUS_PASS if succedded; STATUS_FAIL if it fails
+ ***********************************************************************************************/
 Status_t drv_tc_config(drv_tc_config_t *tc_config)
 {
 	uint32_t ra = 0, rb = 0, rc = 0;
@@ -247,6 +277,12 @@ Status_t drv_tc_config(drv_tc_config_t *tc_config)
 	}
 }
 
+/***********************************************************************************************
+ * drv_tc_enableInterrupt(drv_tc_config_t *tc_config)
+ * @brief Enable the interrupts for the timer counter
+ * @param drv_tc_config_t* tc_config: pointer to the tc config
+ * @return STATUS_PASS if succedded; STATUS_FAIL if it fails
+ ***********************************************************************************************/
 Status_t drv_tc_enableInterrupt(drv_tc_config_t *tc_config)
 {
 	tc_enable_interrupt(tc_config->p_tc, tc_config->tc_channelNumber, tc_config->interrupt_sources);
@@ -299,6 +335,12 @@ Status_t drv_tc_enableInterrupt(drv_tc_config_t *tc_config)
 	return STATUS_PASS;
 }
 
+/***********************************************************************************************
+ * drv_tc_disableInterrupt(drv_tc_config_t *tc_config)
+ * @brief Disable the interrupts for the timer counter
+ * @param drv_tc_config_t* tc_config: pointer to the tc config
+ * @return STATUS_PASS if succedded; STATUS_FAIL if it fails
+ ***********************************************************************************************/
 Status_t drv_tc_disableInterrupt(drv_tc_config_t *tc_config)
 {
 	tc_disable_interrupt(tc_config->p_tc, tc_config->tc_channelNumber, tc_config->interrupt_sources);
@@ -347,22 +389,41 @@ Status_t drv_tc_disableInterrupt(drv_tc_config_t *tc_config)
 			default:
 			break;
 		}
-}
+	}
 return STATUS_PASS;
 }
 
+/***********************************************************************************************
+ * drv_tc_start(drv_tc_config_t *tc_config)
+ * @brief Start the timer counter
+ * @param drv_tc_config_t* tc_config: pointer to the tc config
+ * @return STATUS_PASS if succedded; STATUS_FAIL if it fails
+ ***********************************************************************************************/
 Status_t drv_tc_start(drv_tc_config_t *tc_config)
 {
 	tc_start(tc_config->p_tc, tc_config->tc_channelNumber);
 	return STATUS_PASS;
 }
 
+/***********************************************************************************************
+ * drv_tc_start(drv_tc_config_t *tc_config)
+ * @brief Stop the timer counter
+ * @param drv_tc_config_t* tc_config: pointer to the tc config
+ * @return STATUS_PASS if succedded; STATUS_FAIL if it fails
+ ***********************************************************************************************/
 Status_t drv_tc_stop(drv_tc_config_t *tc_config)
 {
 	tc_stop(tc_config->p_tc, tc_config->tc_channelNumber);
 	return STATUS_PASS;
 }
 
+/***********************************************************************************************
+ * drv_tc_changeFrequency(drv_tc_config_t *tc_config, uint16_t frequency)
+ * @brief Change the frequency for the specified timer counter
+ * @param drv_tc_config_t* tc_config: pointer to the tc config
+ *			uint16_t frequency: new frequency 
+ * @return STATUS_PASS if succedded; STATUS_FAIL if it fails
+ ***********************************************************************************************/
 Status_t drv_tc_changeFrequency(drv_tc_config_t *tc_config, uint16_t frequency)
 {
 	tc_config->frequency = frequency;
@@ -370,6 +431,13 @@ Status_t drv_tc_changeFrequency(drv_tc_config_t *tc_config, uint16_t frequency)
 	return STATUS_PASS;
 }
 
+/***********************************************************************************************
+ * drv_tc_isInterruptGenerated(drv_tc_config_t *tc_config, uint32_t interruptSource)
+ * @brief Check if the interrupt for the particular timer is generated
+ * @param drv_tc_config_t* tc_config: pointer to the tc config
+ *			uint32_t interruptSource: interrupt sources
+ * @return STATUS_PASS if succedded; STATUS_FAIL if it fails
+ ***********************************************************************************************/
 Status_t drv_tc_isInterruptGenerated(drv_tc_config_t *tc_config, uint32_t interruptSource)
 {
 	if ((tc_get_status(tc_config->p_tc, tc_config->tc_channelNumber) & interruptSource) == interruptSource)
@@ -380,6 +448,9 @@ Status_t drv_tc_isInterruptGenerated(drv_tc_config_t *tc_config, uint32_t interr
 }
 
 // interrupt handlers
+/**
+ * @brief: Interrupt handlers for all channels. They call the external callback function specified at the driver initialization
+ **/
 void TC0_Handler()
 {
 	if (vCallbackTable[0] != NULL)
