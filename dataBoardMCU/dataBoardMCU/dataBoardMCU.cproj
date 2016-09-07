@@ -394,7 +394,7 @@
       </framework-data>
     </AsfFrameworkConfig>
     <avrtool>com.atmel.avrdbg.tool.atmelice</avrtool>
-    <avrtoolserialnumber>J41800006052</avrtoolserialnumber>
+    <avrtoolserialnumber>J41800029774</avrtoolserialnumber>
     <avrdeviceexpectedsignature>0x28970CE0</avrdeviceexpectedsignature>
     <avrtoolinterface>SWD</avrtoolinterface>
     <com_atmel_avrdbg_tool_edbg>
@@ -442,7 +442,7 @@
         <InterfaceName>SWD</InterfaceName>
       </ToolOptions>
       <ToolType>com.atmel.avrdbg.tool.atmelice</ToolType>
-      <ToolNumber>J41800006052</ToolNumber>
+      <ToolNumber>J41800029774</ToolNumber>
       <ToolName>Atmel-ICE</ToolName>
     </com_atmel_avrdbg_tool_atmelice>
   </PropertyGroup>
@@ -639,9 +639,9 @@
       <Value>__FREERTOS__</Value>
       <Value>BOARD=SAM4S_XPLAINED_PRO</Value>
       <Value>__SAM4SD32C__</Value>
-      <Value>ARM_MATH_CM4=true</Value>
       <Value>printf=iprintf</Value>
       <Value>scanf=iscanf</Value>
+      <Value>ARM_MATH_CM4=true</Value>
     </ListValues>
   </armgcc.compiler.symbols.DefSymbols>
   <armgcc.compiler.directories.DefaultIncludePath>False</armgcc.compiler.directories.DefaultIncludePath>
@@ -698,7 +698,6 @@
   <armgcc.compiler.miscellaneous.OtherFlags>-pipe -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -std=gnu99 -ffunction-sections -fdata-sections -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return  -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs -Wlong-long -Wunreachable-code -Wcast-align --param max-inline-insns-single=500</armgcc.compiler.miscellaneous.OtherFlags>
   <armgcc.linker.libraries.Libraries>
     <ListValues>
-      <Value>libarm_cortexM4l_math</Value>
       <Value>libm</Value>
     </ListValues>
   </armgcc.linker.libraries.Libraries>
@@ -880,7 +879,6 @@
   <armgcc.compiler.miscellaneous.OtherFlags>-pipe -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -std=gnu99 -ffunction-sections -fdata-sections -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return  -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs -Wlong-long -Wunreachable-code -Wcast-align --param max-inline-insns-single=500</armgcc.compiler.miscellaneous.OtherFlags>
   <armgcc.linker.libraries.Libraries>
     <ListValues>
-      <Value>libarm_cortexM4l_math</Value>
       <Value>libm</Value>
     </ListValues>
   </armgcc.linker.libraries.Libraries>
@@ -1257,6 +1255,12 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\dbg_debugManager.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\drv_haptic.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\drv_haptic.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\drv_led.c">

@@ -46,6 +46,8 @@ src\dat_dataManager.c
 
 src\dbg_debugManager.c
 
+src\drv_haptic.c
+
 src\drv_led.c
 
 src\net_wirelessNetwork.c

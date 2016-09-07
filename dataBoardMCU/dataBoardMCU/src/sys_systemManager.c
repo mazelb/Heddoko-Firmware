@@ -22,6 +22,7 @@
 #include "dbg_debugManager.h"
 #include "net_wirelessNetwork.h"
 #include "ble_bluetoothManager.h"
+#include "drv_haptic.h"
 
 /* Global Variables */
 xQueueHandle queue_systemManager = NULL;
@@ -35,7 +36,16 @@ static void sendStateChangeMessage(sys_manager_systemState_t state);
 
 //Delete me after testing complete
 void playSound(float duration, float frequency);
-
+drv_haptic_config_t hapticConfig = 
+{
+	.hapticGpio = DRV_GPIO_PIN_HAPTIC_OUT,
+	.onState = DRV_GPIO_PIN_STATE_LOW,
+	.offState = DRV_GPIO_PIN_STATE_HIGH
+};
+drv_haptic_patternElement_t hapticPatternArray[] = 
+{
+	{100, 1}
+};
 
 void sys_systemManagerTask(void* pvParameters)
 {
@@ -53,14 +63,15 @@ void sys_systemManagerTask(void* pvParameters)
 	};
 	drv_led_init(&ledConfiguration);
 	drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
-	drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_HIGH);
+	drv_haptic_init(&hapticConfig);
+	drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
 	drv_led_set(DRV_LED_RED,DRV_LED_SOLID);
 	playSound(200,900);
 	drv_led_set(DRV_LED_WHITE,DRV_LED_SOLID);
 	playSound(200,2500);
 	drv_led_set(DRV_LED_BLUE,DRV_LED_SOLID);
 	playSound(200,4000);
-	//drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_LOW);
+	
 	vTaskDelay(200);
 	queue_systemManager = xQueueCreate(10, sizeof(msg_message_t));
 	if (queue_systemManager != 0)
