@@ -17,14 +17,17 @@
 #include "pkt_packetParser.h"
 
 /*	Static function forward declarations	*/
-static void processMessage(msg_message_t message);
 static void processRawPacket(pkt_rawPacket_t* packet);
+static void processMessage(msg_message_t message);
 status_t convertFullFrameToProtoBuff(subp_fullImuFrameSet_t* rawFullFrame, Heddoko__Packet* protoPacket);
 //message senders
 static void sendGetStatusMessage(drv_uart_config_t* uartConfig);
 static void sendStreamMessage(drv_uart_config_t* uartConfig, uint8_t enable);
 static void sendGetTimeRequestMessage(drv_uart_config_t* uartConfig);
 static void sendConfigtMessage(drv_uart_config_t* uartConfig, uint8_t rate, uint32_t sensorMask);
+static void sendPwrDownResponseMessage(drv_uart_config_t* uartConfig);
+//possibly move this somewhere else, such as the 
+static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet);
 
 void protoPacketInit();
 //state change event functions
@@ -150,10 +153,15 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 		switch(packet->payload[1])
 		{
 			case PACKET_COMMAND_ID_SUBP_GET_STATUS_RESP:
-				
-			
-			
-			
+				//copy the structure to the received packet
+				memcpy(&subp_CurrentStatus,&(packet->payload[2]),sizeof(subp_status_t)); 			
+				//send it to the debug module for now, just so we can see it printed up. Eventually send it to the config manager
+				//the pointer is sent only, so it doesn't take up to much space on the queue. 
+				msg_sendMessage(MODULE_DEBUG, MODULE_SUB_PROCESSOR, MSG_TYPE_SUBP_STATUS, &subp_CurrentStatus); 
+			break;
+			case PACKET_COMMAND_ID_SUBP_POWER_DOWN_REQ:
+				//we received a power down request, let the system manager know. 
+				msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_SUBP_POWER_DOWN_REQ, NULL); 					
 			break;
 			case PACKET_COMMAND_ID_SUBP_FULL_FRAME:
 				//this is a frame, cast the payload to the rawFrame type. 
@@ -191,8 +199,11 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 					result = 0; //out of sequence frame
 				}
 				lastTimeStamp = rawFullFrame->timeStamp;
-				dgb_printf(DBG_LOG_LEVEL_DEBUG,"%d,%d,%d,%d,%d\r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,drv_uart_getDroppedBytes(&subpUart));
-				
+				dgb_printf(DBG_LOG_LEVEL_DEBUG,"%d,%d,%d,%d,%d\r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,drv_uart_getDroppedBytes(&subpUart));				
+			break;
+			case PACKET_COMMAND_ID_SUBP_GET_DATE_TIME_RESP:
+				//set the time from the packet contents. 
+				setDateTimeFromPacket(packet);
 			break;
 			default:
 			
@@ -200,6 +211,46 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 		}
 	}	
 	//dbg_printString("Received a packet!!!!"); 
+}
+
+static void processMessage(msg_message_t message)
+{
+	switch(message.type)
+	{
+		case MSG_TYPE_ENTERING_NEW_STATE:
+		{
+			if(message.data == SYSTEM_STATE_RECORDING)
+			{
+				if(recordingStateEntry() == STATUS_PASS)
+				{
+					msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL);
+				}
+				else
+				{
+					msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_ERROR, NULL);
+				}
+			}
+		}
+		break;
+		case MSG_TYPE_LEAVING_STATE:
+		{
+			if(message.data == SYSTEM_STATE_RECORDING)
+			{
+				recordingStateExit();
+				msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL);
+			}
+		}
+		break;
+		case MSG_TYPE_SUBP_POWER_DOWN_READY:
+		{
+			//power down is ready, so send the response message back to the power board.
+			sendPwrDownResponseMessage(&subpUart);
+		}
+		break;
+		default:
+		break;
+		
+	}
 }
 
 
@@ -271,42 +322,6 @@ status_t convertFullFrameToProtoBuff(subp_fullImuFrameSet_t* rawFullFrame, Heddo
 	}	
 }
 
-static void processMessage(msg_message_t message)
-{
-	switch(message.type)
-	{
-		case MSG_TYPE_ENTERING_NEW_STATE:					
-		{
-			if(message.data == SYSTEM_STATE_RECORDING)
-			{
-				if(recordingStateEntry() == STATUS_PASS)
-				{
-					msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL); 
-				}
-				else
-				{
-					msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_ERROR, NULL); 
-				}				
-			}
-		}
-		break;
-		case MSG_TYPE_LEAVING_STATE:
-		{
-			if(message.data == SYSTEM_STATE_RECORDING)
-			{
-				recordingStateExit();
-				msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL); 
-			}
-		}
-		break;	
-		case MSG_TYPE_STATE:
-		break;
-		default:
-		break;
-		 
-	}
-}
-
 void processStatusMessage(uint8_t* packet)
 {
 	//copy the packet to the local structure
@@ -369,4 +384,71 @@ static void sendConfigtMessage(drv_uart_config_t* uartConfig, uint8_t rate, uint
 	configBytes[2] = rate;
 	memcpy(&configBytes[3],&sensorMask,4); //copy the sensor mask to the config bytes.  
 	pkt_sendRawPacket(uartConfig,configBytes, sizeof(configBytes));
+}
+
+static void sendPwrDownResponseMessage(drv_uart_config_t* uartConfig)
+{
+	uint8_t rawBytes[] = {0x01,PACKET_COMMAND_ID_SUBP_POWER_DOWN_RESP};
+	pkt_sendRawPacket(uartConfig,rawBytes, sizeof(rawBytes));
+}
+
+/************************************************************************
+ * setDateTimeFromPacket(pkt_rawPacket_t *packet)
+ * @brief Set the date and time received from the data board
+ * @param pkt_rawPacket_t *packet: pointer to the packet
+ * @return status_t: STATUS_PASS or STATUS_FAILED                   
+ ************************************************************************/
+static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet)
+{
+	status_t status = STATUS_PASS;
+	subp_dateTime_t dateTime;
+	unsigned long startTime = xTaskGetTickCount(), curTime = 0;
+	
+	// set to registers directly
+	dateTime.time = packet->payload[2] | (packet->payload[3] << 8) | (packet->payload[4] << 16) | (0x00 <<22);	// 0x00 as we are using 24-hour mode
+	dateTime.date = packet->payload[6] | (packet->payload[7] << 8) | (((packet->payload[8] & 0x1F) | (packet->payload[8] & 0xE0)) << 16) 
+					| (packet->payload[9] << 24);
+	
+	taskENTER_CRITICAL();
+	// Date
+	RTC->RTC_CR |= RTC_CR_UPDCAL;
+	//delay_ms(1500);	// NOTE: remove this delay when the while loop below starts working
+	while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD)
+	{
+		curTime = xTaskGetTickCount();
+		if (curTime - startTime > 2000)		// it can take up to one second to get the ACKUPD bit
+		{
+			status |= STATUS_FAIL;
+			return status;
+		}
+	}
+	RTC->RTC_SCCR = RTC_SCCR_ACKCLR;
+	RTC->RTC_CALR = dateTime.date;
+	RTC->RTC_CR &= (~RTC_CR_UPDCAL);
+	RTC->RTC_SCCR |= RTC_SCCR_SECCLR;
+
+	status |=  (RTC->RTC_VER & RTC_VER_NVCAL);	// check if the RTC contains a valid value
+	
+	// Time
+	RTC->RTC_CR |= RTC_CR_UPDTIM;
+	//delay_ms(1500);	// NOTE: remove this delay when the while loop below starts working
+	while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD)
+	{
+		curTime = xTaskGetTickCount();
+		if (curTime - startTime > 2000)		// it can take up to one second to get the ACKUPD bit
+		{
+			status |= STATUS_FAIL;
+			return status;
+		}
+	}
+	RTC->RTC_SCCR = RTC_SCCR_ACKCLR;
+	RTC->RTC_TIMR = dateTime.time;
+	RTC->RTC_CR &= (~RTC_CR_UPDTIM);
+	RTC->RTC_SCCR |= RTC_SCCR_SECCLR;
+
+	status |= (RTC->RTC_VER & RTC_VER_NVTIM);	// check if the RTC contains a valid value
+	
+	/*	return the status	*/
+	taskEXIT_CRITICAL();
+	return status;
 }

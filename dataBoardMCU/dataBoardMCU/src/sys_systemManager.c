@@ -29,6 +29,7 @@ sys_manager_systemState_t currentState = SYSTEM_STATE_INIT;
 
 /*	Local static functions	*/
 static void sendStateChangeMessage(sys_manager_systemState_t state);
+static void processEvent(msg_message_t* message);
 /*	Extern functions	*/
 /*	Extern variables	*/
 
@@ -68,15 +69,15 @@ void sys_systemManagerTask(void* pvParameters)
 		msg_registerForMessages(MODULE_SYSTEM_MANAGER, 0xff, queue_systemManager);
 	}
 	//start the other tasks
-	if (xTaskCreate(dbg_debugTask, "DBG", TASK_DEBUG_MANAGER_STACK_SIZE, NULL, TASK_DEBUG_MANAGER_PRIORITY, NULL) != pdPASS)
+	if (xTaskCreate(dbg_debugTask, "dbg", TASK_DEBUG_MANAGER_STACK_SIZE, NULL, TASK_DEBUG_MANAGER_PRIORITY, NULL) != pdPASS)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create sub process handler task\r\n");
 	}	
-	if (xTaskCreate(subp_subProcessorTask, "SP", TASK_SUB_PROCESS_MANAGER_STACK_SIZE, NULL, TASK_SUB_PROCESS_MANAGER_PRIORITY, NULL) != pdPASS)
+	if (xTaskCreate(subp_subProcessorTask, "subp", TASK_SUB_PROCESS_MANAGER_STACK_SIZE, NULL, TASK_SUB_PROCESS_MANAGER_PRIORITY, NULL) != pdPASS)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create sub process handler task\r\n");
 	}
-	if (xTaskCreate(sdc_sdCardTask, "SDC", TASK_SD_CARD_STACK_SIZE, NULL, TASK_SD_CARD_PRIORITY, NULL) != pdPASS)
+	if (xTaskCreate(sdc_sdCardTask, "sdc", TASK_SD_CARD_STACK_SIZE, NULL, TASK_SD_CARD_PRIORITY, NULL) != pdPASS)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create sd card task\r\n");
 	}
@@ -92,14 +93,13 @@ void sys_systemManagerTask(void* pvParameters)
 	vTaskDelay(200); 
 	sendStateChangeMessage(SYSTEM_STATE_INIT); 
 	
-	//vTaskDelay(5000); 
-	//sendStateChangeMessage(SYSTEM_STATE_RECORDING);
+
 	
 	while (1)
 	{		
 		if(xQueueReceive(queue_systemManager, &(eventMessage), 1) == true)
 		{
-			
+			processEvent(&eventMessage);
 		}
 		wdt_restart(WDT);		
 		vTaskDelay(100);
@@ -107,7 +107,20 @@ void sys_systemManagerTask(void* pvParameters)
 }
 
 
-
+static void processEvent(msg_message_t* message)
+{
+	switch(message->type)
+	{
+		case MSG_TYPE_SDCARD_STATE:
+		break;
+		case MSG_TYPE_WIFI_STATE:
+		break;
+		case MSG_TYPE_SUBP_POWER_DOWN_REQ:
+		//right now just send back the power down ready message right away. 
+		msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_SYSTEM_MANAGER, MSG_TYPE_SUBP_POWER_DOWN_READY,NULL);
+		break;
+	}
+}
 
 static void sendStateChangeMessage(sys_manager_systemState_t state)
 {
