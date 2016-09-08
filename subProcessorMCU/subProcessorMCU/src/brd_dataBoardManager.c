@@ -11,7 +11,7 @@
 #include "brd_dataBoardManager.h"
 #include "pkt_packetCommandsList.h"
 #include "mgr_managerTask.h"
-#include "sts_statusHeartbeat.h"
+#include "chrg_chargeMonitor.h"
 #include "sen_sensorHandler.h"
 #include "pkt_packetParser.h"
 #include "drv_gpio.h"
