@@ -1293,6 +1293,12 @@
     <Compile Include="src\drv_tc.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\gpm_gpioManager.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\gpm_gpioManager.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\imu.h">
       <SubType>compile</SubType>
     </Compile>
