@@ -22,10 +22,25 @@
 #include "dbg_debugManager.h"
 #include "net_wirelessNetwork.h"
 #include "ble_bluetoothManager.h"
+#include "drv_piezo.h"
 
 /* Global Variables */
 xQueueHandle queue_systemManager = NULL;
 sys_manager_systemState_t currentState = SYSTEM_STATE_INIT; 
+
+drv_piezo_config_t piezoConfig =
+{
+	.gpioPin = DRV_GPIO_PIN_PIEZO_OUT
+};
+drv_piezo_noteElement_t noteElementsArray[] =
+{
+	{900, 250},
+	//{000, 250},
+	{2500, 250},
+	//{000, 250},
+	{4000, 250},
+	//{000, 250}
+};
 
 /*	Local static functions	*/
 static void sendStateChangeMessage(sys_manager_systemState_t state);
@@ -35,6 +50,7 @@ static void sendStateChangeMessage(sys_manager_systemState_t state);
 
 //Delete me after testing complete
 void playSound(float duration, float frequency);
+void buzzMotor(uint8_t numberOfTimes);
 
 
 void sys_systemManagerTask(void* pvParameters)
@@ -53,17 +69,18 @@ void sys_systemManagerTask(void* pvParameters)
 	};
 	drv_led_init(&ledConfiguration);
 	drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
-	drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_HIGH);
-	playSound(800,900);
-	playSound(800,2500);
-	playSound(800,4000);
-	drv_led_set(DRV_LED_RED,DRV_LED_SOLID);
-	playSound(400,1047);
-	drv_led_set(DRV_LED_WHITE,DRV_LED_SOLID);
-	playSound(400,1244);
-	drv_led_set(DRV_LED_BLUE,DRV_LED_SOLID);
-	playSound(400,1568);
-	//drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_LOW);
+	//playSound(800,900);
+	//playSound(800,2500);
+	//playSound(800,4000);
+	//drv_led_set(DRV_LED_RED,DRV_LED_SOLID);
+	//playSound(400,1047);
+	//drv_led_set(DRV_LED_WHITE,DRV_LED_SOLID);
+	//playSound(400,1244);
+	//drv_led_set(DRV_LED_BLUE,DRV_LED_SOLID);
+	//playSound(400,1568);
+	drv_piezo_init(&piezoConfig);
+	drv_piezo_playPattern(noteElementsArray, (sizeof(noteElementsArray) / sizeof(drv_piezo_noteElement_t)));
+	buzzMotor(5);
 	vTaskDelay(200);
 	queue_systemManager = xQueueCreate(10, sizeof(msg_message_t));
 	if (queue_systemManager != 0)
@@ -139,5 +156,13 @@ void playSound(float duration, float frequency)
 	return;
 }
 
-
-
+void buzzMotor(uint8_t numberOfTimes)
+{
+	for (int i = 0; i < numberOfTimes; i++)
+	{
+		drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_LOW);
+		vTaskDelay(200);
+		drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_HIGH);
+		vTaskDelay(200);
+	}
+}

@@ -93,6 +93,221 @@ void   heddoko__full_data_frame__free_unpacked
   assert(message->base.descriptor == &heddoko__full_data_frame__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+void   heddoko__endpoint__init
+                     (Heddoko__Endpoint         *message)
+{
+  static Heddoko__Endpoint init_value = HEDDOKO__ENDPOINT__INIT;
+  *message = init_value;
+}
+size_t heddoko__endpoint__get_packed_size
+                     (const Heddoko__Endpoint *message)
+{
+  assert(message->base.descriptor == &heddoko__endpoint__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t heddoko__endpoint__pack
+                     (const Heddoko__Endpoint *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &heddoko__endpoint__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t heddoko__endpoint__pack_to_buffer
+                     (const Heddoko__Endpoint *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &heddoko__endpoint__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Heddoko__Endpoint *
+       heddoko__endpoint__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Heddoko__Endpoint *)
+     protobuf_c_message_unpack (&heddoko__endpoint__descriptor,
+                                allocator, len, data);
+}
+void   heddoko__endpoint__free_unpacked
+                     (Heddoko__Endpoint *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &heddoko__endpoint__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   heddoko__wifi_configuration__init
+                     (Heddoko__WifiConfiguration         *message)
+{
+  static Heddoko__WifiConfiguration init_value = HEDDOKO__WIFI_CONFIGURATION__INIT;
+  *message = init_value;
+}
+size_t heddoko__wifi_configuration__get_packed_size
+                     (const Heddoko__WifiConfiguration *message)
+{
+  assert(message->base.descriptor == &heddoko__wifi_configuration__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t heddoko__wifi_configuration__pack
+                     (const Heddoko__WifiConfiguration *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &heddoko__wifi_configuration__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t heddoko__wifi_configuration__pack_to_buffer
+                     (const Heddoko__WifiConfiguration *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &heddoko__wifi_configuration__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Heddoko__WifiConfiguration *
+       heddoko__wifi_configuration__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Heddoko__WifiConfiguration *)
+     protobuf_c_message_unpack (&heddoko__wifi_configuration__descriptor,
+                                allocator, len, data);
+}
+void   heddoko__wifi_configuration__free_unpacked
+                     (Heddoko__WifiConfiguration *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &heddoko__wifi_configuration__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   heddoko__recordings_response__init
+                     (Heddoko__RecordingsResponse         *message)
+{
+  static Heddoko__RecordingsResponse init_value = HEDDOKO__RECORDINGS_RESPONSE__INIT;
+  *message = init_value;
+}
+size_t heddoko__recordings_response__get_packed_size
+                     (const Heddoko__RecordingsResponse *message)
+{
+  assert(message->base.descriptor == &heddoko__recordings_response__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t heddoko__recordings_response__pack
+                     (const Heddoko__RecordingsResponse *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &heddoko__recordings_response__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t heddoko__recordings_response__pack_to_buffer
+                     (const Heddoko__RecordingsResponse *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &heddoko__recordings_response__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Heddoko__RecordingsResponse *
+       heddoko__recordings_response__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Heddoko__RecordingsResponse *)
+     protobuf_c_message_unpack (&heddoko__recordings_response__descriptor,
+                                allocator, len, data);
+}
+void   heddoko__recordings_response__free_unpacked
+                     (Heddoko__RecordingsResponse *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &heddoko__recordings_response__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   heddoko__file_download__init
+                     (Heddoko__FileDownload         *message)
+{
+  static Heddoko__FileDownload init_value = HEDDOKO__FILE_DOWNLOAD__INIT;
+  *message = init_value;
+}
+size_t heddoko__file_download__get_packed_size
+                     (const Heddoko__FileDownload *message)
+{
+  assert(message->base.descriptor == &heddoko__file_download__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t heddoko__file_download__pack
+                     (const Heddoko__FileDownload *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &heddoko__file_download__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t heddoko__file_download__pack_to_buffer
+                     (const Heddoko__FileDownload *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &heddoko__file_download__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Heddoko__FileDownload *
+       heddoko__file_download__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Heddoko__FileDownload *)
+     protobuf_c_message_unpack (&heddoko__file_download__descriptor,
+                                allocator, len, data);
+}
+void   heddoko__file_download__free_unpacked
+                     (Heddoko__FileDownload *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &heddoko__file_download__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
+void   heddoko__firmware_update__init
+                     (Heddoko__FirmwareUpdate         *message)
+{
+  static Heddoko__FirmwareUpdate init_value = HEDDOKO__FIRMWARE_UPDATE__INIT;
+  *message = init_value;
+}
+size_t heddoko__firmware_update__get_packed_size
+                     (const Heddoko__FirmwareUpdate *message)
+{
+  assert(message->base.descriptor == &heddoko__firmware_update__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t heddoko__firmware_update__pack
+                     (const Heddoko__FirmwareUpdate *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &heddoko__firmware_update__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t heddoko__firmware_update__pack_to_buffer
+                     (const Heddoko__FirmwareUpdate *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &heddoko__firmware_update__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+Heddoko__FirmwareUpdate *
+       heddoko__firmware_update__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (Heddoko__FirmwareUpdate *)
+     protobuf_c_message_unpack (&heddoko__firmware_update__descriptor,
+                                allocator, len, data);
+}
+void   heddoko__firmware_update__free_unpacked
+                     (Heddoko__FirmwareUpdate *message,
+                      ProtobufCAllocator *allocator)
+{
+  assert(message->base.descriptor == &heddoko__firmware_update__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   heddoko__packet__init
                      (Heddoko__Packet         *message)
 {
@@ -214,7 +429,7 @@ static const ProtobufCFieldDescriptor heddoko__imu_data_frame__field_descriptors
     "Mag_x",
     7,
     PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
+    PROTOBUF_C_TYPE_SINT32,
     offsetof(Heddoko__ImuDataFrame, has_mag_x),
     offsetof(Heddoko__ImuDataFrame, mag_x),
     NULL,
@@ -226,7 +441,7 @@ static const ProtobufCFieldDescriptor heddoko__imu_data_frame__field_descriptors
     "Mag_y",
     8,
     PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
+    PROTOBUF_C_TYPE_SINT32,
     offsetof(Heddoko__ImuDataFrame, has_mag_y),
     offsetof(Heddoko__ImuDataFrame, mag_y),
     NULL,
@@ -238,7 +453,7 @@ static const ProtobufCFieldDescriptor heddoko__imu_data_frame__field_descriptors
     "Mag_z",
     9,
     PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
+    PROTOBUF_C_TYPE_SINT32,
     offsetof(Heddoko__ImuDataFrame, has_mag_z),
     offsetof(Heddoko__ImuDataFrame, mag_z),
     NULL,
@@ -250,7 +465,7 @@ static const ProtobufCFieldDescriptor heddoko__imu_data_frame__field_descriptors
     "Accel_x",
     10,
     PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
+    PROTOBUF_C_TYPE_SINT32,
     offsetof(Heddoko__ImuDataFrame, has_accel_x),
     offsetof(Heddoko__ImuDataFrame, accel_x),
     NULL,
@@ -262,7 +477,7 @@ static const ProtobufCFieldDescriptor heddoko__imu_data_frame__field_descriptors
     "Accel_y",
     11,
     PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
+    PROTOBUF_C_TYPE_SINT32,
     offsetof(Heddoko__ImuDataFrame, has_accel_y),
     offsetof(Heddoko__ImuDataFrame, accel_y),
     NULL,
@@ -274,7 +489,7 @@ static const ProtobufCFieldDescriptor heddoko__imu_data_frame__field_descriptors
     "Accel_z",
     12,
     PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
+    PROTOBUF_C_TYPE_SINT32,
     offsetof(Heddoko__ImuDataFrame, has_accel_z),
     offsetof(Heddoko__ImuDataFrame, accel_z),
     NULL,
@@ -286,7 +501,7 @@ static const ProtobufCFieldDescriptor heddoko__imu_data_frame__field_descriptors
     "Rot_x",
     14,
     PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
+    PROTOBUF_C_TYPE_SINT32,
     offsetof(Heddoko__ImuDataFrame, has_rot_x),
     offsetof(Heddoko__ImuDataFrame, rot_x),
     NULL,
@@ -298,7 +513,7 @@ static const ProtobufCFieldDescriptor heddoko__imu_data_frame__field_descriptors
     "Rot_y",
     15,
     PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
+    PROTOBUF_C_TYPE_SINT32,
     offsetof(Heddoko__ImuDataFrame, has_rot_y),
     offsetof(Heddoko__ImuDataFrame, rot_y),
     NULL,
@@ -310,7 +525,7 @@ static const ProtobufCFieldDescriptor heddoko__imu_data_frame__field_descriptors
     "Rot_z",
     16,
     PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
+    PROTOBUF_C_TYPE_SINT32,
     offsetof(Heddoko__ImuDataFrame, has_rot_z),
     offsetof(Heddoko__ImuDataFrame, rot_z),
     NULL,
@@ -357,7 +572,7 @@ const ProtobufCMessageDescriptor heddoko__imu_data_frame__descriptor =
   (ProtobufCMessageInit) heddoko__imu_data_frame__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor heddoko__full_data_frame__field_descriptors[2] =
+static const ProtobufCFieldDescriptor heddoko__full_data_frame__field_descriptors[5] =
 {
   {
     "timeStamp",
@@ -383,15 +598,54 @@ static const ProtobufCFieldDescriptor heddoko__full_data_frame__field_descriptor
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
+  {
+    "reportType",
+    3,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_ENUM,
+    offsetof(Heddoko__FullDataFrame, has_reporttype),
+    offsetof(Heddoko__FullDataFrame, reporttype),
+    &heddoko__report_type__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "gpsCoordinates",
+    4,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__FullDataFrame, gpscoordinates),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "calibrationId",
+    5,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(Heddoko__FullDataFrame, has_calibrationid),
+    offsetof(Heddoko__FullDataFrame, calibrationid),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
 static const unsigned heddoko__full_data_frame__field_indices_by_name[] = {
+  4,   /* field[4] = calibrationId */
+  3,   /* field[3] = gpsCoordinates */
   1,   /* field[1] = imuDataFrame */
+  2,   /* field[2] = reportType */
   0,   /* field[0] = timeStamp */
 };
 static const ProtobufCIntRange heddoko__full_data_frame__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 2 }
+  { 0, 5 }
 };
 const ProtobufCMessageDescriptor heddoko__full_data_frame__descriptor =
 {
@@ -401,46 +655,347 @@ const ProtobufCMessageDescriptor heddoko__full_data_frame__descriptor =
   "Heddoko__FullDataFrame",
   "heddoko",
   sizeof(Heddoko__FullDataFrame),
-  2,
+  5,
   heddoko__full_data_frame__field_descriptors,
   heddoko__full_data_frame__field_indices_by_name,
   1,  heddoko__full_data_frame__number_ranges,
   (ProtobufCMessageInit) heddoko__full_data_frame__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCEnumValue heddoko__packet__brain_pack_state__enum_values_by_number[4] =
+static const ProtobufCFieldDescriptor heddoko__endpoint__field_descriptors[2] =
 {
-  { "Idle", "HEDDOKO__PACKET__BRAIN_PACK_STATE__Idle", 0 },
-  { "Recording", "HEDDOKO__PACKET__BRAIN_PACK_STATE__Recording", 1 },
-  { "Reset", "HEDDOKO__PACKET__BRAIN_PACK_STATE__Reset", 2 },
-  { "Error", "HEDDOKO__PACKET__BRAIN_PACK_STATE__Error", 4 },
+  {
+    "address",
+    1,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__Endpoint, address),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "port",
+    2,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_UINT32,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__Endpoint, port),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
 };
-static const ProtobufCIntRange heddoko__packet__brain_pack_state__value_ranges[] = {
-{0, 0},{4, 3},{0, 4}
+static const unsigned heddoko__endpoint__field_indices_by_name[] = {
+  0,   /* field[0] = address */
+  1,   /* field[1] = port */
 };
-static const ProtobufCEnumValueIndex heddoko__packet__brain_pack_state__enum_values_by_name[4] =
+static const ProtobufCIntRange heddoko__endpoint__number_ranges[1 + 1] =
 {
-  { "Error", 3 },
-  { "Idle", 0 },
-  { "Recording", 1 },
-  { "Reset", 2 },
+  { 1, 0 },
+  { 0, 2 }
 };
-const ProtobufCEnumDescriptor heddoko__packet__brain_pack_state__descriptor =
+const ProtobufCMessageDescriptor heddoko__endpoint__descriptor =
 {
-  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
-  "heddoko.Packet.BrainPackState",
-  "BrainPackState",
-  "Heddoko__Packet__BrainPackState",
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "heddoko.Endpoint",
+  "Endpoint",
+  "Heddoko__Endpoint",
   "heddoko",
-  4,
-  heddoko__packet__brain_pack_state__enum_values_by_number,
-  4,
-  heddoko__packet__brain_pack_state__enum_values_by_name,
+  sizeof(Heddoko__Endpoint),
   2,
-  heddoko__packet__brain_pack_state__value_ranges,
-  NULL,NULL,NULL,NULL   /* reserved[1234] */
+  heddoko__endpoint__field_descriptors,
+  heddoko__endpoint__field_indices_by_name,
+  1,  heddoko__endpoint__number_ranges,
+  (ProtobufCMessageInit) heddoko__endpoint__init,
+  NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor heddoko__packet__field_descriptors[6] =
+static const ProtobufCFieldDescriptor heddoko__wifi_configuration__field_descriptors[6] =
+{
+  {
+    "ssid",
+    1,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__WifiConfiguration, ssid),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "securityType",
+    2,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_ENUM,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__WifiConfiguration, securitytype),
+    &heddoko__wifi_security_type__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "wifiState",
+    3,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_BOOL,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__WifiConfiguration, wifistate),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "passphrase",
+    4,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__WifiConfiguration, passphrase),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "udpBroadcastPort",
+    5,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(Heddoko__WifiConfiguration, has_udpbroadcastport),
+    offsetof(Heddoko__WifiConfiguration, udpbroadcastport),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "connectionTimeout",
+    6,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(Heddoko__WifiConfiguration, has_connectiontimeout),
+    offsetof(Heddoko__WifiConfiguration, connectiontimeout),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned heddoko__wifi_configuration__field_indices_by_name[] = {
+  5,   /* field[5] = connectionTimeout */
+  3,   /* field[3] = passphrase */
+  1,   /* field[1] = securityType */
+  0,   /* field[0] = ssid */
+  4,   /* field[4] = udpBroadcastPort */
+  2,   /* field[2] = wifiState */
+};
+static const ProtobufCIntRange heddoko__wifi_configuration__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 6 }
+};
+const ProtobufCMessageDescriptor heddoko__wifi_configuration__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "heddoko.WifiConfiguration",
+  "WifiConfiguration",
+  "Heddoko__WifiConfiguration",
+  "heddoko",
+  sizeof(Heddoko__WifiConfiguration),
+  6,
+  heddoko__wifi_configuration__field_descriptors,
+  heddoko__wifi_configuration__field_indices_by_name,
+  1,  heddoko__wifi_configuration__number_ranges,
+  (ProtobufCMessageInit) heddoko__wifi_configuration__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor heddoko__recordings_response__field_descriptors[4] =
+{
+  {
+    "recordingsCount",
+    1,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_UINT32,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__RecordingsResponse, recordingscount),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "calibrationCount",
+    2,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_UINT32,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__RecordingsResponse, calibrationcount),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "recordingFilename",
+    3,
+    PROTOBUF_C_LABEL_REPEATED,
+    PROTOBUF_C_TYPE_STRING,
+    offsetof(Heddoko__RecordingsResponse, n_recordingfilename),
+    offsetof(Heddoko__RecordingsResponse, recordingfilename),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "calibrationFilename",
+    4,
+    PROTOBUF_C_LABEL_REPEATED,
+    PROTOBUF_C_TYPE_STRING,
+    offsetof(Heddoko__RecordingsResponse, n_calibrationfilename),
+    offsetof(Heddoko__RecordingsResponse, calibrationfilename),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned heddoko__recordings_response__field_indices_by_name[] = {
+  1,   /* field[1] = calibrationCount */
+  3,   /* field[3] = calibrationFilename */
+  2,   /* field[2] = recordingFilename */
+  0,   /* field[0] = recordingsCount */
+};
+static const ProtobufCIntRange heddoko__recordings_response__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 4 }
+};
+const ProtobufCMessageDescriptor heddoko__recordings_response__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "heddoko.RecordingsResponse",
+  "RecordingsResponse",
+  "Heddoko__RecordingsResponse",
+  "heddoko",
+  sizeof(Heddoko__RecordingsResponse),
+  4,
+  heddoko__recordings_response__field_descriptors,
+  heddoko__recordings_response__field_indices_by_name,
+  1,  heddoko__recordings_response__number_ranges,
+  (ProtobufCMessageInit) heddoko__recordings_response__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor heddoko__file_download__field_descriptors[2] =
+{
+  {
+    "downloadEndpoint",
+    1,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__FileDownload, downloadendpoint),
+    &heddoko__endpoint__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "downloadFilename",
+    2,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__FileDownload, downloadfilename),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned heddoko__file_download__field_indices_by_name[] = {
+  0,   /* field[0] = downloadEndpoint */
+  1,   /* field[1] = downloadFilename */
+};
+static const ProtobufCIntRange heddoko__file_download__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor heddoko__file_download__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "heddoko.FileDownload",
+  "FileDownload",
+  "Heddoko__FileDownload",
+  "heddoko",
+  sizeof(Heddoko__FileDownload),
+  2,
+  heddoko__file_download__field_descriptors,
+  heddoko__file_download__field_indices_by_name,
+  1,  heddoko__file_download__number_ranges,
+  (ProtobufCMessageInit) heddoko__file_download__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor heddoko__firmware_update__field_descriptors[2] =
+{
+  {
+    "fwEndpoint",
+    1,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__FirmwareUpdate, fwendpoint),
+    &heddoko__endpoint__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "fwFilename",
+    2,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__FirmwareUpdate, fwfilename),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned heddoko__firmware_update__field_indices_by_name[] = {
+  0,   /* field[0] = fwEndpoint */
+  1,   /* field[1] = fwFilename */
+};
+static const ProtobufCIntRange heddoko__firmware_update__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 2 }
+};
+const ProtobufCMessageDescriptor heddoko__firmware_update__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "heddoko.FirmwareUpdate",
+  "FirmwareUpdate",
+  "Heddoko__FirmwareUpdate",
+  "heddoko",
+  sizeof(Heddoko__FirmwareUpdate),
+  2,
+  heddoko__firmware_update__field_descriptors,
+  heddoko__firmware_update__field_indices_by_name,
+  1,  heddoko__firmware_update__number_ranges,
+  (ProtobufCMessageInit) heddoko__firmware_update__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
+static const ProtobufCFieldDescriptor heddoko__packet__field_descriptors[19] =
 {
   {
     "type",
@@ -455,44 +1010,200 @@ static const ProtobufCFieldDescriptor heddoko__packet__field_descriptors[6] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "state",
+    "brainpackState",
     2,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_ENUM,
-    offsetof(Heddoko__Packet, has_state),
-    offsetof(Heddoko__Packet, state),
-    &heddoko__packet__brain_pack_state__descriptor,
+    offsetof(Heddoko__Packet, has_brainpackstate),
+    offsetof(Heddoko__Packet, brainpackstate),
+    &heddoko__brainpack_state__descriptor,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "brainPackVersion",
+    "firmwareVersion",
     3,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_STRING,
     0,   /* quantifier_offset */
-    offsetof(Heddoko__Packet, brainpackversion),
+    offsetof(Heddoko__Packet, firmwareversion),
     NULL,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "batteryCharge",
+    "serialNumber",
     4,
     PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
-    offsetof(Heddoko__Packet, has_batterycharge),
-    offsetof(Heddoko__Packet, batterycharge),
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__Packet, serialnumber),
     NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "batteryLevel",
+    5,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(Heddoko__Packet, has_batterylevel),
+    offsetof(Heddoko__Packet, batterylevel),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "chargeState",
+    6,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_ENUM,
+    offsetof(Heddoko__Packet, has_chargestate),
+    offsetof(Heddoko__Packet, chargestate),
+    &heddoko__charge_state__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "messageStatus",
+    7,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_BOOL,
+    offsetof(Heddoko__Packet, has_messagestatus),
+    offsetof(Heddoko__Packet, messagestatus),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "calibrationFilename",
+    8,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__Packet, calibrationfilename),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "recordingRate",
+    9,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(Heddoko__Packet, has_recordingrate),
+    offsetof(Heddoko__Packet, recordingrate),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "recordingFilename",
+    10,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__Packet, recordingfilename),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "dateTime",
+    11,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__Packet, datetime),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "configurationPort",
+    12,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(Heddoko__Packet, has_configurationport),
+    offsetof(Heddoko__Packet, configurationport),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "sensorMask",
+    13,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_UINT32,
+    offsetof(Heddoko__Packet, has_sensormask),
+    offsetof(Heddoko__Packet, sensormask),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "wifiConfiguration",
+    14,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__Packet, wificonfiguration),
+    &heddoko__wifi_configuration__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "recordingsResponse",
+    15,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__Packet, recordingsresponse),
+    &heddoko__recordings_response__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "fileDownload",
+    16,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__Packet, filedownload),
+    &heddoko__file_download__descriptor,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "firmwareUpdate",
+    17,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_MESSAGE,
+    0,   /* quantifier_offset */
+    offsetof(Heddoko__Packet, firmwareupdate),
+    &heddoko__firmware_update__descriptor,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
     "fullDataFrame",
-    5,
+    18,
     PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_MESSAGE,
     0,   /* quantifier_offset */
@@ -503,30 +1214,43 @@ static const ProtobufCFieldDescriptor heddoko__packet__field_descriptors[6] =
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
   {
-    "recordingName",
-    6,
+    "endpoint",
+    19,
     PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_STRING,
+    PROTOBUF_C_TYPE_MESSAGE,
     0,   /* quantifier_offset */
-    offsetof(Heddoko__Packet, recordingname),
-    NULL,
+    offsetof(Heddoko__Packet, endpoint),
+    &heddoko__endpoint__descriptor,
     NULL,
     0,             /* flags */
     0,NULL,NULL    /* reserved1,reserved2, etc */
   },
 };
 static const unsigned heddoko__packet__field_indices_by_name[] = {
-  3,   /* field[3] = batteryCharge */
-  2,   /* field[2] = brainPackVersion */
-  4,   /* field[4] = fullDataFrame */
-  5,   /* field[5] = recordingName */
-  1,   /* field[1] = state */
+  4,   /* field[4] = batteryLevel */
+  1,   /* field[1] = brainpackState */
+  7,   /* field[7] = calibrationFilename */
+  5,   /* field[5] = chargeState */
+  11,   /* field[11] = configurationPort */
+  10,   /* field[10] = dateTime */
+  18,   /* field[18] = endpoint */
+  15,   /* field[15] = fileDownload */
+  16,   /* field[16] = firmwareUpdate */
+  2,   /* field[2] = firmwareVersion */
+  17,   /* field[17] = fullDataFrame */
+  6,   /* field[6] = messageStatus */
+  9,   /* field[9] = recordingFilename */
+  8,   /* field[8] = recordingRate */
+  14,   /* field[14] = recordingsResponse */
+  12,   /* field[12] = sensorMask */
+  3,   /* field[3] = serialNumber */
   0,   /* field[0] = type */
+  13,   /* field[13] = wifiConfiguration */
 };
 static const ProtobufCIntRange heddoko__packet__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 6 }
+  { 0, 19 }
 };
 const ProtobufCMessageDescriptor heddoko__packet__descriptor =
 {
@@ -536,39 +1260,65 @@ const ProtobufCMessageDescriptor heddoko__packet__descriptor =
   "Heddoko__Packet",
   "heddoko",
   sizeof(Heddoko__Packet),
-  6,
+  19,
   heddoko__packet__field_descriptors,
   heddoko__packet__field_indices_by_name,
   1,  heddoko__packet__number_ranges,
   (ProtobufCMessageInit) heddoko__packet__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCEnumValue heddoko__packet_type__enum_values_by_number[9] =
+static const ProtobufCEnumValue heddoko__packet_type__enum_values_by_number[22] =
 {
-  { "StateRequest", "HEDDOKO__PACKET_TYPE__StateRequest", 0 },
-  { "StateResponse", "HEDDOKO__PACKET_TYPE__StateResponse", 1 },
-  { "DataFrame", "HEDDOKO__PACKET_TYPE__DataFrame", 2 },
-  { "BatteryChargeRequest", "HEDDOKO__PACKET_TYPE__BatteryChargeRequest", 3 },
-  { "BatteryChargeResponse", "HEDDOKO__PACKET_TYPE__BatteryChargeResponse", 4 },
-  { "BrainPackVersionRequest", "HEDDOKO__PACKET_TYPE__BrainPackVersionRequest", 5 },
-  { "BrainPackVersionResponse", "HEDDOKO__PACKET_TYPE__BrainPackVersionResponse", 6 },
-  { "SetRecordingName", "HEDDOKO__PACKET_TYPE__SetRecordingName", 7 },
-  { "GetRecordingName", "HEDDOKO__PACKET_TYPE__GetRecordingName", 8 },
+  { "StatusRequest", "HEDDOKO__PACKET_TYPE__StatusRequest", 0 },
+  { "StatusResponse", "HEDDOKO__PACKET_TYPE__StatusResponse", 1 },
+  { "SetWifiConfiguration", "HEDDOKO__PACKET_TYPE__SetWifiConfiguration", 2 },
+  { "RecordingsListRequest", "HEDDOKO__PACKET_TYPE__RecordingsListRequest", 3 },
+  { "RecordingListReponse", "HEDDOKO__PACKET_TYPE__RecordingListReponse", 4 },
+  { "FileDownloadRequest", "HEDDOKO__PACKET_TYPE__FileDownloadRequest", 5 },
+  { "FileDownloadReponse", "HEDDOKO__PACKET_TYPE__FileDownloadReponse", 6 },
+  { "ClearBrainpackRequest", "HEDDOKO__PACKET_TYPE__ClearBrainpackRequest", 7 },
+  { "CalibrationRequest", "HEDDOKO__PACKET_TYPE__CalibrationRequest", 8 },
+  { "CalibrationResponse", "HEDDOKO__PACKET_TYPE__CalibrationResponse", 9 },
+  { "StartDataStream", "HEDDOKO__PACKET_TYPE__StartDataStream", 10 },
+  { "StopDataStream", "HEDDOKO__PACKET_TYPE__StopDataStream", 11 },
+  { "ConfigureRecordingSettings", "HEDDOKO__PACKET_TYPE__ConfigureRecordingSettings", 12 },
+  { "DataFrame", "HEDDOKO__PACKET_TYPE__DataFrame", 13 },
+  { "RecordingInformation", "HEDDOKO__PACKET_TYPE__RecordingInformation", 14 },
+  { "LastCalibrationRequest", "HEDDOKO__PACKET_TYPE__LastCalibrationRequest", 15 },
+  { "LastCalibrationResponse", "HEDDOKO__PACKET_TYPE__LastCalibrationResponse", 16 },
+  { "AdvertisingPacket", "HEDDOKO__PACKET_TYPE__AdvertisingPacket", 17 },
+  { "UpdateFirmwareRequest", "HEDDOKO__PACKET_TYPE__UpdateFirmwareRequest", 18 },
+  { "UpdatedFirmwareResponse", "HEDDOKO__PACKET_TYPE__UpdatedFirmwareResponse", 19 },
+  { "SetTimeRequest", "HEDDOKO__PACKET_TYPE__SetTimeRequest", 20 },
+  { "MessageStatus", "HEDDOKO__PACKET_TYPE__MessageStatus", 21 },
 };
 static const ProtobufCIntRange heddoko__packet_type__value_ranges[] = {
-{0, 0},{0, 9}
+{0, 0},{0, 22}
 };
-static const ProtobufCEnumValueIndex heddoko__packet_type__enum_values_by_name[9] =
+static const ProtobufCEnumValueIndex heddoko__packet_type__enum_values_by_name[22] =
 {
-  { "BatteryChargeRequest", 3 },
-  { "BatteryChargeResponse", 4 },
-  { "BrainPackVersionRequest", 5 },
-  { "BrainPackVersionResponse", 6 },
-  { "DataFrame", 2 },
-  { "GetRecordingName", 8 },
-  { "SetRecordingName", 7 },
-  { "StateRequest", 0 },
-  { "StateResponse", 1 },
+  { "AdvertisingPacket", 17 },
+  { "CalibrationRequest", 8 },
+  { "CalibrationResponse", 9 },
+  { "ClearBrainpackRequest", 7 },
+  { "ConfigureRecordingSettings", 12 },
+  { "DataFrame", 13 },
+  { "FileDownloadReponse", 6 },
+  { "FileDownloadRequest", 5 },
+  { "LastCalibrationRequest", 15 },
+  { "LastCalibrationResponse", 16 },
+  { "MessageStatus", 21 },
+  { "RecordingInformation", 14 },
+  { "RecordingListReponse", 4 },
+  { "RecordingsListRequest", 3 },
+  { "SetTimeRequest", 20 },
+  { "SetWifiConfiguration", 2 },
+  { "StartDataStream", 10 },
+  { "StatusRequest", 0 },
+  { "StatusResponse", 1 },
+  { "StopDataStream", 11 },
+  { "UpdateFirmwareRequest", 18 },
+  { "UpdatedFirmwareResponse", 19 },
 };
 const ProtobufCEnumDescriptor heddoko__packet_type__descriptor =
 {
@@ -577,11 +1327,135 @@ const ProtobufCEnumDescriptor heddoko__packet_type__descriptor =
   "PacketType",
   "Heddoko__PacketType",
   "heddoko",
-  9,
+  22,
   heddoko__packet_type__enum_values_by_number,
-  9,
+  22,
   heddoko__packet_type__enum_values_by_name,
   1,
   heddoko__packet_type__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue heddoko__brainpack_state__enum_values_by_number[5] =
+{
+  { "Initializing", "HEDDOKO__BRAINPACK_STATE__Initializing", 0 },
+  { "Idle", "HEDDOKO__BRAINPACK_STATE__Idle", 1 },
+  { "Recording", "HEDDOKO__BRAINPACK_STATE__Recording", 2 },
+  { "Streaming", "HEDDOKO__BRAINPACK_STATE__Streaming", 3 },
+  { "Error", "HEDDOKO__BRAINPACK_STATE__Error", 4 },
+};
+static const ProtobufCIntRange heddoko__brainpack_state__value_ranges[] = {
+{0, 0},{0, 5}
+};
+static const ProtobufCEnumValueIndex heddoko__brainpack_state__enum_values_by_name[5] =
+{
+  { "Error", 4 },
+  { "Idle", 1 },
+  { "Initializing", 0 },
+  { "Recording", 2 },
+  { "Streaming", 3 },
+};
+const ProtobufCEnumDescriptor heddoko__brainpack_state__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "heddoko.BrainpackState",
+  "BrainpackState",
+  "Heddoko__BrainpackState",
+  "heddoko",
+  5,
+  heddoko__brainpack_state__enum_values_by_number,
+  5,
+  heddoko__brainpack_state__enum_values_by_name,
+  1,
+  heddoko__brainpack_state__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue heddoko__charge_state__enum_values_by_number[4] =
+{
+  { "BatteryLow", "HEDDOKO__CHARGE_STATE__BatteryLow", 0 },
+  { "BatteryNominal", "HEDDOKO__CHARGE_STATE__BatteryNominal", 1 },
+  { "BatteryFull", "HEDDOKO__CHARGE_STATE__BatteryFull", 2 },
+  { "Charging", "HEDDOKO__CHARGE_STATE__Charging", 3 },
+};
+static const ProtobufCIntRange heddoko__charge_state__value_ranges[] = {
+{0, 0},{0, 4}
+};
+static const ProtobufCEnumValueIndex heddoko__charge_state__enum_values_by_name[4] =
+{
+  { "BatteryFull", 2 },
+  { "BatteryLow", 0 },
+  { "BatteryNominal", 1 },
+  { "Charging", 3 },
+};
+const ProtobufCEnumDescriptor heddoko__charge_state__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "heddoko.ChargeState",
+  "ChargeState",
+  "Heddoko__ChargeState",
+  "heddoko",
+  4,
+  heddoko__charge_state__enum_values_by_number,
+  4,
+  heddoko__charge_state__enum_values_by_name,
+  1,
+  heddoko__charge_state__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue heddoko__report_type__enum_values_by_number[2] =
+{
+  { "pain", "HEDDOKO__REPORT_TYPE__pain", 0 },
+  { "concern", "HEDDOKO__REPORT_TYPE__concern", 1 },
+};
+static const ProtobufCIntRange heddoko__report_type__value_ranges[] = {
+{0, 0},{0, 2}
+};
+static const ProtobufCEnumValueIndex heddoko__report_type__enum_values_by_name[2] =
+{
+  { "concern", 1 },
+  { "pain", 0 },
+};
+const ProtobufCEnumDescriptor heddoko__report_type__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "heddoko.ReportType",
+  "ReportType",
+  "Heddoko__ReportType",
+  "heddoko",
+  2,
+  heddoko__report_type__enum_values_by_number,
+  2,
+  heddoko__report_type__enum_values_by_name,
+  1,
+  heddoko__report_type__value_ranges,
+  NULL,NULL,NULL,NULL   /* reserved[1234] */
+};
+static const ProtobufCEnumValue heddoko__wifi_security_type__enum_values_by_number[3] =
+{
+  { "WEP", "HEDDOKO__WIFI_SECURITY_TYPE__WEP", 0 },
+  { "WPA", "HEDDOKO__WIFI_SECURITY_TYPE__WPA", 1 },
+  { "Open", "HEDDOKO__WIFI_SECURITY_TYPE__Open", 3 },
+};
+static const ProtobufCIntRange heddoko__wifi_security_type__value_ranges[] = {
+{0, 0},{3, 2},{0, 3}
+};
+static const ProtobufCEnumValueIndex heddoko__wifi_security_type__enum_values_by_name[3] =
+{
+  { "Open", 2 },
+  { "WEP", 0 },
+  { "WPA", 1 },
+};
+const ProtobufCEnumDescriptor heddoko__wifi_security_type__descriptor =
+{
+  PROTOBUF_C__ENUM_DESCRIPTOR_MAGIC,
+  "heddoko.WifiSecurityType",
+  "WifiSecurityType",
+  "Heddoko__WifiSecurityType",
+  "heddoko",
+  3,
+  heddoko__wifi_security_type__enum_values_by_number,
+  3,
+  heddoko__wifi_security_type__enum_values_by_name,
+  2,
+  heddoko__wifi_security_type__value_ranges,
   NULL,NULL,NULL,NULL   /* reserved[1234] */
 };

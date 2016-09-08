@@ -79,3 +79,6 @@
  VERSION 0.4m (for makeup!)
  1. Added in GPIO call to set the PB_PIN high so as to indicate wakeup. This is added for auto power down feature.
  2. Changed the max idle timeout to 10 mins.
+
+ VERSION 0.4n (for novelty!)
+ 1. Added changes as per the code review. Changed the default state of STAT pin to LOW.
