@@ -23,6 +23,7 @@
 #include "net_wirelessNetwork.h"
 #include "ble_bluetoothManager.h"
 #include "drv_piezo.h"
+#include "gpm_gpioManager.h"
 
 /* Global Variables */
 xQueueHandle queue_systemManager = NULL;
@@ -34,24 +35,20 @@ drv_piezo_config_t piezoConfig =
 };
 drv_piezo_noteElement_t noteElementsArray[] =
 {
-	{900, 250},
+	{900, 300},
 	//{000, 250},
-	{2500, 250},
+	{2500, 300},
 	//{000, 250},
-	{4000, 250},
+	{4000, 300},
 	//{000, 250}
 };
 
 /*	Local static functions	*/
 static void sendStateChangeMessage(sys_manager_systemState_t state);
+static void processMessage(msg_message_t message);
+static void processGpmMessage(uint32_t data);
 /*	Extern functions	*/
 /*	Extern variables	*/
-
-
-//Delete me after testing complete
-void playSound(float duration, float frequency);
-void buzzMotor(uint8_t numberOfTimes);
-
 
 void sys_systemManagerTask(void* pvParameters)
 {
@@ -69,18 +66,8 @@ void sys_systemManagerTask(void* pvParameters)
 	};
 	drv_led_init(&ledConfiguration);
 	drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
-	//playSound(800,900);
-	//playSound(800,2500);
-	//playSound(800,4000);
-	//drv_led_set(DRV_LED_RED,DRV_LED_SOLID);
-	//playSound(400,1047);
-	//drv_led_set(DRV_LED_WHITE,DRV_LED_SOLID);
-	//playSound(400,1244);
-	//drv_led_set(DRV_LED_BLUE,DRV_LED_SOLID);
-	//playSound(400,1568);
 	drv_piezo_init(&piezoConfig);
 	drv_piezo_playPattern(noteElementsArray, (sizeof(noteElementsArray) / sizeof(drv_piezo_noteElement_t)));
-	buzzMotor(5);
 	vTaskDelay(200);
 	queue_systemManager = xQueueCreate(10, sizeof(msg_message_t));
 	if (queue_systemManager != 0)
@@ -108,6 +95,10 @@ void sys_systemManagerTask(void* pvParameters)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create ble task\r\n");
 	}
+	if(xTaskCreate(gpm_gpioManagerTask, "gom", (3000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS)
+	{
+		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create gpm task\r\n");
+	}
 	
 	vTaskDelay(200); 
 	sendStateChangeMessage(SYSTEM_STATE_INIT); 
@@ -119,15 +110,38 @@ void sys_systemManagerTask(void* pvParameters)
 	{		
 		if(xQueueReceive(queue_systemManager, &(eventMessage), 1) == true)
 		{
-			
+			processMessage(eventMessage);
 		}
 		wdt_restart(WDT);		
 		vTaskDelay(100);
 	}
 }
 
-
-
+static void processMessage(msg_message_t message)
+{
+	switch(message.type)
+	{
+		case MSG_TYPE_ENTERING_NEW_STATE:
+		break;
+		case MSG_TYPE_ERROR:
+		break;
+		case MSG_TYPE_SDCARD_STATE:
+		break;
+		case MSG_TYPE_WIFI_STATE:
+		break;
+		case MSG_TYPE_GPM_BUTTON_EVENT:
+		{
+			if (message.source == MODULE_GPIO_MANAGER)
+			{
+				processGpmMessage(message.data);
+			}
+		}
+		break;
+		default:
+		break;
+		
+	}
+}
 
 static void sendStateChangeMessage(sys_manager_systemState_t state)
 {
@@ -135,34 +149,26 @@ static void sendStateChangeMessage(sys_manager_systemState_t state)
 	msg_sendBroadcastMessage(&message);
 }
 
-void playSound(float duration, float frequency)
+static void processGpmMessage(uint32_t data)
 {
-
-	long int i,cycles;
-	long half_period;
-	float wavelength;
-	
-	wavelength=(1/frequency)*1000000;
-	cycles= (long)((duration*1000)/wavelength);
-	half_period = (long)(wavelength/2);
-	for (i=0;i<cycles;i++)
+	switch (data)
 	{
-		delay_us(half_period);
-		drv_gpio_setPinState(DRV_GPIO_PIN_PIEZO_OUT, DRV_GPIO_PIN_STATE_HIGH);
-		delay_us(half_period);
-		drv_gpio_setPinState(DRV_GPIO_PIN_PIEZO_OUT, DRV_GPIO_PIN_STATE_LOW);
-	}
-
-	return;
-}
-
-void buzzMotor(uint8_t numberOfTimes)
-{
-	for (int i = 0; i < numberOfTimes; i++)
-	{
-		drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_LOW);
-		vTaskDelay(200);
-		drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_HIGH);
-		vTaskDelay(200);
+		case GPM_BUTTON_ONE_SHORT_PRESS:
+			drv_led_set(DRV_LED_BLUE, DRV_LED_SOLID);
+		break;
+		case GPM_BUTTON_ONE_LONG_PRESS:
+			drv_led_set(DRV_LED_BLUE, DRV_LED_FLASH);
+		break;
+		case GPM_BUTTON_TWO_SHORT_PRESS:
+			drv_led_set(DRV_LED_RED, DRV_LED_SOLID);
+		break;
+		case GPM_BUTTON_TWO_LONG_PRESS:
+			drv_led_set(DRV_LED_RED, DRV_LED_FLASH);
+		break;
+		case GPM_BOTH_BUTTON_LONG_PRESS:
+			drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
+		break;
+		default:
+		break;
 	}
 }

@@ -26,7 +26,8 @@ typedef enum
 	MSG_TYPE_WIFI_DISCONNECT, //
 	MSG_TYPE_USB_CONNECTED,
 	MSG_TYPE_CHARGER_EVENT,
-	MSG_TYPE_COMMAND_PACKET_RECEIVED			//TODO: should we have a separate type for the commands to the power board
+	MSG_TYPE_COMMAND_PACKET_RECEIVED,			//TODO: should we have a separate type for the commands to the power board
+	MSG_TYPE_GPM_BUTTON_EVENT
 }msg_messageType_t;
 
 typedef struct 

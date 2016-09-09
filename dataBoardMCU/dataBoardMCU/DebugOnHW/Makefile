@@ -168,6 +168,7 @@ C_SRCS +=  \
 ../src/dbg_debugManager.c \
 ../src/drv_led.c \
 ../src/drv_tc.c \
+../src/gpm_gpioManager.c \
 ../src/net_wirelessNetwork.c \
 ../src/drv_piezo.c \
 ../src/pkt_packetParser.c \
@@ -250,6 +251,7 @@ src/dat_dataManager.o \
 src/dbg_debugManager.o \
 src/drv_led.o \
 src/drv_tc.o \
+src/gpm_gpioManager.o \
 src/net_wirelessNetwork.o \
 src/drv_piezo.o \
 src/pkt_packetParser.o \
@@ -325,6 +327,7 @@ src/dat_dataManager.o \
 src/dbg_debugManager.o \
 src/drv_led.o \
 src/drv_tc.o \
+src/gpm_gpioManager.o \
 src/net_wirelessNetwork.o \
 src/drv_piezo.o \
 src/pkt_packetParser.o \
@@ -400,6 +403,7 @@ src/dat_dataManager.d \
 src/dbg_debugManager.d \
 src/drv_led.d \
 src/drv_tc.d \
+src/gpm_gpioManager.d \
 src/net_wirelessNetwork.d \
 src/drv_piezo.d \
 src/pkt_packetParser.d \
@@ -475,6 +479,7 @@ src/dat_dataManager.d \
 src/dbg_debugManager.d \
 src/drv_led.d \
 src/drv_tc.d \
+src/gpm_gpioManager.d \
 src/net_wirelessNetwork.d \
 src/drv_piezo.d \
 src/pkt_packetParser.d \
@@ -539,6 +544,8 @@ LINKER_SCRIPT_DEP+=  \
 
 
 # AVR32/GNU C Compiler
+
+
 
 
 

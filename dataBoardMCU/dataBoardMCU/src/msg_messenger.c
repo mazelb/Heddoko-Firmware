@@ -18,7 +18,8 @@ msg_messageBox_t messageBoxes[] =
 	{MODULE_COMMAND,NULL,NULL},
 	{MODULE_DEBUG,NULL,NULL},
 	{MODULE_SUB_PROCESSOR,NULL,NULL},
-	{MODULE_DATA_MANAGER,NULL,NULL}
+	{MODULE_DATA_MANAGER,NULL,NULL},
+	{MODULE_GPIO_MANAGER, NULL, NULL}
 };
 
 status_t msg_registerForMessages(modules_t module, uint32_t messageMask, xQueueHandle messageQueue)

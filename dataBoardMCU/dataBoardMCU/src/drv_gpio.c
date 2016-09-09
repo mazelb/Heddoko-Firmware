@@ -436,19 +436,30 @@ status_t drv_gpio_disable_interrupt_all(void)
 	return status;
 }
 
-///*	Interrupt Handlers definitions for GPIOs	*/
-//static void drv_gpio_int_sw0(uint32_t ul_id, uint32_t ul_mask)
-//{
-	//uint32_t PinMask = pio_get_pin_group_mask(gpioConfig[DRV_GPIO_PIN_SW0].pinId);
-	//pio_disable_interrupt(PIOA, PinMask);
-	//uint32_t ReadIsr = pio_get_interrupt_status(PIOA);
-	//if (PinMask == ul_mask)
-	//{
-		//gpioConfig[DRV_GPIO_PIN_SW0].gpioSetFlag = 1;
-	//}
-	//pio_enable_interrupt(PIOA, PinMask);
-//}
+/***********************************************************************************************
+ * drv_gpio_service_Int(drv_gpio_pins_t pin)
+ * @brief Service the interrupt for pins with external interrupt handlers
+ * @param drv_gpio_pins_t pin, uint32_t ul_mask: mask to verify the interrupt generated, 
+ *			bool intGeneratedFlag: pointer to boolean, indicates if the interrupt was generated
+ * @return void
+ ***********************************************************************************************/
+void drv_gpio_service_Int(drv_gpio_pins_t pin, uint32_t ul_mask, bool *intGeneratedFlag)
+{
+	uint32_t PinMask = pio_get_pin_group_mask(gpioConfig[pin].pinId);
+	pio_disable_interrupt(PIOA, PinMask);
+	uint32_t ReadIsr = PIOA->PIO_ISR;
+	if (PinMask == ul_mask)
+	{
+		*intGeneratedFlag = TRUE;	// set the flag to indicate that the interrupt was generated
+	}
+	else
+	{
+		*intGeneratedFlag = FALSE;	// no interrupt was generated
+	}
+	pio_enable_interrupt(PIOA, PinMask);
+}
 
+/*	Interrupt Handlers definitions for GPIOs	*/
 /***********************************************************************************************
  * drv_gpio_int_pw(uint32_t ul_id, uint32_t ul_mask)
  * @brief Interrupt routine for Power Switch

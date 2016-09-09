@@ -52,6 +52,8 @@ src\drv_led.c
 
 src\drv_tc.c
 
+src\gpm_gpioManager.c
+
 src\net_wirelessNetwork.c
 
 src\drv_piezo.c
