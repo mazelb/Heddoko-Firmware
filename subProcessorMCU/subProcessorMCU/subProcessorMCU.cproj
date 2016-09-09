@@ -297,7 +297,7 @@
       </framework-data>
     </AsfFrameworkConfig>
     <avrtool>com.atmel.avrdbg.tool.atmelice</avrtool>
-    <avrtoolserialnumber>J41800029774</avrtoolserialnumber>
+    <avrtoolserialnumber>J41800006052</avrtoolserialnumber>
     <avrdeviceexpectedsignature>0x288B07E0</avrdeviceexpectedsignature>
     <com_atmel_avrdbg_tool_atmelice>
       <ToolOptions>
@@ -307,7 +307,7 @@
         <InterfaceName>SWD</InterfaceName>
       </ToolOptions>
       <ToolType>com.atmel.avrdbg.tool.atmelice</ToolType>
-      <ToolNumber>J41800029774</ToolNumber>
+      <ToolNumber>J41800006052</ToolNumber>
       <ToolName>Atmel-ICE</ToolName>
     </com_atmel_avrdbg_tool_atmelice>
     <avrtoolinterface>SWD</avrtoolinterface>
@@ -557,7 +557,6 @@
       <Value>../src/ASF/thirdparty/freertos/freertos-7.3.0/source/portable/gcc/sam</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
-  <armgcc.compiler.optimization.level>Optimize (-O1)</armgcc.compiler.optimization.level>
   <armgcc.compiler.optimization.OtherFlags>-fdata-sections</armgcc.compiler.optimization.OtherFlags>
   <armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>True</armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>
   <armgcc.compiler.optimization.DebugLevel>Maximum (-g3)</armgcc.compiler.optimization.DebugLevel>

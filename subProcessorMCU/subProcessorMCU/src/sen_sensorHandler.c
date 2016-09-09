@@ -117,7 +117,7 @@ imuFrame_t imuFrameData =
 void sen_sensorHandlerTask(void *pvParameters)
 {
 	UNUSED(pvParameters);
-	
+	status_t status = STATUS_FAIL;
 	uint16_t bufferOffset = 0;
 	uint8_t sensorID = 0;
 	bool firstFrame = TRUE;		// check if it is the very first frame
@@ -126,7 +126,7 @@ void sen_sensorHandlerTask(void *pvParameters)
 	// initialize the UART driver
 	sensorPortConfig = &uart0Config;
 		
-	sendCommand(COMMAND_ID_CHANGE_BAUD, NULL, SENSOR_BUS_SPEED_HIGH);	// change the baud rate of sensors and designated UART.
+	//sendCommand(COMMAND_ID_CHANGE_BAUD, NULL, SENSOR_BUS_SPEED_HIGH);	// change the baud rate of sensors and designated UART.
 	
 	while (1)
 	{
@@ -192,10 +192,11 @@ void sen_sensorHandlerTask(void *pvParameters)
 				
 				bufferOffset = ((SEN_MAX_SENSOR_ID - number_FramesReceived) * SEN_DEFAULT_DATA_SIZE) + SEN_SENSOR_FULL_FRAME_HEADER_SIZE - SEN_SENSOR_FRAME_HEADER_SIZE;
 				tempPacket.p_payload = sensorFullFrame + bufferOffset; 						// set the pointer to the set offset in the full frame array
-				pkt_getPacketTimedNew(sensorPortConfig, &tempPacket, 1);					// NOTE: needs a pointer to the packet and not the packet.payload
-			
+				status = pkt_getPacketTimedNew(sensorPortConfig, &tempPacket, 2);					// NOTE: needs a pointer to the packet and not the packet.payload
+
+				
 				// perform a short check to verify the integrity of the packet
-				if (((tempPacket.payloadSize != SEN_DEFAULT_DATA_FRAME_LENGTH) || 
+				if (status != STATUS_PASS || ((tempPacket.payloadSize != SEN_DEFAULT_DATA_FRAME_LENGTH) || 
 					(isExpectedSensorId(sensorFullFrame[bufferOffset + SEN_SENSOR_FRAME_SENID_OFFSET], sensorID)) != STATUS_PASS))	// check for the size of packet and a valid sensor ID
 				{
 					// this is a corrupt frame, should discard it
@@ -270,7 +271,9 @@ static void sendPacket(uint8_t *data, uint8_t length)
  ************************************************************************/
 static void disableRs485Transmit()
 {
-	drv_gpio_setPinState(GPIO_RS485_DATA_DIRECTION_RE,  DRV_GPIO_PIN_STATE_LOW);
+	drv_gpio_setPinState(DRV_GPIO_PIN_RS485_D_EN,  DRV_GPIO_PIN_STATE_LOW);
+	drv_gpio_setPinState(DRV_GPIO_PIN_RS485_R_EN,  DRV_GPIO_PIN_STATE_LOW);
+	
 }
 
 /************************************************************************
@@ -281,7 +284,8 @@ static void disableRs485Transmit()
  ************************************************************************/
 static void enableRs485Transmit()
 {
-	drv_gpio_setPinState(GPIO_RS485_DATA_DIRECTION_RE,  DRV_GPIO_PIN_STATE_HIGH);
+	drv_gpio_setPinState(DRV_GPIO_PIN_RS485_D_EN,  DRV_GPIO_PIN_STATE_HIGH);
+	drv_gpio_setPinState(DRV_GPIO_PIN_RS485_R_EN,  DRV_GPIO_PIN_STATE_HIGH);
 }
 
 /************************************************************************
@@ -620,8 +624,8 @@ void sen_enableSensorStream(bool enable)
 		if (enableStream)
 		{
 			// reconfigure the baud rate (in case sensors were disconnected, default speed is LOW)
-			changeUartBaud(SENSOR_BUS_SPEED_LOW);	// NOTE: these functions do not work with optimization.
-			sendCommand(COMMAND_ID_CHANGE_BAUD, NULL, SENSOR_BUS_SPEED_HIGH);
+			//changeUartBaud(SENSOR_BUS_SPEED_LOW);	// NOTE: these functions do not work with optimization.
+			//sendCommand(COMMAND_ID_CHANGE_BAUD, NULL, SENSOR_BUS_SPEED_HIGH);
 		}
 	}
 }

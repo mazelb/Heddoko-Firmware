@@ -34,6 +34,18 @@ sdc_file_t debugLogFile =
 	.sem_bufferAccess = NULL
 };
 
+const char* moduleNameString[] = {
+"MODULE_SYSTEM_MANAGER",
+"MODULE_SDCARD",
+"MODULE_WIFI",
+"MODULE_COMMAND",
+"MODULE_DEBUG",
+"MODULE_SUB_PROCESSOR",
+"MODULE_DATA_MANAGER",
+"MODULE_BLE",
+"MODULE_NUMBER_OF_MODULES"
+};
+
 /*	Local static functions	*/
 static status_t processCommand(char* command, size_t cmdSize);
 static void processEvent(msg_message_t* message);
@@ -141,20 +153,18 @@ static status_t processCommand(char* command, size_t cmdSize)
 	
 	if(strncmp(command, "Record\r\n",cmdSize) == 0)
 	{		
-		msg_sendBroadcastMessageSimple(MODULE_DEBUG, MSG_TYPE_LEAVING_STATE, SYSTEM_STATE_IDLE);
 		msg_sendBroadcastMessageSimple(MODULE_DEBUG, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_RECORDING);
 		printString("Starting to record!\r\n");
 	}
 	else if(strncmp(command, "Idle\r\n",cmdSize) == 0)
 	{		
-		msg_sendBroadcastMessageSimple(MODULE_DEBUG, MSG_TYPE_LEAVING_STATE, SYSTEM_STATE_RECORDING);
 		msg_sendBroadcastMessageSimple(MODULE_DEBUG, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
 		printString("Entering Idle!\r\n");
 	}	
 	else if(strncmp(command, "Stream\r\n",cmdSize) == 0)
 	{		
 		msg_sendBroadcastMessageSimple(MODULE_DEBUG, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_STREAMING);
-		printString("Starting to record!\r\n");
+		printString("Starting to Stream!\r\n");
 	}		
 	else if(strncmp(command, "?\r\n",cmdSize) == 0)
 	{
@@ -192,6 +202,9 @@ static void processEvent(msg_message_t* message)
 		case MSG_TYPE_WIFI_STATE:
 			printString("Received Wifi state event\r\n");
 		break;
+		case MSG_TYPE_ERROR:
+			dgb_printf(DBG_LOG_LEVEL_DEBUG,"Received Error from Module: %s\r\n", moduleNameString[message->source]);
+		break;		
 		case MSG_TYPE_SUBP_STATUS:
 			printString("Received subp status\r\n");
 			subpReceivedStatus = (subp_status_t*)message->parameters;
@@ -247,3 +260,4 @@ static char* getTimeString()
 	sprintf(timeString,"%02d:%02d:%02d",hour,minute,second); 
 	return timeString; 
 } 
+

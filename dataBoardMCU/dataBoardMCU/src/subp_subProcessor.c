@@ -33,6 +33,8 @@ void protoPacketInit();
 //state change event functions
 static status_t recordingStateEntry();
 static status_t recordingStateExit();
+static status_t streamingStateEntry();
+static status_t streamingStateExit();
 
 /*	Local variables	*/
 xQueueHandle queue_subp = NULL;
@@ -56,7 +58,7 @@ drv_uart_config_t subpUart =
 	.mem_index = 0,
 	.uart_options =
 	{
-		.baudrate   = 921600,
+		.baudrate   = 460800,
 		.charlength = CONF_CHARLENGTH,
 		.paritytype = CONF_PARITY,
 		.stopbits   = CONF_STOPBITS
@@ -87,7 +89,16 @@ sdc_file_t dataLogFile =
 	.sem_bufferAccess = NULL
 };
 
+bool wifiConnected = false; 
+net_socketConfig_t streamingSocket =
+{
+	.endpoint.sin_addr = 0xFFFFFFFF, //broadcast Address
+	.endpoint.sin_family = AF_INET,
+	.endpoint.sin_port = _htons(6669),
+	.sourceModule = MODULE_WIFI
+};
 
+sys_manager_systemState_t subpState = SYSTEM_STATE_INIT; 
 
 /*	Extern functions	*/
 
@@ -181,7 +192,11 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 					{					
 						sdc_writeToFile(&dataLogFile, serializedDataBuffer, serializedLength); 
 					}
-					//net_sendPacket(serializedDataBuffer, serializedLength);
+					//check if the streaming socket is open. (should only be open in receive mode)
+					if(streamingSocket.socketId > -1)
+					{
+						net_sendUdpPacket(&streamingSocket, serializedDataBuffer, serializedLength);
+					}
 				}
 				if(rawFullFrame->timeStamp > lastTimeStamp)
 				{					
@@ -199,12 +214,14 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 					result = 0; //out of sequence frame
 				}
 				lastTimeStamp = rawFullFrame->timeStamp;
-				dgb_printf(DBG_LOG_LEVEL_DEBUG,"%d,%d,%d,%d,%d\r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,drv_uart_getDroppedBytes(&subpUart));				
+				dgb_printf(DBG_LOG_LEVEL_DEBUG,"%d,%d,%d,%d,%d\r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,drv_uart_getDroppedBytes(&subpUart));
+								
 			break;
 			case PACKET_COMMAND_ID_SUBP_GET_DATE_TIME_RESP:
 				//set the time from the packet contents. 
 				setDateTimeFromPacket(packet);
 			break;
+			
 			default:
 			
 			break;
@@ -223,12 +240,37 @@ static void processMessage(msg_message_t message)
 			{
 				if(recordingStateEntry() == STATUS_PASS)
 				{
+					subpState = SYSTEM_STATE_RECORDING;
 					msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL);
 				}
 				else
 				{
 					msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_ERROR, NULL);
 				}
+			}
+			else if(message.data == SYSTEM_STATE_STREAMING)
+			{
+				if(streamingStateEntry() == STATUS_PASS)
+				{
+					subpState = SYSTEM_STATE_STREAMING;
+					msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL);
+				}
+				else
+				{
+					msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_ERROR, NULL);
+				}
+			}
+			else if(message.data == SYSTEM_STATE_IDLE)
+			{
+				if(subpState == SYSTEM_STATE_RECORDING)
+				{
+					recordingStateExit();
+				}
+				else if(subpState == SYSTEM_STATE_STREAMING)
+				{
+					streamingStateExit();
+				}
+				subpState = SYSTEM_STATE_IDLE; 
 			}
 		}
 		break;
@@ -238,7 +280,14 @@ static void processMessage(msg_message_t message)
 			{
 				recordingStateExit();
 				msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL);
+				subpState = SYSTEM_STATE_IDLE;
 			}
+			else if(message.data == SYSTEM_STATE_STREAMING)
+			{
+				streamingStateExit();
+				msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL);
+				subpState = SYSTEM_STATE_IDLE;
+			}			
 		}
 		break;
 		case MSG_TYPE_SUBP_POWER_DOWN_READY:
@@ -247,6 +296,17 @@ static void processMessage(msg_message_t message)
 			sendPwrDownResponseMessage(&subpUart);
 		}
 		break;
+		case MSG_TYPE_WIFI_STATE:
+		{
+			if(message.data == 0)
+			{
+				wifiConnected = false;
+			}
+			else
+			{
+				wifiConnected = true; 
+			}
+		}		
 		default:
 		break;
 		
@@ -357,6 +417,46 @@ static status_t recordingStateExit()
 	//close file
 	status =  sdc_closeFile(&dataLogFile);
 	return status; 
+}
+
+static status_t streamingStateEntry()
+{
+	status_t status = STATUS_PASS;
+	
+	//check for valid calibration file (the name of the last calibration file should be populated)
+	
+	//check if we are connected to wifi
+	if(!wifiConnected)
+	{
+		//since we're not connected we cannot stream. don't know how we'd get here. 
+		return STATUS_FAIL;	
+	}
+	//create the udp socket
+	dbg_printString(DBG_LOG_LEVEL_DEBUG, "Creating streaming socket\r\n");
+	status = net_createUdpSocket(&streamingSocket, 255);
+	
+	//open/create recording data file
+	status |=  sdc_openFile(&dataLogFile, dataLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DATA_LOG);
+	//write file header to log
+	
+	//send config to power board
+	sendConfigtMessage(&subpUart,subp_config.rate,subp_config.sensorMask);
+	//send stream start command to power board.
+	sendStreamMessage(&subpUart, 0x01);
+	return status;
+}
+
+static status_t streamingStateExit()
+{
+	status_t status = STATUS_PASS;
+	//send stop streaming command to power board
+	sendStreamMessage(&subpUart, 0x00);
+	//close UDP socket
+	status = net_closeSocket(&streamingSocket);
+	//close file
+	status =  sdc_closeFile(&dataLogFile);	
+	
+	return status;
 }
 
 //message sending functions
