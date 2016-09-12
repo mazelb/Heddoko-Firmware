@@ -205,7 +205,9 @@ sint8 nm_bus_ioctl(uint8 u8Cmd, void* pvParameter)
 #elif defined CONF_WINC_USE_SPI
 		case NM_BUS_IOCTL_RW: {
 			tstrNmSpiRw *pstrParam = (tstrNmSpiRw *)pvParameter;
+			taskENTER_CRITICAL();
 			s8Ret = spi_rw(pstrParam->pu8InBuf, pstrParam->pu8OutBuf, pstrParam->u16Sz);
+			taskEXIT_CRITICAL();
 		}
 		break;
 #endif

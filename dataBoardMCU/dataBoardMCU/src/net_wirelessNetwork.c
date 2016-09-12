@@ -294,7 +294,7 @@ status_t net_sendUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_
 			}
 			else
 			{
-				dbg_printString(DBG_LOG_LEVEL_ERROR,"main: failed to send packet!\r\n");
+				dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to send packet!\r\n");
 			}
 			xSemaphoreGive(semaphore_wifiAccess);
 		}
@@ -354,6 +354,8 @@ static status_t registerSocket(net_socketConfig_t* newSocket)
 		{
 			registeredSockets[i] = newSocket;
 			status = STATUS_PASS;
+			//get out of the loop, we found a place for the socket.
+			break;
 		}
 	}
 	return status;

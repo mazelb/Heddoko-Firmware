@@ -157,8 +157,7 @@ status_t pkt_processIncomingByte(pkt_rawPacket_t* rawPacket, uint8_t byte)
 		if(rawPacket->payloadSize > RAW_PACKET_MAX_SIZE)
 		{
 			//set the error flag, something weird is going on...
-			rawPacket->inError = true;			
-			errorCount++;
+			rawPacket->inError = true;		
 			
 		}
 	}

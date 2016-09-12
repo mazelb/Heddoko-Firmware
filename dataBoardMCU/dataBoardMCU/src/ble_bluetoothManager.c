@@ -11,6 +11,7 @@
 #include "pkt_packetParser.h"
 #include "dbg_debugManager.h"
 #include "pkt_packetCommandsList.h"
+#include "subp_subProcessor.h"
 
 /*	Local defines	*/
 #define BLE_MAX_BP_STATUS_DATA_LENGTH	5
@@ -23,6 +24,7 @@ static void sendBpStatusData();
 /*	Local variables	*/
 xQueueHandle queue_ble = NULL;
 bool newBpStateDataAvailble = false;
+subp_status_t subProcessorStatusData;
 drv_uart_config_t usart1Config =
 {
 	.p_usart = USART1,
@@ -58,7 +60,7 @@ void ble_bluetoothManagerTask(void *pvParameters)
 	queue_ble = xQueueCreate(10, sizeof(msg_message_t));
 	if (queue_ble != 0)
 	{
-		msg_registerForMessages(MODULE_SUB_PROCESSOR, 0xff, queue_ble);
+		msg_registerForMessages(MODULE_BLE, 0xff, queue_ble);
 	}
 	//initialize the UART packet receiver
 	if(drv_uart_init(&usart1Config) != STATUS_PASS)
@@ -81,7 +83,10 @@ void ble_bluetoothManagerTask(void *pvParameters)
 			//we have a full packet
 			processRawPacket(&rawPacket);
 		}
-		vTaskDelay(3);		// carefully assign the delay as one packet can be as fast as 1.85ms
+		
+		sendBpStatusData();
+		
+		vTaskDelay(10);		// carefully assign the delay as one packet can be as fast as 1.85ms
 	}
 }
 
@@ -137,6 +142,17 @@ static void processMessage(msg_message_t message)
 			if (bpStatus.wiFiConnectionState != message.data)
 			{
 				bpStatus.wiFiConnectionState = message.data;
+				newBpStateDataAvailble = true;
+			}
+		}
+		break;
+		case MSG_TYPE_SUBP_STATUS:
+		{
+			memcpy(&subProcessorStatusData, &message.parameters, sizeof(subp_status_t));
+			if ((bpStatus.batteryLevel != subProcessorStatusData.chargeLevel) || (bpStatus.chargeState != subProcessorStatusData.chargerState))
+			{
+				bpStatus.batteryLevel = subProcessorStatusData.chargeLevel;
+				bpStatus.chargeState = subProcessorStatusData.chargerState;
 				newBpStateDataAvailble = true;
 			}
 		}
