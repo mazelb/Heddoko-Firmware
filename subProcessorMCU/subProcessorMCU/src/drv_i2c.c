@@ -419,7 +419,8 @@ uint32_t twi_read(Twi *p_twi, twi_packet_t *p_packet)
 
 static void assertBusError(drv_twi_config_t* twi_config)
 {	
-	int breakCount = 10;
+	int breakCount = 10;	// to break out of while loop if it is stuck for too long.
+	
 	if (twi_config->mem_index > 2)
 	{
 		return;	// a safety check to make sure incorrect drv_config is not passed
@@ -433,7 +434,7 @@ static void assertBusError(drv_twi_config_t* twi_config)
 		
 		/*
 			The method used to release the bus from hang is by toggling the SCL 
-			line manually so as to generate clock and let the slave send out remaining data. 
+			line manually so as to generate a clock and let the slave send out remaining data. 
 			Steps are:
 			1. Master tries to assert logic 1 on SDA.
 			2. Master still sees logic 0 on SDA, master generates a clock pulse.

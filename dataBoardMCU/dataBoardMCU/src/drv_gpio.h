@@ -108,6 +108,7 @@ status_t drv_gpio_save_interrupt_mask_all(void);
 status_t drv_gpio_disable_interrupt_all(void);
 bool drv_gpio_check_Int(drv_gpio_pins_t pin);
 bool drv_gpio_clear_Int(drv_gpio_pins_t pin);
+void drv_gpio_service_Int(drv_gpio_pins_t pin, uint32_t ul_mask, bool *intGeneratedFlag);
 
 #define	DEBOUNCE_PERIOD	5
 

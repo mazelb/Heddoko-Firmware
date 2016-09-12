@@ -27,7 +27,8 @@ typedef enum
 	MSG_TYPE_COMMAND_PACKET_RECEIVED,			//TODO: should we have a separate type for the commands to the power board
 	MSG_TYPE_SUBP_POWER_DOWN_REQ,
 	MSG_TYPE_SUBP_POWER_DOWN_READY,
-	MSG_TYPE_SUBP_STATUS
+	MSG_TYPE_SUBP_STATUS,
+	MSG_TYPE_GPM_BUTTON_EVENT
 }msg_messageType_t;
 
 typedef struct 

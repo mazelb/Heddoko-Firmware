@@ -8,11 +8,12 @@
 #include "asf.h"
 #include "sdc_sdCard.h"
 #include "net_wirelessNetwork.h"
+#include "subp_subProcessor.h"
 #include <stdio.h>
 #include <stdarg.h>
+#include "drv_gpio.h"
 #include "drv_uart.h"
 #include "msg_messenger.h"
-#include "subp_subProcessor.h"
 
 /* Global Variables */
 xQueueHandle queue_debugManager = NULL;
@@ -178,6 +179,14 @@ static status_t processCommand(char* command, size_t cmdSize)
 	{
 		net_disconnectFromNetwork();
 	}
+	else if (strncmp(command, "buzz1\r\n",cmdSize) == 0)
+	{
+		drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_LOW);
+	}
+	else if (strncmp(command, "buzz0\r\n",cmdSize) == 0)
+	{
+		drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_HIGH);
+	}
 	else if(strncmp(command, "powerDown\r\n",cmdSize) == 0)
 	{
 		msg_sendMessageSimple(MODULE_SUB_PROCESSOR,MODULE_DEBUG, MSG_TYPE_SUBP_POWER_DOWN_READY, 0x00);
@@ -185,7 +194,7 @@ static status_t processCommand(char* command, size_t cmdSize)
 	else if(strncmp(command, "getTime\r\n",cmdSize) == 0)
 	{
 		dgb_printf(DBG_LOG_LEVEL_DEBUG,"Time: %s\r\n",getTimeString());
-	}	
+	}
 	return status;	
 }
 static void processEvent(msg_message_t* message)

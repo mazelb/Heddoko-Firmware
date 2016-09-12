@@ -99,7 +99,7 @@ static inline void usart_serial_init(usart_if p_usart,
 {
 #if ((!SAM4L) && (!SAMG55))
 	sam_uart_opt_t uart_settings;
-	uart_settings.ul_mck = 120000000; //sysclk_get_peripheral_hz();
+	uart_settings.ul_mck = sysclk_get_peripheral_hz();
 	uart_settings.ul_baudrate = opt->baudrate;
 	uart_settings.ul_mode = opt->paritytype;
 #endif

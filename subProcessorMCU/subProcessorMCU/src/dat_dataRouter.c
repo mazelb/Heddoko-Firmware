@@ -37,8 +37,7 @@ void task(void)
 }
 /***********************************************************************************************
  * dat_task_dataRouter(void *pvParameters)
- * @brief This is the main task for routing data from the data board to either the USB or 
- *	the daughter board UART 
+ * @brief This is the main task for routing data from the data board to either the USB
  * @param pvParameters, void pointer to structure containing data router configuration. 
  * @return void
  ***********************************************************************************************/
@@ -68,8 +67,8 @@ void dat_task_dataRouter(void *pvParameters)
 		{
 			if (xQueueReceive(queue_dataBoard, dataBoardRxBuffer, 10) == pdPASS)
 			{
-				// data received should be passed to the daughter board and USB
-				dat_sendStringToUsb(dataBoardRxBuffer);
+				// data received should be passed to the USB
+				dat_sendStringToUsb(dataBoardRxBuffer);	// TODO: can we verify that it is a string
 			}
 		}
 						

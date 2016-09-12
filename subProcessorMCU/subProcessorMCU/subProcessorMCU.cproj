@@ -885,12 +885,6 @@
     <Compile Include="src\sen_sensorHandler.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\sts_statusHeartbeat.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\sts_statusHeartbeat.h">
-      <SubType>compile</SubType>
-    </Compile>
     <None Include="src\config\FreeRTOSConfig.h">
       <SubType>compile</SubType>
     </None>

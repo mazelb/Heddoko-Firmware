@@ -144,6 +144,23 @@ uint32_t pio_handler_set(Pio *p_pio, uint32_t ul_id, uint32_t ul_mask,
 {
 	struct s_interrupt_source *pSource;
 
+	//search to see if there's already an entry.
+	int i = 0;
+	for(i=0;i<gs_ul_nb_sources; i++)
+	{
+		if(gs_interrupt_sources[i].id == ul_id)
+		{
+			pSource = &(gs_interrupt_sources[i]);
+			pSource->id = ul_id;
+			pSource->mask = ul_mask;
+			pSource->attr = ul_attr;
+			pSource->handler = p_handler;
+			/* Configure interrupt mode */
+			pio_configure_interrupt(p_pio, ul_mask, ul_attr);
+			return 0;
+		}
+	}
+
 	if (gs_ul_nb_sources >= MAX_INTERRUPT_SOURCES)
 		return 1;
 

@@ -22,21 +22,47 @@
 #include "dbg_debugManager.h"
 #include "net_wirelessNetwork.h"
 #include "ble_bluetoothManager.h"
+#include "drv_haptic.h"
+#include "drv_piezo.h"
+#include "gpm_gpioManager.h"
 
 /* Global Variables */
 xQueueHandle queue_systemManager = NULL;
 sys_manager_systemState_t currentState = SYSTEM_STATE_INIT; 
 
+drv_piezo_config_t piezoConfig =
+{
+	.gpioPin = DRV_GPIO_PIN_PIEZO_OUT
+};
+drv_piezo_noteElement_t noteElementsArray[] =
+{
+	{900, 300},
+	//{000, 250},
+	{2500, 300},
+	//{000, 250},
+	{4000, 300},
+	//{000, 250}
+};
+drv_haptic_config_t hapticConfig =
+{
+	.hapticGpio = DRV_GPIO_PIN_HAPTIC_OUT,
+	.onState = DRV_GPIO_PIN_STATE_LOW,
+	.offState = DRV_GPIO_PIN_STATE_HIGH
+};
+drv_haptic_patternElement_t hapticPatternArray[] =
+{
+	{100, 1}
+};
+
 /*	Local static functions	*/
 static void sendStateChangeMessage(sys_manager_systemState_t state);
-static void processEvent(msg_message_t* message);
+static void processMessage(msg_message_t message);
+static void processGpmMessage(uint32_t data);
 /*	Extern functions	*/
 /*	Extern variables	*/
 
 
 //Delete me after testing complete
-void playSound(float duration, float frequency);
-
 
 void sys_systemManagerTask(void* pvParameters)
 {
@@ -54,14 +80,13 @@ void sys_systemManagerTask(void* pvParameters)
 	};
 	drv_led_init(&ledConfiguration);
 	drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
-	drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_HIGH);
-	drv_led_set(DRV_LED_RED,DRV_LED_SOLID);
-	playSound(200,900);
-	drv_led_set(DRV_LED_WHITE,DRV_LED_SOLID);
-	playSound(200,2500);
-	drv_led_set(DRV_LED_BLUE,DRV_LED_SOLID);
-	playSound(200,4000);
-	//drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_LOW);
+	
+	drv_piezo_init(&piezoConfig);
+	drv_piezo_playPattern(noteElementsArray, (sizeof(noteElementsArray) / sizeof(drv_piezo_noteElement_t)));
+	
+	drv_haptic_init(&hapticConfig);
+	drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
+	
 	vTaskDelay(200);
 	queue_systemManager = xQueueCreate(10, sizeof(msg_message_t));
 	if (queue_systemManager != 0)
@@ -89,6 +114,10 @@ void sys_systemManagerTask(void* pvParameters)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create ble task\r\n");
 	}
+	if(xTaskCreate(gpm_gpioManagerTask, "gpm", (3000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS)
+	{
+		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create gpm task\r\n");
+	}
 	
 	vTaskDelay(200); 
 	sendStateChangeMessage(SYSTEM_STATE_INIT); 
@@ -99,26 +128,40 @@ void sys_systemManagerTask(void* pvParameters)
 	{		
 		if(xQueueReceive(queue_systemManager, &(eventMessage), 1) == true)
 		{
-			processEvent(&eventMessage);
+			processMessage(eventMessage);
 		}
 		wdt_restart(WDT);		
 		vTaskDelay(100);
 	}
 }
 
-
-static void processEvent(msg_message_t* message)
+static void processMessage(msg_message_t message)
 {
-	switch(message->type)
+	switch(message.type)
 	{
+		case MSG_TYPE_ENTERING_NEW_STATE:
+		break;
+		case MSG_TYPE_ERROR:
+		break;
 		case MSG_TYPE_SDCARD_STATE:
 		break;
 		case MSG_TYPE_WIFI_STATE:
+		break;
+		case MSG_TYPE_GPM_BUTTON_EVENT:
+		{
+			if (message.source == MODULE_GPIO_MANAGER)
+			{
+				processGpmMessage(message.data);
+			}
+		}
 		break;
 		case MSG_TYPE_SUBP_POWER_DOWN_REQ:
 		//right now just send back the power down ready message right away. 
 		msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_SYSTEM_MANAGER, MSG_TYPE_SUBP_POWER_DOWN_READY,NULL);
 		break;
+		default:
+		break;
+		
 	}
 }
 
@@ -128,26 +171,36 @@ static void sendStateChangeMessage(sys_manager_systemState_t state)
 	msg_sendBroadcastMessage(&message);
 }
 
-void playSound(float duration, float frequency)
+static void processGpmMessage(uint32_t data)
 {
-
-	long int i,cycles;
-	long half_period;
-	float wavelength;
-	
-	wavelength=(1/frequency)*1000000;
-	cycles= (long)((duration*1000)/wavelength);
-	half_period = (long)(wavelength/2);
-	for (i=0;i<cycles;i++)
+	switch (data)
 	{
-		delay_us(half_period);
-		drv_gpio_setPinState(DRV_GPIO_PIN_PIEZO_OUT, DRV_GPIO_PIN_STATE_HIGH);
-		delay_us(half_period);
-		drv_gpio_setPinState(DRV_GPIO_PIN_PIEZO_OUT, DRV_GPIO_PIN_STATE_LOW);
+		case GPM_BUTTON_ONE_SHORT_PRESS:
+			drv_led_set(DRV_LED_BLUE, DRV_LED_SOLID);
+			drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
+			drv_piezo_playPattern(&noteElementsArray[2], 1);
+		break;
+		case GPM_BUTTON_ONE_LONG_PRESS:
+			drv_led_set(DRV_LED_BLUE, DRV_LED_FLASH);
+			drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
+			drv_piezo_playPattern(&noteElementsArray[1], 2);
+		break;
+		case GPM_BUTTON_TWO_SHORT_PRESS:
+			drv_led_set(DRV_LED_RED, DRV_LED_SOLID);
+			drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
+			drv_piezo_playPattern(&noteElementsArray[2], 1);
+		break;
+		case GPM_BUTTON_TWO_LONG_PRESS:
+			drv_led_set(DRV_LED_RED, DRV_LED_FLASH);
+			drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
+			drv_piezo_playPattern(&noteElementsArray[1], 2);
+		break;
+		case GPM_BOTH_BUTTON_LONG_PRESS:
+			drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
+			drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
+			drv_piezo_playPattern(noteElementsArray, (sizeof(noteElementsArray) / sizeof(drv_piezo_noteElement_t)));
+		break;
+		default:
+		break;
 	}
-
-	return;
 }
-
-
-

@@ -40,15 +40,25 @@ src\ASF\sam\drivers\matrix\matrix.c
 
 src\ASF\sam\drivers\spi\spi.c
 
+src\ASF\sam\drivers\tc\tc.c
+
 src\ble_bluetoothManager.c
 
 src\dat_dataManager.c
 
 src\dbg_debugManager.c
 
+src\drv_haptic.c
+
 src\drv_led.c
 
+src\drv_tc.c
+
+src\gpm_gpioManager.c
+
 src\net_wirelessNetwork.c
+
+src\drv_piezo.c
 
 src\pkt_packetParser.c
 

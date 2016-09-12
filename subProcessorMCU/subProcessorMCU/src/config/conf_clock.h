@@ -99,7 +99,6 @@
 // - USB clock divider: 2 (divided by 2)
 // - PLLB output: XTAL * 12 / 2
 // - USB clock: 16 * 12 / 2 / 2 = 48MHz
-// - change ul_mck in usart_serial_init to 120000000 from sysclk_get_peripheral_hz()
 
 
 #endif /* CONF_CLOCK_H_INCLUDED */

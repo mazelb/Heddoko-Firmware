@@ -96,7 +96,7 @@ void cmd_task_commandProcesor(void *pvParameters)
 				else if(strncmp(packet.packetData,"getCharge",9)==0)
 				{
 					//handle the set time command. 
-					status = getCalculatedPercentage(&ltc2941Config, &chargePercent);	// TODO: this functions magically changes the packet source to daughter board !!!!
+					status = getCalculatedPercentage(&ltc2941Config, &chargePercent);
 					if (status == STATUS_PASS)
 					{
 						sprintf(tempString,"charge Level: %d\r\n", chargePercent);
