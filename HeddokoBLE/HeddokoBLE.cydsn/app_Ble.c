@@ -55,7 +55,6 @@ void HandleBleProcessing(void)
             if(CyBle_GattGetBusStatus() != CYBLE_STACK_STATE_BUSY)
             {
                 sendUnsentData();
-                //sendUnsentRawData();
             }
             break;
                 

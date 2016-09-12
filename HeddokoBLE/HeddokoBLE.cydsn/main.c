@@ -19,13 +19,16 @@
 static void saveWifiDefaultConfig(rawPacket_t* packet);   // send the default wifi config received from data board
 static void sendUnsentWifiData();   // send new wifi data available if any
 void saveReceivedRawData(uint8 *data, uint16_t length);
+void saveReceivedBpStatusData(uint8 *data, uint16_t length);
 
 #define RAW_DATA_SIZE 20
 #define SSID_DATA_SIZE 32
 #define PASSPHRASE_DATA_SIZE 64
 #define SECURITY_TYPE_DATA_SIZE 1
+#define BP_STATUS_DATA_SIZE 5
 
 uint8 rawData[RAW_DATA_SIZE] = {0};
+uint8 bpStatusData[BP_STATUS_DATA_SIZE] = {0};
 struct 
 {
     uint8 ssid[SSID_DATA_SIZE];
@@ -33,6 +36,7 @@ struct
     uint8 securityType;
 }wifi_data;
 bool newRawDataAvailable = true;
+bool newBpStatusDataAvailable = false;
 bool newWifiDataAvailable = false;
 rawPacket_t dataPacket;
 
@@ -60,7 +64,14 @@ void cmd_processPacket(rawPacket_t* packet)
                 #endif
                 getSendAttrData(CYBLE_HEDDOKO_GPS_GPS_DATA_CHAR_HANDLE, PACKET_COMMAND_ID_GPS_DATA_RESP, 32);
             break;
-            
+                
+            case PACKET_COMMAND_ID_BP_STATUS:
+                #ifdef PRINT_MESSAGE_LOG
+                UART_UartPutString("Received Brain Pack Status\r\n");
+                #endif
+                saveReceivedBpStatusData((uint8 *) &packet->payload[2], packet->payloadSize);
+            break;
+                
 //            case PACKET_COMMAND_ID_SSID_DATA_REQ:
 //                #ifdef PRINT_MESSAGE_LOG
 //                UART_UartPutString("Received SSID data request\r\n");
@@ -402,6 +413,45 @@ void sendUnsentRawData()
     }
 }
 
+void sendUnsentBpStatusData()
+{
+    CYBLE_API_RESULT_T                  bleApiResult;
+    CYBLE_GATTS_HANDLE_VALUE_NTF_T      uartTxDataNtf;
+    
+    if (newBpStatusDataAvailable)
+    {
+        if (NOTIFICATON_ENABLED == txDataClientConfigDesc[0])
+        {
+            uartTxDataNtf.value.val  = bpStatusData;
+            uartTxDataNtf.value.len  = BP_STATUS_DATA_SIZE;
+            uartTxDataNtf.attrHandle = CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CHAR_HANDLE;
+            
+            do
+            {
+                bleApiResult = CyBle_GattsNotification(cyBle_connHandle, &uartTxDataNtf);
+                CyBle_ProcessEvents();
+            }
+            while((CYBLE_ERROR_OK != bleApiResult)  && (CYBLE_STATE_CONNECTED == cyBle_state));
+        }
+         newBpStatusDataAvailable = false;
+    }
+}
+
+void saveReceivedBpStatusData(uint8 *data, uint16_t length)
+{
+    CYBLE_GATT_HANDLE_VALUE_PAIR_T handlePair = {{0, BP_STATUS_DATA_SIZE, BP_STATUS_DATA_SIZE}, CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CHAR_HANDLE};
+    
+    if((length != 0) && (length <= BP_STATUS_DATA_SIZE))
+    {
+        memset(bpStatusData, 0, BP_STATUS_DATA_SIZE);
+        memcpy(bpStatusData, data, length);
+        newBpStatusDataAvailable = true;
+        
+        handlePair.value.val = (uint8 *) bpStatusData;
+        CyBle_GattsWriteAttributeValue(&handlePair, 0, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
+    }
+}
+
 void saveReceivedRawData(uint8 *data, uint16_t length)
 {
     CYBLE_GATT_HANDLE_VALUE_PAIR_T handlePair = {{0, RAW_DATA_SIZE, RAW_DATA_SIZE}, CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CHAR_HANDLE};
@@ -421,6 +471,7 @@ void sendUnsentData()
 {
     sendUnsentRawData();
     sendUnsentWifiData();
+    sendUnsentBpStatusData();
 }
 
 /* [] END OF FILE */

@@ -24,7 +24,7 @@
 ***************************************/
 
 /* Maximum supported Custom Services */
-#define CYBLE_CUSTOMS_SERVICE_COUNT                  (0x04u)
+#define CYBLE_CUSTOMS_SERVICE_COUNT                  (0x05u)
 #define CYBLE_CUSTOMC_SERVICE_COUNT                  (0x00u)
 #define CYBLE_CUSTOM_SERVICE_CHAR_COUNT              (0x04u)
 #define CYBLE_CUSTOM_SERVICE_CHAR_DESCRIPTORS_COUNT  (0x03u)
@@ -57,6 +57,11 @@
 #define CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CHAR_INDEX   (0x00u) /* Index of Raw data characteristic */
 #define CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CHARACTERISTIC_USER_DESCRIPTION_DESC_INDEX   (0x00u) /* Index of Characteristic User Description descriptor */
 #define CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_INDEX   (0x01u) /* Index of Client Characteristic Configuration descriptor */
+
+#define CYBLE_HEDDOKO_BRAINPACK_STATUS_SERVICE_INDEX   (0x04u) /* Index of Heddoko: BrainPack Status service in the cyBle_customs array */
+#define CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CHAR_INDEX   (0x00u) /* Index of BP-Status characteristic */
+#define CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_INDEX   (0x00u) /* Index of Client Characteristic Configuration descriptor */
+#define CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CHARACTERISTIC_USER_DESCRIPTION_DESC_INDEX   (0x01u) /* Index of Characteristic User Description descriptor */
 
 
 #define CYBLE_SERVER_UART_SERVICE_HANDLE   (0x000Cu) /* Handle of Server_UART service */
@@ -94,6 +99,12 @@
 #define CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CHAR_HANDLE   (0x0029u) /* Handle of Raw data characteristic */
 #define CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CHARACTERISTIC_USER_DESCRIPTION_DESC_HANDLE   (0x002Au) /* Handle of Characteristic User Description descriptor */
 #define CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE   (0x002Bu) /* Handle of Client Characteristic Configuration descriptor */
+
+#define CYBLE_HEDDOKO_BRAINPACK_STATUS_SERVICE_HANDLE   (0x002Cu) /* Handle of Heddoko: BrainPack Status service */
+#define CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_DECL_HANDLE   (0x002Du) /* Handle of BP-Status characteristic declaration */
+#define CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CHAR_HANDLE   (0x002Eu) /* Handle of BP-Status characteristic */
+#define CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE   (0x002Fu) /* Handle of Client Characteristic Configuration descriptor */
+#define CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CHARACTERISTIC_USER_DESCRIPTION_DESC_HANDLE   (0x0030u) /* Handle of Characteristic User Description descriptor */
 
 
 

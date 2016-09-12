@@ -23,7 +23,7 @@
 */
 /* This array contains attribute handles for the defined Custom Services and their characteristics and descriptors.
    The array index definitions are located in the CYBLE_custom.h file. */
-const CYBLE_CUSTOMS_T cyBle_customs[0x04u] = {
+const CYBLE_CUSTOMS_T cyBle_customs[0x05u] = {
 
     /* Server_UART service */
     {
@@ -193,6 +193,55 @@ const CYBLE_CUSTOMS_T cyBle_customs[0x04u] = {
                 {
                     0x002Au, /* Handle of the Characteristic User Description descriptor */ 
                     0x002Bu, /* Handle of the Client Characteristic Configuration descriptor */ 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+            {
+                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                
+                /* Array of Descriptors handles */
+                {
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+            {
+                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                
+                /* Array of Descriptors handles */
+                {
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+            {
+                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                
+                /* Array of Descriptors handles */
+                {
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+        }, 
+    },
+
+    /* Heddoko: BrainPack Status service */
+    {
+        0x002Cu, /* Handle of the Heddoko: BrainPack Status service */ 
+        {
+
+            /* BP-Status characteristic */
+            {
+                0x002Eu, /* Handle of the BP-Status characteristic */ 
+                
+                /* Array of Descriptors handles */
+                {
+                    0x002Fu, /* Handle of the Client Characteristic Configuration descriptor */ 
+                    0x0030u, /* Handle of the Characteristic User Description descriptor */ 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                 }, 
             },
