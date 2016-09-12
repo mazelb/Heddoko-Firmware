@@ -24,7 +24,7 @@ static void sendBpStatusData();
 /*	Local variables	*/
 xQueueHandle queue_ble = NULL;
 bool newBpStateDataAvailble = false;
-subp_status_t subProcessorStatusData;
+subp_status_t *subProcessorStatusData;
 drv_uart_config_t usart1Config =
 {
 	.p_usart = USART1,
@@ -148,11 +148,11 @@ static void processMessage(msg_message_t message)
 		break;
 		case MSG_TYPE_SUBP_STATUS:
 		{
-			memcpy(&subProcessorStatusData, &message.parameters, sizeof(subp_status_t));
-			if ((bpStatus.batteryLevel != subProcessorStatusData.chargeLevel) || (bpStatus.chargeState != subProcessorStatusData.chargerState))
+			subProcessorStatusData = message.parameters;
+			if ((bpStatus.batteryLevel != subProcessorStatusData->chargeLevel) || (bpStatus.chargeState != subProcessorStatusData->chargerState))
 			{
-				bpStatus.batteryLevel = subProcessorStatusData.chargeLevel;
-				bpStatus.chargeState = subProcessorStatusData.chargerState;
+				bpStatus.batteryLevel =	subProcessorStatusData->chargeLevel;
+				bpStatus.chargeState = subProcessorStatusData->chargerState;
 				newBpStateDataAvailble = true;
 			}
 		}
@@ -169,6 +169,14 @@ static void sendBpStatusData()
 	if (newBpStateDataAvailble)
 	{
 		newBpStateDataAvailble = false;
+		
+		outputData[0] = PACKET_TYPE_MASTER_CONTROL;
+		outputData[1] = PACKET_COMMAND_ID_SEND_RAW_DATA_TO_BLE;
+		memcpy(&outputData[2], &bpStatus, BLE_MAX_BP_STATUS_DATA_LENGTH);
+		
+		pkt_sendRawPacket(&usart1Config, outputData, (BLE_MAX_BP_STATUS_DATA_LENGTH + 2));
+		
+		vTaskDelay(200);
 		
 		outputData[0] = PACKET_TYPE_MASTER_CONTROL;
 		outputData[1] = PACKET_COMMAND_ID_BP_STATUS;
