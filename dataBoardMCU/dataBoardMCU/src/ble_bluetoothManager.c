@@ -10,13 +10,19 @@
 #include "msg_messenger.h"
 #include "pkt_packetParser.h"
 #include "dbg_debugManager.h"
+#include "pkt_packetCommandsList.h"
+
+/*	Local defines	*/
+#define BLE_MAX_BP_STATUS_DATA_LENGTH	5
 
 /*	Static function forward declarations	*/
 static void processMessage(msg_message_t message);
 static void processRawPacket(pkt_rawPacket_t* packet);
+static void sendBpStatusData();
 
 /*	Local variables	*/
 xQueueHandle queue_ble = NULL;
+bool newBpStateDataAvailble = false;
 drv_uart_config_t usart1Config =
 {
 	.p_usart = USART1,
@@ -30,6 +36,14 @@ drv_uart_config_t usart1Config =
 	},
 	.mode = DRV_UART_MODE_INTERRUPT
 };
+static struct  
+{
+	uint8_t batteryLevel;
+	uint8_t chargeState;
+	uint8_t currentState;
+	uint8_t wiFiConnectionState;
+	uint8_t sdCardState;
+}bpStatus;
 
 void ble_bluetoothManagerTask(void *pvParameters)
 {
@@ -46,7 +60,7 @@ void ble_bluetoothManagerTask(void *pvParameters)
 	{
 		msg_registerForMessages(MODULE_SUB_PROCESSOR, 0xff, queue_ble);
 	}
-	//initialize the uart packet receiver
+	//initialize the UART packet receiver
 	if(drv_uart_init(&usart1Config) != STATUS_PASS)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"failed to open USART1 for ble\r\n");
@@ -84,33 +98,66 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 		switch(packet->payload[1])
 		{
 			case PACKET_COMMAND_ID_GPS_DATA_RESP:
-
-			
 			break;
 
 			default:
-			
 			break;
 		}
 	}
 	dbg_printString(DBG_LOG_LEVEL_DEBUG,"Received a packet!!!!");
 }
 
-
 static void processMessage(msg_message_t message)
 {
 	switch(message.type)
 	{
 		case MSG_TYPE_ENTERING_NEW_STATE:
+		{
+			if (bpStatus.currentState != message.data)
+			{
+				bpStatus.currentState = message.data;
+				newBpStateDataAvailble = true;
+			}
+		}
 		break;
 		case MSG_TYPE_ERROR:
+			
 		break;
 		case MSG_TYPE_SDCARD_STATE:
+		{
+			if (bpStatus.sdCardState != message.data)
+			{
+				bpStatus.sdCardState = message.data;
+				newBpStateDataAvailble = true;
+			}
+		}
 		break;
 		case MSG_TYPE_WIFI_STATE:
+		{
+			if (bpStatus.wiFiConnectionState != message.data)
+			{
+				bpStatus.wiFiConnectionState = message.data;
+				newBpStateDataAvailble = true;
+			}
+		}
 		break;
 		default:
 		break;
 		
+	}
+}
+
+static void sendBpStatusData()
+{
+	uint8_t outputData[BLE_MAX_BP_STATUS_DATA_LENGTH + 2] = {0};	// frame has a two byte header
+	if (newBpStateDataAvailble)
+	{
+		newBpStateDataAvailble = false;
+		
+		outputData[0] = PACKET_TYPE_MASTER_CONTROL;
+		outputData[1] = PACKET_COMMAND_ID_BP_STATUS;
+		memcpy(&outputData[2], &bpStatus, BLE_MAX_BP_STATUS_DATA_LENGTH);
+		
+		pkt_sendRawPacket(&usart1Config, outputData, (BLE_MAX_BP_STATUS_DATA_LENGTH + 2));
 	}
 }
