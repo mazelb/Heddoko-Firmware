@@ -198,21 +198,6 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 						net_sendUdpPacket(&streamingSocket, serializedDataBuffer, serializedLength);
 					}
 				}
-				if(rawFullFrame->timeStamp > lastTimeStamp)
-				{					
-					if(rawFullFrame->frames[8].Rotation_z == 13)
-					{
-						result = 1;	//everything is good
-					}
-					else
-					{
-						result = 2; 	//corrupt frame
-					}					 
-				}
-				else
-				{
-					result = 0; //out of sequence frame
-				}
 				lastTimeStamp = rawFullFrame->timeStamp;
 				dgb_printf(DBG_LOG_LEVEL_DEBUG,"%d,%d,%d,%d,%d\r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,drv_uart_getDroppedBytes(&subpUart));
 								
