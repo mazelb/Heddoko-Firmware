@@ -31,7 +31,11 @@ net_socketConfig_t advertisingSocket =
 	.endpoint.sin_addr = 0xFFFFFFFF, //broadcast Address
 	.endpoint.sin_family = AF_INET,
 	.endpoint.sin_port = _htons(6668),
-	.sourceModule = MODULE_WIFI
+	.sourceModule = MODULE_WIFI,
+    .socketStatusCallback = NULL,
+    .socketDataReceivedCallback = NULL,
+    .socketId = -1,
+    .clientSocketId = -1
 };
 	
 /*	Extern functions	*/
@@ -107,36 +111,7 @@ void net_wirelessNetworkTask(void *pvParameters)
 	{
 		//check the command queue
 		
-		//if (wifi_connected == M2M_WIFI_CONNECTED && tcp_server_socket < 0)
-		//{
-			//struct sockaddr_in addr;
-			//if(xSemaphoreTake(semaphore_wifiAccess, 100) == true)
-			//{
-				///* Create TCP server socket. */
-				//if ((tcp_server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) //SOCK_STREAM
-				//{
-					//dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create TCP server socket!\r\n");
-					//continue;
-				//}
-				///* Initialize socket address structure and bind service. */
-				//addr.sin_family = AF_INET;
-				//addr.sin_port = _htons(6666);
-				//addr.sin_addr.s_addr = 0;
-				//bind(tcp_server_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
-				///* Create socket for Tx UDP */
-				//if (udp_socket < 0) 
-				//{
-					//uint32 u32EnableCallbacks = 0;
-					//if ((udp_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) 
-					//{
-						//dbg_printString(DBG_LOG_LEVEL_DEBUG,"Failed to create TX UDP client socket error!\r\n");
-						//continue;
-					//}
-					//setsockopt(udp_socket, SOL_SOCKET, SO_SET_UDP_SEND_CALLBACK, &u32EnableCallbacks , 0);
-				//}				
-				//xSemaphoreGive(semaphore_wifiAccess);						
-			//}			
-		//}			
+		
 		if(xSemaphoreTake(semaphore_wifiAccess, 100) == true)
 		{
 			//handle the wifi process
@@ -155,6 +130,26 @@ void net_wirelessNetworkTask(void *pvParameters)
 				advertisingPacketLastSentTime = xTaskGetTickCount();
 				sendAdvertisingPacket(&advertisingSocket);
 			}
+      		//if (tcp_server_socket < 0)
+      		//{
+        		//struct sockaddr_in addr;
+        		//if(xSemaphoreTake(semaphore_wifiAccess, 100) == true)
+        		//{
+          			///* Create TCP server socket. */
+          			//if ((tcp_server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) //SOCK_STREAM
+          			//{
+            			//dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create TCP server socket!\r\n");
+            			//continue;
+          			//}
+          			///* Initialize socket address structure and bind service. */
+          			//addr.sin_family = AF_INET;
+          			//addr.sin_port = _htons(6666);
+          			//addr.sin_addr.s_addr = 0;
+          			//bind(tcp_server_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
+          			///* Create socket for Tx UDP */
+          			//xSemaphoreGive(semaphore_wifiAccess);
+        		//}
+      		//}
 		}
 		
 		vTaskDelay(1); 
@@ -204,7 +199,7 @@ status_t net_connectToNetwork(net_wirelessConfig_t* wirelessConfig)
 			wirelessConfig->passphrase, wirelessConfig->channel);
 		if(retVal != M2M_SUCCESS)
 		{
-			dgb_printf(DBG_LOG_LEVEL_ERROR, "Failed to execute wifi connect with error\r\n");
+			dbg_printf(DBG_LOG_LEVEL_ERROR, "Failed to execute wifi connect with error %d\r\n",retVal);
 			currentWifiState = NET_WIFI_STATE_DISCONNECTED;
 			status = STATUS_FAIL;
 		}
@@ -294,12 +289,87 @@ status_t net_sendUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_
 			}
 			else
 			{
-				dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to send packet!\r\n");
+				dbg_printf(DBG_LOG_LEVEL_ERROR,"Failed to send packet! %d\r\n", ret);
 			}
 			xSemaphoreGive(semaphore_wifiAccess);
 		}
 	}
 	return status;	
+}
+status_t net_createServerSocket(net_socketConfig_t* sock, size_t receiveBufSize)
+{
+	status_t status = STATUS_PASS;
+	uint32_t enableCallBacks = 0;
+	//make sure we're connected to the wifi network
+	if(currentWifiState != NET_WIFI_STATE_CONNECTED)
+	{
+    	return STATUS_FAIL;
+	}
+	if(xSemaphoreTake(semaphore_wifiAccess, 50) == true)
+	{
+    	//register the socket with the handler
+    	//this must be done first to make sure there's room in the array.
+    	status = registerSocket(sock);
+    	if(status == STATUS_PASS)
+    	{
+        	//create the socket
+        	if ((sock->socketId = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+        	{
+            	dbg_printString(DBG_LOG_LEVEL_DEBUG,"Failed to create TCP server socket\r\n");
+            	status = STATUS_FAIL;
+        	}
+        	else
+        	{
+            	//allocate a buffer for the socket.
+            	sock->buffer = malloc(receiveBufSize);
+            	sock->bufferLength = receiveBufSize;
+            	if(sock->buffer == NULL)
+            	{
+                	status = STATUS_FAIL;
+            	}
+        	}
+        	if(status == STATUS_FAIL)
+        	{
+            	//remove the socket from the handler list.
+            	deRegisterSocket(sock);
+        	}
+            else
+            {
+                //try to call the bind service. 
+                //addr.sin_family = AF_INET;
+                //addr.sin_port = _htons(6666);
+                //addr.sin_addr.s_addr = 0;
+                bind(sock->socketId, (struct sockaddr *)&(sock->endpoint), sizeof(struct sockaddr_in));                   
+            }                
+    	}
+    	xSemaphoreGive(semaphore_wifiAccess);
+	}
+	return status;    
+}
+status_t net_sendPacketToClientSock(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength)
+{
+    status_t status = STATUS_FAIL;
+    
+    if(currentWifiState == NET_WIFI_STATE_CONNECTED && sock->clientSocketId > -1)
+    {
+        //TODO: add validation of socket endpoint
+        //don't wait very long for the wifi access, only 5ms for now.
+        //if(xSemaphoreTake(semaphore_wifiAccess, 5) == true)
+        //{
+            
+            int ret = send(sock->clientSocketId, packetBuf, packetBufLength, 0);
+            if (ret == M2M_SUCCESS)
+            {
+                status = STATUS_PASS;
+            }
+            else
+            {
+                dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to send packet!\r\n");
+            }
+            //xSemaphoreGive(semaphore_wifiAccess);
+        //}
+    }
+    return status;
 }
 status_t net_closeSocket(net_socketConfig_t* sock)
 {
@@ -448,7 +518,7 @@ static void wifi_cb(uint8 msg_type, void *msg_data)
 			//m2m_wifi_connect((char *)MAIN_WLAN_SSID, sizeof(MAIN_WLAN_SSID),
 					//MAIN_WLAN_AUTH, (char *)MAIN_WLAN_PSK, M2M_WIFI_CH_ALL);
 		}
-		msg_sendBroadcastMessageSimple(MODULE_WIFI, MSG_TYPE_WIFI_STATE, currentWifiState);
+		
 		
 	}
 	break;
@@ -457,7 +527,8 @@ static void wifi_cb(uint8 msg_type, void *msg_data)
 	{
 		uint8 *pu8IPAddress = (uint8 *)msg_data;
 		wifi_connected = M2M_WIFI_CONNECTED;
-		dgb_printf(DBG_LOG_LEVEL_DEBUG,"Wi-Fi IP is %u.%u.%u.%u\r\n", pu8IPAddress[0], pu8IPAddress[1], pu8IPAddress[2], pu8IPAddress[3]);
+		dbg_printf(DBG_LOG_LEVEL_DEBUG,"Wi-Fi IP is %u.%u.%u.%u\r\n", pu8IPAddress[0], pu8IPAddress[1], pu8IPAddress[2], pu8IPAddress[3]);
+        msg_sendBroadcastMessageSimple(MODULE_WIFI, MSG_TYPE_WIFI_STATE, currentWifiState);
 	}
 	break;
 
@@ -490,10 +561,14 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 	//go through all socket configurations and find which one is used for this socket.
 	for(int i = 0; i < MAX_NUMBER_OF_SOCKETS; i++)
 	{
-		if(registeredSockets[i]->socketId == sock)
+		if(registeredSockets[i] != NULL)
 		{
-			socketConfig = registeredSockets[i];	
-		}		
+			if(registeredSockets[i]->socketId == sock || registeredSockets[i]->clientSocketId == sock)
+			{
+				socketConfig = registeredSockets[i];	
+                break;
+			}
+		}    		
 	}
 
 	switch (u8Msg) 
@@ -504,12 +579,16 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			tstrSocketBindMsg *pstrBind = (tstrSocketBindMsg *)pvMsg;
 			if (pstrBind && pstrBind->status == 0) 
 			{
-				dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: bind success.\r\n");
-				listen(tcp_server_socket, 0);
+				dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: bind success.\r\n");                
+				listen(sock, 0);
 			} 
 			else 
 			{
 				dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: bind error!\r\n");
+                if(socketConfig != NULL)
+                {
+                    socketConfig->socketStatusCallback(sock, NET_SOCKET_STATUS_SERVER_OPEN_FAILED);
+                }
 			}
 		}
 		break;
@@ -521,11 +600,25 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			if (pstrListen && pstrListen->status == 0) 
 			{
 				dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: listen success.\r\n");
+                if(socketConfig != NULL)
+                {
+                    if(socketConfig->socketStatusCallback != NULL)
+                    {
+                       socketConfig->socketStatusCallback(sock, NET_SOCKET_STATUS_SERVER_OPEN);  
+                    }                       
+                }                
 				accept(sock, NULL, NULL);
 			}
 			else 
 			{
 				dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: listen error!\r\n");
+                if(socketConfig != NULL)
+                {
+                    if(socketConfig->socketStatusCallback != NULL)
+                    {
+                        socketConfig->socketStatusCallback(sock, NET_SOCKET_STATUS_SERVER_OPEN_FAILED);
+                    }                    
+                }
 			}
 		}
 		break;
@@ -536,11 +629,29 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			tstrSocketAcceptMsg *pstrAccept = (tstrSocketAcceptMsg *)pvMsg;
 			if (pstrAccept) 
 			{
-				dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: accept success.\r\n");
-				accept(tcp_server_socket, NULL, NULL);
-				tcp_client_socket = pstrAccept->sock;
-				tcp_connected = 1;
-				recv(tcp_client_socket, receiveBuffer, sizeof(receiveBuffer), 0);
+				
+				accept(socketConfig->socketId, NULL, NULL);
+				if(socketConfig->clientSocketId != -1)
+				{
+					dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: Rejected accept\r\n");
+					close(pstrAccept->sock);
+				}
+				else
+				{
+					dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: accept success.\r\n");
+                    if(socketConfig != NULL)
+                    {
+                        if(socketConfig->socketStatusCallback != NULL)
+                        {
+                            socketConfig->socketStatusCallback(sock, NET_SOCKET_STATUS_CLIENT_CONNECTED);
+                            socketConfig->clientSocketId = pstrAccept->sock;                   
+                        }
+                    }
+					//tcp_client_socket = pstrAccept->sock;
+					//tcp_connected = 1;
+					recv(pstrAccept->sock, receiveBuffer, sizeof(receiveBuffer), 0);
+				}                    
+				
 			} 
 			else 
 			{
@@ -571,6 +682,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		case SOCKET_MSG_SEND:
 		{
 			recv(tcp_client_socket, receiveBuffer, sizeof(receiveBuffer), 0);
+            
 		}
 		break;
 		/* Message send to */
@@ -592,20 +704,43 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 				//}
 				//loop back the data!
 				//send(tcp_client_socket, pstrRecv->pu8Buffer, pstrRecv->s16BufferSize, 0);
+                if(socketConfig != NULL)
+                {                    
+                    if(socketConfig->socketDataReceivedCallback != NULL)
+                    {
+                        socketConfig->socketDataReceivedCallback(sock,pstrRecv->pu8Buffer,pstrRecv->s16BufferSize);
+                        //call receive again so we get more data
+                    }                    
+                    recv(sock, socketConfig->buffer, socketConfig->bufferLength, 0);                        
+                }
+                else
+                {
+                    recv(sock, receiveBuffer, sizeof(receiveBuffer), 0);
+                }
+                
 			} 
 			else 
 			{
 				dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: recv error!\r\n");
-				if (tcp_client_socket >= 0) 
+				if (sock >= 0) 
 				{
 					dbg_printString(DBG_LOG_LEVEL_DEBUG,"Close client socket to disconnect.\r\n");
-					close(tcp_client_socket);
-					tcp_client_socket = -1;		
+					close(sock);
+                    if(socketConfig != NULL)
+                    {
+                        socketConfig->socketStatusCallback(sock, NET_SOCKET_STATUS_CLIENT_DISCONNECTED);
+                        socketConfig->clientSocketId = -1;                      
+                    }
+					if(sock == tcp_client_socket)
+					{
+						tcp_client_socket = -1;		
+					}            
+					
 				}
 				tcp_connected = 0;
 				break;
 			}
-			recv(tcp_client_socket, receiveBuffer, sizeof(receiveBuffer), 0);
+			
 		}
 		break;
 		

@@ -18,11 +18,16 @@ typedef enum
 	DBG_LOG_LEVEL_WARNING,
 	DBG_LOG_LEVEL_VERBOSE,
 	DBG_LOG_LEVEL_DEBUG
-}dgb_debugLogLevel_t;
+}dbg_debugLogLevel_t;
+typedef enum 
+{
+    DBG_CMD_SOURCE_SERIAL,
+    DBG_CMD_SOURCE_NET
+}dbg_commandSource_t;
 
 void dbg_debugTask(void* pvParameters);
-void dgb_printf(dgb_debugLogLevel_t msgLogLevel, char *fmt, ...);
-void dbg_printString(dgb_debugLogLevel_t msgLogLevel, char* string);
+void dbg_printf(dbg_debugLogLevel_t msgLogLevel, char *fmt, ...);
+void dbg_printString(dbg_debugLogLevel_t msgLogLevel, char* string);
 
 
 
