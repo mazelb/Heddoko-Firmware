@@ -1,5 +1,5 @@
 -- Project:   HeddokoBLE
--- Generated: 09/12/2016 18:04:24
+-- Generated: 09/13/2016 17:09:59
 -- PSoC Creator  3.3 CP3
 
 ENTITY HeddokoBLE IS
@@ -37,7 +37,7 @@ ARCHITECTURE __DEFAULT__ OF HeddokoBLE IS
     SIGNAL Net_172 : bit;
     SIGNAL Net_174 : bit;
     SIGNAL Net_175 : bit;
-    SIGNAL Net_275 : bit;
+    SIGNAL Net_294 : bit;
     SIGNAL \BLE:Net_15\ : bit;
     SIGNAL \UART:Net_847_ff1\ : bit;
     ATTRIBUTE global_signal OF \UART:Net_847_ff1\ : SIGNAL IS true;
@@ -682,7 +682,7 @@ BEGIN
             cy_registers => "")
         PORT MAP(
             interrupt => \BLE:Net_15\,
-            rfctrl_extpa_en => Net_275);
+            rfctrl_extpa_en => Net_294);
 
     \BLE:bless_isr\:interrupt
         GENERIC MAP(

@@ -41,7 +41,8 @@ bool newWifiDataAvailable = false;
 rawPacket_t dataPacket;
 
 extern uint8 txDataClientConfigDesc[2];
-
+extern uint8 rawDataConfigDesc[2];
+extern uint8 bpStatusConfigDesc[2];
 
 void cmd_processPacket(rawPacket_t* packet)
 {
@@ -69,7 +70,7 @@ void cmd_processPacket(rawPacket_t* packet)
                 #ifdef PRINT_MESSAGE_LOG
                 UART_UartPutString("Received Brain Pack Status\r\n");
                 #endif
-                saveReceivedBpStatusData((uint8 *) &packet->payload[2], packet->payloadSize);
+                saveReceivedBpStatusData((uint8 *) &packet->payload[2], (packet->payloadSize - 2)); // remove two bytes of header
             break;
                 
 //            case PACKET_COMMAND_ID_SSID_DATA_REQ:
@@ -118,7 +119,7 @@ void cmd_processPacket(rawPacket_t* packet)
                 #ifdef PRINT_MESSAGE_LOG
                 UART_UartPutString("Received new raw data from data board\r\n");
                 #endif
-                saveReceivedRawData((uint8 *) &packet->payload[2], packet->payloadSize);
+                saveReceivedRawData((uint8 *) &packet->payload[2], (packet->payloadSize - 2));  // remove two bytes for header
             break;
                 
             case PACKET_COMMAND_ID_START_FAST_ADV:
@@ -340,6 +341,7 @@ void saveWifiDefaultConfig(rawPacket_t* packet)
     newWifiDataAvailable = true;
 }
 
+/*  OBSOLETE: WiFi should not send out notifications
 static void sendUnsentWifiData()
 {
     CYBLE_API_RESULT_T                  bleApiResult;
@@ -388,6 +390,7 @@ static void sendUnsentWifiData()
          newWifiDataAvailable = false;
     }
 }
+*/
 
 void sendUnsentRawData()
 {
@@ -396,7 +399,7 @@ void sendUnsentRawData()
     
     if (newRawDataAvailable)
     {
-        if (NOTIFICATON_ENABLED == txDataClientConfigDesc[0])
+        if (NOTIFICATON_ENABLED == rawDataConfigDesc[0])
         {
             uartTxDataNtf.value.val  = rawData;
             uartTxDataNtf.value.len  = RAW_DATA_SIZE;
@@ -420,7 +423,7 @@ void sendUnsentBpStatusData()
     
     if (newBpStatusDataAvailable)
     {
-        if (NOTIFICATON_ENABLED == txDataClientConfigDesc[0])
+        if (NOTIFICATON_ENABLED == bpStatusConfigDesc[0])
         {
             uartTxDataNtf.value.val  = bpStatusData;
             uartTxDataNtf.value.len  = BP_STATUS_DATA_SIZE;

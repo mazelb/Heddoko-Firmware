@@ -2,7 +2,7 @@
 --	Conversion of HeddokoBLE.v to vh2:
 --
 --	Cypress Semiconductor - WARP Version 6.3 IR 41
---	Mon Sep 12 18:04:23 2016
+--	Tue Sep 13 17:09:58 2016
 --
 
 USE cypress.cypress.all;
@@ -80,9 +80,9 @@ TERMINAL Net_203 : bit;
 TERMINAL Net_3701 : bit;
 TERMINAL Net_3702 : bit;
 SIGNAL \BLE:Net_15\ : bit;
-SIGNAL Net_275 : bit;
+SIGNAL Net_294 : bit;
 SIGNAL \BLE:Net_53\ : bit;
-SIGNAL Net_274 : bit;
+SIGNAL Net_293 : bit;
 SIGNAL \BLE:Net_55\ : bit;
 BEGIN
 
@@ -452,7 +452,7 @@ L_1:cy_annotation_universal_v1_0
 \BLE:cy_m0s8_ble\:cy_m0s8_ble_v1_0
 	GENERIC MAP(cy_registers=>"")
 	PORT MAP(interrupt=>\BLE:Net_15\,
-		rf_ext_pa_en=>Net_275);
+		rf_ext_pa_en=>Net_294);
 \BLE:bless_isr\:cy_isr_v1_0
 	GENERIC MAP(int_type=>"10")
 	PORT MAP(int_signal=>\BLE:Net_15\);

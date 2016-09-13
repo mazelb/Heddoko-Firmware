@@ -27,7 +27,7 @@
 #define CYBLE_CUSTOMS_SERVICE_COUNT                  (0x05u)
 #define CYBLE_CUSTOMC_SERVICE_COUNT                  (0x00u)
 #define CYBLE_CUSTOM_SERVICE_CHAR_COUNT              (0x04u)
-#define CYBLE_CUSTOM_SERVICE_CHAR_DESCRIPTORS_COUNT  (0x03u)
+#define CYBLE_CUSTOM_SERVICE_CHAR_DESCRIPTORS_COUNT  (0x02u)
 
 /* Below are the indexes and handles of the defined Custom Services and their characteristics */
 #define CYBLE_SERVER_UART_SERVICE_INDEX   (0x00u) /* Index of Server_UART service in the cyBle_customs array */
@@ -42,14 +42,11 @@
 #define CYBLE_HEDDOKO_WIFI_SERVICE_INDEX   (0x02u) /* Index of Heddoko: WiFi service in the cyBle_customs array */
 #define CYBLE_HEDDOKO_WIFI_SSID_CHAR_INDEX   (0x00u) /* Index of SSID characteristic */
 #define CYBLE_HEDDOKO_WIFI_SSID_CHARACTERISTIC_USER_DESCRIPTION_DESC_INDEX   (0x00u) /* Index of Characteristic User Description descriptor */
-#define CYBLE_HEDDOKO_WIFI_SSID_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_INDEX   (0x01u) /* Index of Client Characteristic Configuration descriptor */
 #define CYBLE_HEDDOKO_WIFI_PASSPHRASE_CHAR_INDEX   (0x01u) /* Index of PassPhrase characteristic */
 #define CYBLE_HEDDOKO_WIFI_PASSPHRASE_CHARACTERISTIC_USER_DESCRIPTION_DESC_INDEX   (0x00u) /* Index of Characteristic User Description descriptor */
-#define CYBLE_HEDDOKO_WIFI_PASSPHRASE_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_INDEX   (0x01u) /* Index of Client Characteristic Configuration descriptor */
 #define CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_CHAR_INDEX   (0x02u) /* Index of Security type characteristic */
 #define CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_VALID_RANGE_DESC_INDEX   (0x00u) /* Index of Valid Range descriptor */
 #define CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_CHARACTERISTIC_USER_DESCRIPTION_DESC_INDEX   (0x01u) /* Index of Characteristic User Description descriptor */
-#define CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_INDEX   (0x02u) /* Index of Client Characteristic Configuration descriptor */
 #define CYBLE_HEDDOKO_WIFI_WIFI_ENABLE_CHAR_INDEX   (0x03u) /* Index of Wifi enable characteristic */
 #define CYBLE_HEDDOKO_WIFI_WIFI_ENABLE_CHARACTERISTIC_USER_DESCRIPTION_DESC_INDEX   (0x00u) /* Index of Characteristic User Description descriptor */
 
@@ -80,31 +77,28 @@
 #define CYBLE_HEDDOKO_WIFI_SSID_DECL_HANDLE   (0x0017u) /* Handle of SSID characteristic declaration */
 #define CYBLE_HEDDOKO_WIFI_SSID_CHAR_HANDLE   (0x0018u) /* Handle of SSID characteristic */
 #define CYBLE_HEDDOKO_WIFI_SSID_CHARACTERISTIC_USER_DESCRIPTION_DESC_HANDLE   (0x0019u) /* Handle of Characteristic User Description descriptor */
-#define CYBLE_HEDDOKO_WIFI_SSID_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE   (0x001Au) /* Handle of Client Characteristic Configuration descriptor */
-#define CYBLE_HEDDOKO_WIFI_PASSPHRASE_DECL_HANDLE   (0x001Bu) /* Handle of PassPhrase characteristic declaration */
-#define CYBLE_HEDDOKO_WIFI_PASSPHRASE_CHAR_HANDLE   (0x001Cu) /* Handle of PassPhrase characteristic */
-#define CYBLE_HEDDOKO_WIFI_PASSPHRASE_CHARACTERISTIC_USER_DESCRIPTION_DESC_HANDLE   (0x001Du) /* Handle of Characteristic User Description descriptor */
-#define CYBLE_HEDDOKO_WIFI_PASSPHRASE_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE   (0x001Eu) /* Handle of Client Characteristic Configuration descriptor */
-#define CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_DECL_HANDLE   (0x001Fu) /* Handle of Security type characteristic declaration */
-#define CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_CHAR_HANDLE   (0x0020u) /* Handle of Security type characteristic */
-#define CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_VALID_RANGE_DESC_HANDLE   (0x0021u) /* Handle of Valid Range descriptor */
-#define CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_CHARACTERISTIC_USER_DESCRIPTION_DESC_HANDLE   (0x0022u) /* Handle of Characteristic User Description descriptor */
-#define CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE   (0x0023u) /* Handle of Client Characteristic Configuration descriptor */
-#define CYBLE_HEDDOKO_WIFI_WIFI_ENABLE_DECL_HANDLE   (0x0024u) /* Handle of Wifi enable characteristic declaration */
-#define CYBLE_HEDDOKO_WIFI_WIFI_ENABLE_CHAR_HANDLE   (0x0025u) /* Handle of Wifi enable characteristic */
-#define CYBLE_HEDDOKO_WIFI_WIFI_ENABLE_CHARACTERISTIC_USER_DESCRIPTION_DESC_HANDLE   (0x0026u) /* Handle of Characteristic User Description descriptor */
+#define CYBLE_HEDDOKO_WIFI_PASSPHRASE_DECL_HANDLE   (0x001Au) /* Handle of PassPhrase characteristic declaration */
+#define CYBLE_HEDDOKO_WIFI_PASSPHRASE_CHAR_HANDLE   (0x001Bu) /* Handle of PassPhrase characteristic */
+#define CYBLE_HEDDOKO_WIFI_PASSPHRASE_CHARACTERISTIC_USER_DESCRIPTION_DESC_HANDLE   (0x001Cu) /* Handle of Characteristic User Description descriptor */
+#define CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_DECL_HANDLE   (0x001Du) /* Handle of Security type characteristic declaration */
+#define CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_CHAR_HANDLE   (0x001Eu) /* Handle of Security type characteristic */
+#define CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_VALID_RANGE_DESC_HANDLE   (0x001Fu) /* Handle of Valid Range descriptor */
+#define CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_CHARACTERISTIC_USER_DESCRIPTION_DESC_HANDLE   (0x0020u) /* Handle of Characteristic User Description descriptor */
+#define CYBLE_HEDDOKO_WIFI_WIFI_ENABLE_DECL_HANDLE   (0x0021u) /* Handle of Wifi enable characteristic declaration */
+#define CYBLE_HEDDOKO_WIFI_WIFI_ENABLE_CHAR_HANDLE   (0x0022u) /* Handle of Wifi enable characteristic */
+#define CYBLE_HEDDOKO_WIFI_WIFI_ENABLE_CHARACTERISTIC_USER_DESCRIPTION_DESC_HANDLE   (0x0023u) /* Handle of Characteristic User Description descriptor */
 
-#define CYBLE_HEDDOKO_RAW_DATA_SERVICE_HANDLE   (0x0027u) /* Handle of Heddoko: Raw data service */
-#define CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_DECL_HANDLE   (0x0028u) /* Handle of Raw data characteristic declaration */
-#define CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CHAR_HANDLE   (0x0029u) /* Handle of Raw data characteristic */
-#define CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CHARACTERISTIC_USER_DESCRIPTION_DESC_HANDLE   (0x002Au) /* Handle of Characteristic User Description descriptor */
-#define CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE   (0x002Bu) /* Handle of Client Characteristic Configuration descriptor */
+#define CYBLE_HEDDOKO_RAW_DATA_SERVICE_HANDLE   (0x0024u) /* Handle of Heddoko: Raw data service */
+#define CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_DECL_HANDLE   (0x0025u) /* Handle of Raw data characteristic declaration */
+#define CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CHAR_HANDLE   (0x0026u) /* Handle of Raw data characteristic */
+#define CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CHARACTERISTIC_USER_DESCRIPTION_DESC_HANDLE   (0x0027u) /* Handle of Characteristic User Description descriptor */
+#define CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE   (0x0028u) /* Handle of Client Characteristic Configuration descriptor */
 
-#define CYBLE_HEDDOKO_BRAINPACK_STATUS_SERVICE_HANDLE   (0x002Cu) /* Handle of Heddoko: BrainPack Status service */
-#define CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_DECL_HANDLE   (0x002Du) /* Handle of BP-Status characteristic declaration */
-#define CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CHAR_HANDLE   (0x002Eu) /* Handle of BP-Status characteristic */
-#define CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE   (0x002Fu) /* Handle of Client Characteristic Configuration descriptor */
-#define CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CHARACTERISTIC_USER_DESCRIPTION_DESC_HANDLE   (0x0030u) /* Handle of Characteristic User Description descriptor */
+#define CYBLE_HEDDOKO_BRAINPACK_STATUS_SERVICE_HANDLE   (0x0029u) /* Handle of Heddoko: BrainPack Status service */
+#define CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_DECL_HANDLE   (0x002Au) /* Handle of BP-Status characteristic declaration */
+#define CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CHAR_HANDLE   (0x002Bu) /* Handle of BP-Status characteristic */
+#define CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE   (0x002Cu) /* Handle of Client Characteristic Configuration descriptor */
+#define CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CHARACTERISTIC_USER_DESCRIPTION_DESC_HANDLE   (0x002Du) /* Handle of Characteristic User Description descriptor */
 
 
 

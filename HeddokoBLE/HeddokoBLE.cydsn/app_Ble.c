@@ -23,6 +23,18 @@ CYBLE_GATT_HANDLE_VALUE_PAIR_T  attrValue = {
                                                     CYBLE_SERVER_UART_SERVER_UART_TX_DATA_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE
                                                 };
 
+uint8 rawDataConfigDesc[2] = {0, 0};
+CYBLE_GATT_HANDLE_VALUE_PAIR_T  rawDataConfigAttrValue = {
+                                                            {(uint8 *)rawDataConfigDesc, 2, 2}, 
+                                                            CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE
+                                                        };
+
+uint8 bpStatusConfigDesc[2] = {0, 0};
+CYBLE_GATT_HANDLE_VALUE_PAIR_T  bpStatusConfigAttrValue = {
+                                                            {(uint8 *)bpStatusConfigDesc, 2, 2}, 
+                                                            CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE
+                                                        };
+
 /*******************************************************************************
 * Function Name: HandleBleProcessing
 ********************************************************************************
@@ -50,6 +62,8 @@ void HandleBleProcessing(void)
             
             /* read CCCD for TX characteristic for checking if notifications are enabled*/
             CyBle_GattsReadAttributeValue(&attrValue, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
+            CyBle_GattsReadAttributeValue(&rawDataConfigAttrValue, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
+            CyBle_GattsReadAttributeValue(&bpStatusConfigAttrValue, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
             
             /* if stack is free, handle UART traffic */
             if(CyBle_GattGetBusStatus() != CYBLE_STACK_STATE_BUSY)
@@ -62,6 +76,12 @@ void HandleBleProcessing(void)
         
             txDataClientConfigDesc[0] = NOTIFICATON_DISABLED;
             txDataClientConfigDesc[1] = NOTIFICATON_DISABLED;
+            
+            rawDataConfigDesc[0] = NOTIFICATON_DISABLED;
+            rawDataConfigDesc[1] = NOTIFICATON_DISABLED;
+            
+            bpStatusConfigDesc[0] = NOTIFICATON_DISABLED;
+            bpStatusConfigDesc[1] = NOTIFICATON_DISABLED;
             
             CyBle_GappStartAdvertisement(CYBLE_ADVERTISING_FAST);
 
@@ -166,6 +186,7 @@ void AppCallBack(uint32 event, void *eventParam)
             
             writeReqParam = (CYBLE_GATTS_WRITE_REQ_PARAM_T *) eventParam;
             
+            // notification status flags
             if(CYBLE_SERVER_UART_SERVER_UART_TX_DATA_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE == \
                                                                     writeReqParam->handleValPair.attrHandle)
             {
@@ -177,6 +198,40 @@ void AppCallBack(uint32 event, void *eventParam)
                     CyBle_GattsWriteRsp(cyBle_connHandle);
                     #ifdef PRINT_MESSAGE_LOG   
                         UART_UartPutString("\n\rNotifications enabled\n\r");
+                        UART_UartPutString("\n\rStart entering data:\n\r");
+                    #endif
+                }
+            }
+            
+            // enable notification flag for RAW data
+            if(CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE == \
+                                                                    writeReqParam->handleValPair.attrHandle)
+            {
+                errorCode = CyBle_GattsWriteAttributeValue(&(writeReqParam->handleValPair), \
+                                                0, &cyBle_connHandle, CYBLE_GATT_DB_PEER_INITIATED);
+                
+                if (CYBLE_GATT_ERR_NONE  == errorCode)
+                {
+                    CyBle_GattsWriteRsp(cyBle_connHandle);
+                    #ifdef PRINT_MESSAGE_LOG   
+                        UART_UartPutString("\n\rRaw data Notifications enabled\n\r");
+                        UART_UartPutString("\n\rStart entering data:\n\r");
+                    #endif
+                }
+            }
+            
+            // enable notification flag for Brain Pack Status
+            if(CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE == \
+                                                                    writeReqParam->handleValPair.attrHandle)
+            {
+                errorCode = CyBle_GattsWriteAttributeValue(&(writeReqParam->handleValPair), \
+                                                0, &cyBle_connHandle, CYBLE_GATT_DB_PEER_INITIATED);
+                
+                if (CYBLE_GATT_ERR_NONE  == errorCode)
+                {
+                    CyBle_GattsWriteRsp(cyBle_connHandle);
+                    #ifdef PRINT_MESSAGE_LOG   
+                        UART_UartPutString("\n\rBrain Pack Status Notifications enabled\n\r");
                         UART_UartPutString("\n\rStart entering data:\n\r");
                     #endif
                 }
