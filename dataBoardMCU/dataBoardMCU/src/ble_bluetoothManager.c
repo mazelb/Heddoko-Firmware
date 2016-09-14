@@ -15,6 +15,10 @@
 
 /*	Local defines	*/
 #define BLE_MAX_BP_STATUS_DATA_LENGTH	5
+#define BLE_MAX_WIFI_DATA_LENGTH	97
+#define BLE_MAX_RAW_DATA_LENGTH	20
+#define SSID_DATA_SIZE	32
+#define PASSPHRASE_DATA_SIZE	64
 
 /*	Static function forward declarations	*/
 static void processMessage(msg_message_t message);
@@ -25,6 +29,7 @@ static void sendBpStatusData();
 xQueueHandle queue_ble = NULL;
 bool newBpStateDataAvailble = false;
 subp_status_t *subProcessorStatusData;
+uint8_t vRawData[BLE_MAX_RAW_DATA_LENGTH];
 drv_uart_config_t usart1Config =
 {
 	.p_usart = USART1,
@@ -46,6 +51,13 @@ static struct
 	uint8_t wiFiConnectionState;
 	uint8_t sdCardState;
 }bpStatus;
+
+static struct 
+{
+    uint8_t ssid[SSID_DATA_SIZE];
+    uint8_t passphrase[PASSPHRASE_DATA_SIZE];
+    uint8_t securityType;
+}wifi_data;
 
 void ble_bluetoothManagerTask(void *pvParameters)
 {
@@ -104,7 +116,21 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 		{
 			case PACKET_COMMAND_ID_GPS_DATA_RESP:
 			break;
-
+			
+			case PACKET_COMMAND_ID_ALL_WIFI_DATA_RESP:
+				memcpy(wifi_data.ssid, (uint8_t *) &packet->payload[2], SSID_DATA_SIZE);    
+				memcpy(wifi_data.passphrase, (uint8_t *) &packet->payload[34], PASSPHRASE_DATA_SIZE);
+				wifi_data.securityType = packet->payload[98];
+			break;
+			
+			case PACKET_COMMAND_ID_SEND_RAW_DATA_TO_MASTER:	// received as notification every time new data is written
+				dbg_printString(DBG_LOG_LEVEL_DEBUG,"Received a packet!!!!");
+			break;
+			
+			case PACKET_COMMAND_ID_GET_RAW_DATA_RESP:	// received when the master polls for data
+				dbg_printString(DBG_LOG_LEVEL_DEBUG,"Received a packet!!!!");
+			break;
+			
 			default:
 			break;
 		}
@@ -171,17 +197,52 @@ static void sendBpStatusData()
 		newBpStateDataAvailble = false;
 		
 		outputData[0] = PACKET_TYPE_MASTER_CONTROL;
-		outputData[1] = PACKET_COMMAND_ID_SEND_RAW_DATA_TO_BLE;
-		memcpy(&outputData[2], &bpStatus, BLE_MAX_BP_STATUS_DATA_LENGTH);
-		
-		pkt_sendRawPacket(&usart1Config, outputData, (BLE_MAX_BP_STATUS_DATA_LENGTH + 2));
-		
-		vTaskDelay(200);
-		
-		outputData[0] = PACKET_TYPE_MASTER_CONTROL;
 		outputData[1] = PACKET_COMMAND_ID_BP_STATUS;
 		memcpy(&outputData[2], &bpStatus, BLE_MAX_BP_STATUS_DATA_LENGTH);
 		
 		pkt_sendRawPacket(&usart1Config, outputData, (BLE_MAX_BP_STATUS_DATA_LENGTH + 2));
 	}
+}
+
+void ble_startFastAdv()
+{
+	uint8_t outputData[2] = {PACKET_TYPE_MASTER_CONTROL, PACKET_COMMAND_ID_START_FAST_ADV};
+	pkt_sendRawPacket(&usart1Config, outputData, (2));
+}
+
+void ble_sendWiFiConfig(net_wirelessConfig_t *wiFiConfig)
+{
+	uint8_t outputData[BLE_MAX_WIFI_DATA_LENGTH + 2] = {0};	// frame has a two byte header
+	
+	outputData[0] = PACKET_TYPE_MASTER_CONTROL;
+	outputData[1] = PACKET_COMMAND_ID_DEFAULT_WIFI_DATA;
+	memcpy(&wifi_data.ssid, (uint8_t *) &wiFiConfig->ssid, SSID_DATA_SIZE);
+	memcpy(&wifi_data.passphrase, (uint8_t *) &wiFiConfig->passphrase, PASSPHRASE_DATA_SIZE);
+	wifi_data.securityType = wiFiConfig->securityType;
+	
+	memcpy(&outputData[2], (uint8_t *) &wifi_data, BLE_MAX_WIFI_DATA_LENGTH);
+	pkt_sendRawPacket(&usart1Config, outputData, (BLE_MAX_WIFI_DATA_LENGTH + 2));
+}
+
+void ble_sendRawData(uint8_t *data, uint8_t size)
+{
+	uint8_t outputData[BLE_MAX_RAW_DATA_LENGTH + 2] = {0};	// frame has a two byte header
+	
+	outputData[0] = PACKET_TYPE_MASTER_CONTROL;
+	outputData[1] = PACKET_COMMAND_ID_SEND_RAW_DATA_TO_BLE;
+	memcpy(&outputData[2], data, (size > BLE_MAX_RAW_DATA_LENGTH ? BLE_MAX_RAW_DATA_LENGTH : size));
+	
+	pkt_sendRawPacket(&usart1Config, outputData, (BLE_MAX_RAW_DATA_LENGTH + 2));
+}
+
+void ble_wifiDataReq()
+{
+	uint8_t outputData[2] = {PACKET_TYPE_MASTER_CONTROL, PACKET_COMMAND_ID_ALL_WIFI_DATA_REQ};
+	pkt_sendRawPacket(&usart1Config, outputData, (2));
+}
+
+void ble_rawDataReq()
+{
+	uint8_t outputData[2] = {PACKET_TYPE_MASTER_CONTROL, PACKET_COMMAND_ID_GET_RAW_DATA_REQ};
+	pkt_sendRawPacket(&usart1Config, outputData, (2));
 }

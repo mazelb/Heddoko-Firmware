@@ -173,32 +173,46 @@ static void sendStateChangeMessage(sys_manager_systemState_t state)
 
 static void processGpmMessage(uint32_t data)
 {
+	uint8_t bleRawData[20] = "Hello!!! How are you";
+	net_wirelessConfig_t bleWifiConfig = 
+	{
+		.ssid = {0xaa},
+		.passphrase	= {0x0f},
+		.securityType = 0x02,
+		.channel = NULL
+	};
+	
 	switch (data)
 	{
 		case GPM_BUTTON_ONE_SHORT_PRESS:
 			drv_led_set(DRV_LED_BLUE, DRV_LED_SOLID);
 			drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
 			drv_piezo_playPattern(&noteElementsArray[2], 1);
+			ble_sendRawData(bleRawData, sizeof(bleRawData));
 		break;
 		case GPM_BUTTON_ONE_LONG_PRESS:
 			drv_led_set(DRV_LED_BLUE, DRV_LED_FLASH);
 			drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
 			drv_piezo_playPattern(&noteElementsArray[1], 2);
+			ble_rawDataReq();
 		break;
 		case GPM_BUTTON_TWO_SHORT_PRESS:
 			drv_led_set(DRV_LED_RED, DRV_LED_SOLID);
 			drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
 			drv_piezo_playPattern(&noteElementsArray[2], 1);
+			ble_sendWiFiConfig(&bleWifiConfig);
 		break;
 		case GPM_BUTTON_TWO_LONG_PRESS:
 			drv_led_set(DRV_LED_RED, DRV_LED_FLASH);
 			drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
 			drv_piezo_playPattern(&noteElementsArray[1], 2);
+			ble_wifiDataReq();
 		break;
 		case GPM_BOTH_BUTTON_LONG_PRESS:
 			drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
 			drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
 			drv_piezo_playPattern(noteElementsArray, (sizeof(noteElementsArray) / sizeof(drv_piezo_noteElement_t)));
+			ble_startFastAdv();
 		break;
 		default:
 		break;
