@@ -2,7 +2,7 @@
 --	Conversion of HeddokoBLE.v to vh2:
 --
 --	Cypress Semiconductor - WARP Version 6.3 IR 41
---	Tue Sep 13 17:09:58 2016
+--	Thu Sep 15 10:19:53 2016
 --
 
 USE cypress.cypress.all;

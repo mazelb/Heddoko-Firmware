@@ -38,6 +38,7 @@ struct
 bool newRawDataAvailable = true;
 bool newBpStatusDataAvailable = false;
 bool newWifiDataAvailable = false;
+bool restartFastAdv = false;
 rawPacket_t dataPacket;
 
 extern uint8 txDataClientConfigDesc[2];
@@ -46,6 +47,8 @@ extern uint8 bpStatusConfigDesc[2];
 
 void cmd_processPacket(rawPacket_t* packet)
 {
+    CYBLE_API_RESULT_T      bleApiResult;
+    CYBLE_STATE_T bleState;
     if (packet->payloadSize < 2)
     {
         #ifdef PRINT_MESSAGE_LOG
@@ -123,9 +126,15 @@ void cmd_processPacket(rawPacket_t* packet)
             break;
                 
             case PACKET_COMMAND_ID_START_FAST_ADV:
-                if (cyBle_state != CYBLE_STATE_CONNECTED)
+                if (cyBle_state == CYBLE_STATE_DISCONNECTED)
                 {
-                    CyBle_GappStartAdvertisement(CYBLE_ADVERTISING_FAST);
+                    bleApiResult = CyBle_GappStartAdvertisement(CYBLE_ADVERTISING_FAST);
+                    bleState = CyBle_GetState();
+                }
+                else
+                {
+                    CyBle_GappStopAdvertisement();
+                    restartFastAdv = true;
                 }
             break;
             
@@ -316,7 +325,7 @@ void saveWifiDefaultConfig(rawPacket_t* packet)
     
     memset(&wifi_data, 0, sizeof(wifi_data));
     memcpy(wifi_data.ssid, (uint8 *) &packet->payload[2], SSID_DATA_SIZE);    
-    memcpy(wifi_data.passphrase, (uint8 *) &packet->payload[34], SSID_DATA_SIZE);
+    memcpy(wifi_data.passphrase, (uint8 *) &packet->payload[34], PASSPHRASE_DATA_SIZE);
     wifi_data.securityType = packet->payload[98];
         
     // save SSID data
@@ -334,7 +343,7 @@ void saveWifiDefaultConfig(rawPacket_t* packet)
     handlePair.attrHandle = CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_CHAR_HANDLE;
     handlePair.value.len = SECURITY_TYPE_DATA_SIZE;
     handlePair.value.actualLen = SECURITY_TYPE_DATA_SIZE;
-    handlePair.value.val = (uint8 *) wifi_data.passphrase;
+    handlePair.value.val = (uint8 *) &wifi_data.securityType;
     CyBle_GattsWriteAttributeValue(&handlePair, 0, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
     
     // set the flag to indicate the presence of new data
@@ -472,8 +481,9 @@ void saveReceivedRawData(uint8 *data, uint16_t length)
 
 void sendUnsentData()
 {
+    // send notifications
     sendUnsentRawData();
-    sendUnsentWifiData();
+    //sendUnsentWifiData();
     sendUnsentBpStatusData();
 }
 

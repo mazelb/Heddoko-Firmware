@@ -14,6 +14,8 @@
 
 extern void sendUnsentRawData();
 
+extern bool restartFastAdv;
+
 /* MTU size to be used by Client and Server after MTU exchange */
 uint16 mtuSize      = CYBLE_GATT_MTU;   
 
@@ -240,6 +242,14 @@ void AppCallBack(uint32 event, void *eventParam)
             break;
         
         case CYBLE_EVT_GATTC_READ_RSP:
+            break;
+        
+        case CYBLE_EVT_GAPP_ADVERTISEMENT_START_STOP:
+             if (restartFastAdv)
+            {
+                CyBle_GappStartAdvertisement(CYBLE_ADVERTISING_FAST);
+                restartFastAdv = false;
+            }
             break;
             
         default:

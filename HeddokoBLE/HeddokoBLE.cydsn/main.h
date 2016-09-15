@@ -20,7 +20,7 @@
     #include "app_LED.h"
     
     #define PACKET_TYPE_MASTER_CONTROL                  0x01
-    #define PACKET_TYPE_BLUETOOTH_MODULE                0x04
+    #define PACKET_TYPE_BLUETOOTH_MODULE                0x06
     
     #define PACKET_COMMAND_ID_GPS_DATA_REQ              0x41
     #define PACKET_COMMAND_ID_GPS_DATA_RESP             0x42
