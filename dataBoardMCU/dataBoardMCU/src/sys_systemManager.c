@@ -171,6 +171,7 @@ static void sendStateChangeMessage(sys_manager_systemState_t state)
 	msg_sendBroadcastMessage(&message);
 }
 
+// NOTE: this function contains test function calls which are to be replaced with actual required actions.
 static void processGpmMessage(uint32_t data)
 {
 	uint8_t bleRawData[20] = "Hello!!! How are you";

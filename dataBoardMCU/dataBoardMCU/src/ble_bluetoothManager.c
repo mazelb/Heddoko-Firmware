@@ -50,14 +50,14 @@ static struct
 	uint8_t currentState;
 	uint8_t wiFiConnectionState;
 	uint8_t sdCardState;
-}bpStatus;
+}bpStatus;	// status to be passed to BLE module.
 
 static struct 
 {
     uint8_t ssid[SSID_DATA_SIZE];
     uint8_t passphrase[PASSPHRASE_DATA_SIZE];
     uint8_t securityType;
-}wifi_data;
+}wifi_data;	// local config to store wifi data for BLE module.
 
 void ble_bluetoothManagerTask(void *pvParameters)
 {
@@ -111,10 +111,10 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 	int result = 0;
 	if(packet->payload[0] == PACKET_TYPE_BLE_MODULE)
 	{
-		
 		switch(packet->payload[1])
 		{
 			case PACKET_COMMAND_ID_GPS_DATA_RESP:
+				
 			break;
 			
 			case PACKET_COMMAND_ID_ALL_WIFI_DATA_RESP:
