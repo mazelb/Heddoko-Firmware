@@ -142,7 +142,7 @@ void dbg_printf(dbg_debugLogLevel_t msgLogLevel, char *fmt, ...)
 		va_start (va, fmt);
 		vsnprintf(buffer,sizeof(buffer), fmt, va);
 		va_end (va);
-		drv_uart_putString(&debugUartConfig,buffer); 
+		printString(buffer); 
 	}
 }
 
@@ -152,7 +152,7 @@ void dbg_printString(dbg_debugLogLevel_t msgLogLevel, char* string)
 	//only process the message if the log level is below the 
 	if(msgLogLevel <= debugLogLevel)
 	{
-		drv_uart_putString(&debugUartConfig,string); 	
+		printString(string); 	
 	}
 	
 }
@@ -218,11 +218,11 @@ static status_t processCommand(dbg_commandSource_t source, char* command, size_t
     {
         if(source == DBG_CMD_SOURCE_SERIAL)
         {
-            printString(responseBuffer);
+            drv_uart_putData(&debugUartConfig, responseBuffer,responseLength);
         }
         else if(source == DBG_CMD_SOURCE_NET)
         {
-            net_sendPacketToClientSock(&debugServer, responseBuffer, responseLength); 
+            net_sendPacketToClientSock(&debugServer, responseBuffer, responseLength,false); 
         }
         responseBuffer[0] = 0; //clear the string           
     }        
@@ -282,6 +282,12 @@ static void printString(char* str)
 	{
 		drv_uart_putString(&debugUartConfig, str);
 	}
+    if(debugServer.clientSocketId > -1)
+    {
+        
+        net_sendPacketToClientSock(&debugServer, str, strlen(str),true); 
+    }
+    
 }
 
 static void configure_console(void)

@@ -291,6 +291,7 @@ static void processMessage(msg_message_t message)
 			if(message.data == 0)
 			{
 				wifiConnected = false;
+                
 			}
 			else
 			{

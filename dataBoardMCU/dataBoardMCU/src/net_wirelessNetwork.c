@@ -346,28 +346,39 @@ status_t net_createServerSocket(net_socketConfig_t* sock, size_t receiveBufSize)
 	}
 	return status;    
 }
-status_t net_sendPacketToClientSock(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength)
+status_t net_sendPacketToClientSock(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength, bool semaphoreNeeded)
 {
     status_t status = STATUS_FAIL;
-    
+    bool semaphoreAquired = false; 
     if(currentWifiState == NET_WIFI_STATE_CONNECTED && sock->clientSocketId > -1)
     {
-        //TODO: add validation of socket endpoint
-        //don't wait very long for the wifi access, only 5ms for now.
-        //if(xSemaphoreTake(semaphore_wifiAccess, 5) == true)
-        //{
+        
+        //only try to get the semaphore if it is needed. 
+        if(semaphoreNeeded)
+        {
+            //don't wait very long for the wifi access, only 5ms for now.
+            semaphoreAquired = xSemaphoreTake(semaphore_wifiAccess, 5);
+        }
+        else
+        {
+            //set to true so we send directly to the socket. 
+            semaphoreAquired = true; 
+        }
+        if(semaphoreAquired)
+        {
             
             int ret = send(sock->clientSocketId, packetBuf, packetBufLength, 0);
             if (ret == M2M_SUCCESS)
             {
                 status = STATUS_PASS;
             }
-            else
+            //If the semaphore was needed then release it now that we're done
+            if(semaphoreNeeded)
             {
-                dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to send packet!\r\n");
+                xSemaphoreGive(semaphore_wifiAccess);    
             }
-            //xSemaphoreGive(semaphore_wifiAccess);
-        //}
+            
+        }
     }
     return status;
 }
@@ -386,8 +397,12 @@ status_t net_closeSocket(net_socketConfig_t* sock)
 		{
 			free(sock->buffer);
 		}
-		sock->socketId = -1; 	
-		xSemaphoreGive(semaphore_wifiAccess);	
+		sock->socketId = -1; 			
+        if(sock->clientSocketId > -1)
+        {
+            close(sock->clientSocketId);    
+        }
+        xSemaphoreGive(semaphore_wifiAccess);	            
 	}
 	return status;	
 }
