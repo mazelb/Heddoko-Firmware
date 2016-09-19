@@ -273,6 +273,8 @@ static void __attribute__((Optimize("O0"))) enterSleepMode()
 	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
 	//turn off power to the data board
 	drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_LOW);
+	// disable the UARTs
+	drv_uart_deInit(dataRouterConfiguration.dataBoardUart);
 	//wait for the button to go high
 	drv_gpio_getPinState(DRV_GPIO_PIN_PWR_BTN, &pwSwState);	//poll the power switch
 	loopCount = 0;
@@ -291,7 +293,7 @@ static void __attribute__((Optimize("O0"))) enterSleepMode()
 	enterSleep();
 }
 
-static void enterSleep()
+static void __attribute__((Optimize("O0"))) enterSleep()
 {
 	uint32_t powerOnFlag = FALSE, chargeFlag = FALSE;
 	drv_gpio_pin_state_t pwSwState = DRV_GPIO_PIN_STATE_HIGH;
@@ -421,7 +423,8 @@ static void enterPowerDownChargeState()
 	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_HIGH);
 	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
 	drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_LOW);
-	
+	// disable the UARTs
+	drv_uart_deInit(dataRouterConfiguration.dataBoardUart);
 	currentSystemState = SYS_STATE_POWER_OFF_CHARGING; 
 		
 }
