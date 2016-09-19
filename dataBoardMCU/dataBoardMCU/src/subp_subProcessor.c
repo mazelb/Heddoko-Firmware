@@ -17,8 +17,8 @@
 #include "pkt_packetParser.h"
 
 /*	Static function forward declarations	*/
-static void processMessage(msg_message_t message);
 static void processRawPacket(pkt_rawPacket_t* packet);
+static void processMessage(msg_message_t message);
 status_t convertFullFrameToProtoBuff(subp_fullImuFrameSet_t* rawFullFrame, Heddoko__Packet* protoPacket);
 //message senders
 static void sendGetStatusMessage(drv_uart_config_t* uartConfig);
@@ -26,11 +26,15 @@ static void sendStreamMessage(drv_uart_config_t* uartConfig, uint8_t enable);
 static void sendGetTimeRequestMessage(drv_uart_config_t* uartConfig);
 static void sendConfigtMessage(drv_uart_config_t* uartConfig, uint8_t rate, uint32_t sensorMask);
 static void sendPwrDownResponseMessage(drv_uart_config_t* uartConfig);
+//possibly move this somewhere else, such as the 
+static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet);
 
 void protoPacketInit();
 //state change event functions
 static status_t recordingStateEntry();
 static status_t recordingStateExit();
+static status_t streamingStateEntry();
+static status_t streamingStateExit();
 
 /*	Local variables	*/
 xQueueHandle queue_subp = NULL;
@@ -85,7 +89,16 @@ sdc_file_t dataLogFile =
 	.sem_bufferAccess = NULL
 };
 
+bool wifiConnected = false; 
+net_socketConfig_t streamingSocket =
+{
+	.endpoint.sin_addr = 0xFFFFFFFF, //broadcast Address
+	.endpoint.sin_family = AF_INET,
+	.endpoint.sin_port = _htons(6669),
+	.sourceModule = MODULE_WIFI
+};
 
+sys_manager_systemState_t subpState = SYSTEM_STATE_INIT; 
 
 /*	Extern functions	*/
 
@@ -151,10 +164,15 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 		switch(packet->payload[1])
 		{
 			case PACKET_COMMAND_ID_SUBP_GET_STATUS_RESP:
-				
-			
-			
-			
+				//copy the structure to the received packet
+				memcpy(&subp_CurrentStatus,&(packet->payload[2]),sizeof(subp_status_t)); 			
+				//send it to the debug module for now, just so we can see it printed up. Eventually send it to the config manager
+				//the pointer is sent only, so it doesn't take up to much space on the queue. 
+				msg_sendMessage(MODULE_DEBUG, MODULE_SUB_PROCESSOR, MSG_TYPE_SUBP_STATUS, &subp_CurrentStatus); 
+			break;
+			case PACKET_COMMAND_ID_SUBP_POWER_DOWN_REQ:
+				//we received a power down request, let the system manager know. 
+				msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_SUBP_POWER_DOWN_REQ, NULL); 					
 			break;
 			case PACKET_COMMAND_ID_SUBP_FULL_FRAME:
 				//this is a frame, cast the payload to the rawFrame type. 
@@ -174,30 +192,19 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 					{					
 						sdc_writeToFile(&dataLogFile, serializedDataBuffer, serializedLength); 
 					}
-					//net_sendPacket(serializedDataBuffer, serializedLength);
-				}
-				if(rawFullFrame->timeStamp > lastTimeStamp)
-				{					
-					if(rawFullFrame->frames[8].Rotation_z == 13)
+					//check if the streaming socket is open. (should only be open in receive mode)
+					if(streamingSocket.socketId > -1)
 					{
-						result = 1;	//everything is good
+						net_sendUdpPacket(&streamingSocket, serializedDataBuffer, serializedLength);
 					}
-					else
-					{
-						result = 2; 	//corrupt frame
-					}					 
-				}
-				else
-				{
-					result = 0; //out of sequence frame
 				}
 				lastTimeStamp = rawFullFrame->timeStamp;
 				dgb_printf(DBG_LOG_LEVEL_DEBUG,"%d,%d,%d,%d,%d\r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,drv_uart_getDroppedBytes(&subpUart));
-				
+								
 			break;
-			
-			case PACKET_COMMAND_ID_SUBP_POWER_DOWN_REQ:
-				sendPwrDownResponseMessage(&subpUart);
+			case PACKET_COMMAND_ID_SUBP_GET_DATE_TIME_RESP:
+				//set the time from the packet contents. 
+				setDateTimeFromPacket(packet);
 			break;
 			
 			default:
@@ -206,6 +213,89 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 		}
 	}	
 	//dbg_printString("Received a packet!!!!"); 
+}
+
+static void processMessage(msg_message_t message)
+{
+	switch(message.type)
+	{
+		case MSG_TYPE_ENTERING_NEW_STATE:
+		{
+			if(message.data == SYSTEM_STATE_RECORDING)
+			{
+				if(recordingStateEntry() == STATUS_PASS)
+				{
+					subpState = SYSTEM_STATE_RECORDING;
+					msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL);
+				}
+				else
+				{
+					msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_ERROR, NULL);
+				}
+			}
+			else if(message.data == SYSTEM_STATE_STREAMING)
+			{
+				if(streamingStateEntry() == STATUS_PASS)
+				{
+					subpState = SYSTEM_STATE_STREAMING;
+					msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL);
+				}
+				else
+				{
+					msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_ERROR, NULL);
+				}
+			}
+			else if(message.data == SYSTEM_STATE_IDLE)
+			{
+				if(subpState == SYSTEM_STATE_RECORDING)
+				{
+					recordingStateExit();
+				}
+				else if(subpState == SYSTEM_STATE_STREAMING)
+				{
+					streamingStateExit();
+				}
+				subpState = SYSTEM_STATE_IDLE; 
+			}
+		}
+		break;
+		case MSG_TYPE_LEAVING_STATE:
+		{
+			if(message.data == SYSTEM_STATE_RECORDING)
+			{
+				recordingStateExit();
+				msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL);
+				subpState = SYSTEM_STATE_IDLE;
+			}
+			else if(message.data == SYSTEM_STATE_STREAMING)
+			{
+				streamingStateExit();
+				msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL);
+				subpState = SYSTEM_STATE_IDLE;
+			}			
+		}
+		break;
+		case MSG_TYPE_SUBP_POWER_DOWN_READY:
+		{
+			//power down is ready, so send the response message back to the power board.
+			sendPwrDownResponseMessage(&subpUart);
+		}
+		break;
+		case MSG_TYPE_WIFI_STATE:
+		{
+			if(message.data == 0)
+			{
+				wifiConnected = false;
+			}
+			else
+			{
+				wifiConnected = true; 
+			}
+		}		
+		default:
+		break;
+		
+	}
 }
 
 
@@ -277,42 +367,6 @@ status_t convertFullFrameToProtoBuff(subp_fullImuFrameSet_t* rawFullFrame, Heddo
 	}	
 }
 
-static void processMessage(msg_message_t message)
-{
-	switch(message.type)
-	{
-		case MSG_TYPE_ENTERING_NEW_STATE:					
-		{
-			if(message.data == SYSTEM_STATE_RECORDING)
-			{
-				if(recordingStateEntry() == STATUS_PASS)
-				{
-					msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL); 
-				}
-				else
-				{
-					msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_ERROR, NULL); 
-				}				
-			}
-		}
-		break;
-		case MSG_TYPE_LEAVING_STATE:
-		{
-			if(message.data == SYSTEM_STATE_RECORDING)
-			{
-				recordingStateExit();
-				msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL); 
-			}
-		}
-		break;	
-		case MSG_TYPE_STATE:
-		break;
-		default:
-		break;
-		 
-	}
-}
-
 void processStatusMessage(uint8_t* packet)
 {
 	//copy the packet to the local structure
@@ -350,6 +404,46 @@ static status_t recordingStateExit()
 	return status; 
 }
 
+static status_t streamingStateEntry()
+{
+	status_t status = STATUS_PASS;
+	
+	//check for valid calibration file (the name of the last calibration file should be populated)
+	
+	//check if we are connected to wifi
+	if(!wifiConnected)
+	{
+		//since we're not connected we cannot stream. don't know how we'd get here. 
+		return STATUS_FAIL;	
+	}
+	//create the udp socket
+	dbg_printString(DBG_LOG_LEVEL_DEBUG, "Creating streaming socket\r\n");
+	status = net_createUdpSocket(&streamingSocket, 255);
+	
+	//open/create recording data file
+	status |=  sdc_openFile(&dataLogFile, dataLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DATA_LOG);
+	//write file header to log
+	
+	//send config to power board
+	sendConfigtMessage(&subpUart,subp_config.rate,subp_config.sensorMask);
+	//send stream start command to power board.
+	sendStreamMessage(&subpUart, 0x01);
+	return status;
+}
+
+static status_t streamingStateExit()
+{
+	status_t status = STATUS_PASS;
+	//send stop streaming command to power board
+	sendStreamMessage(&subpUart, 0x00);
+	//close UDP socket
+	status = net_closeSocket(&streamingSocket);
+	//close file
+	status =  sdc_closeFile(&dataLogFile);	
+	
+	return status;
+}
+
 //message sending functions
 static void sendGetStatusMessage(drv_uart_config_t* uartConfig)
 {
@@ -379,6 +473,67 @@ static void sendConfigtMessage(drv_uart_config_t* uartConfig, uint8_t rate, uint
 
 static void sendPwrDownResponseMessage(drv_uart_config_t* uartConfig)
 {
-	uint8_t bytes[] = {0x01,PACKET_COMMAND_ID_SUBP_POWER_DOWN_RESP};
-	pkt_sendRawPacket(uartConfig,bytes, sizeof(bytes));
+	uint8_t rawBytes[] = {0x01,PACKET_COMMAND_ID_SUBP_POWER_DOWN_RESP};
+	pkt_sendRawPacket(uartConfig,rawBytes, sizeof(rawBytes));
+}
+
+/************************************************************************
+ * setDateTimeFromPacket(pkt_rawPacket_t *packet)
+ * @brief Set the date and time received from the data board
+ * @param pkt_rawPacket_t *packet: pointer to the packet
+ * @return status_t: STATUS_PASS or STATUS_FAILED                   
+ ************************************************************************/
+static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet)
+{
+	status_t status = STATUS_PASS;
+	subp_dateTime_t dateTime;
+	unsigned long startTime = xTaskGetTickCount(), curTime = 0;
+	
+	// set to registers directly
+	dateTime.time = packet->payload[2] | (packet->payload[3] << 8) | (packet->payload[4] << 16) | (0x00 <<22);	// 0x00 as we are using 24-hour mode
+	dateTime.date = packet->payload[6] | (packet->payload[7] << 8) | (((packet->payload[8] & 0x1F) | (packet->payload[8] & 0xE0)) << 16) 
+					| (packet->payload[9] << 24);
+	
+	taskENTER_CRITICAL();
+	// Date
+	RTC->RTC_CR |= RTC_CR_UPDCAL;
+	//delay_ms(1500);	// NOTE: remove this delay when the while loop below starts working
+	while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD)
+	{
+		curTime = xTaskGetTickCount();
+		if (curTime - startTime > 2000)		// it can take up to one second to get the ACKUPD bit
+		{
+			status |= STATUS_FAIL;
+			return status;
+		}
+	}
+	RTC->RTC_SCCR = RTC_SCCR_ACKCLR;
+	RTC->RTC_CALR = dateTime.date;
+	RTC->RTC_CR &= (~RTC_CR_UPDCAL);
+	RTC->RTC_SCCR |= RTC_SCCR_SECCLR;
+
+	status |=  (RTC->RTC_VER & RTC_VER_NVCAL);	// check if the RTC contains a valid value
+	
+	// Time
+	RTC->RTC_CR |= RTC_CR_UPDTIM;
+	//delay_ms(1500);	// NOTE: remove this delay when the while loop below starts working
+	while ((RTC->RTC_SR & RTC_SR_ACKUPD) != RTC_SR_ACKUPD)
+	{
+		curTime = xTaskGetTickCount();
+		if (curTime - startTime > 2000)		// it can take up to one second to get the ACKUPD bit
+		{
+			status |= STATUS_FAIL;
+			return status;
+		}
+	}
+	RTC->RTC_SCCR = RTC_SCCR_ACKCLR;
+	RTC->RTC_TIMR = dateTime.time;
+	RTC->RTC_CR &= (~RTC_CR_UPDTIM);
+	RTC->RTC_SCCR |= RTC_SCCR_SECCLR;
+
+	status |= (RTC->RTC_VER & RTC_VER_NVTIM);	// check if the RTC contains a valid value
+	
+	/*	return the status	*/
+	taskEXIT_CRITICAL();
+	return status;
 }

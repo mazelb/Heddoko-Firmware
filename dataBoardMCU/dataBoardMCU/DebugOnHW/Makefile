@@ -166,6 +166,7 @@ C_SRCS +=  \
 ../src/ble_bluetoothManager.c \
 ../src/dat_dataManager.c \
 ../src/dbg_debugManager.c \
+../src/drv_haptic.c \
 ../src/drv_led.c \
 ../src/drv_tc.c \
 ../src/gpm_gpioManager.c \
@@ -249,6 +250,7 @@ src/ASF/sam/drivers/tc/tc.o \
 src/ble_bluetoothManager.o \
 src/dat_dataManager.o \
 src/dbg_debugManager.o \
+src/drv_haptic.o \
 src/drv_led.o \
 src/drv_tc.o \
 src/gpm_gpioManager.o \
@@ -325,6 +327,7 @@ src/ASF/sam/drivers/tc/tc.o \
 src/ble_bluetoothManager.o \
 src/dat_dataManager.o \
 src/dbg_debugManager.o \
+src/drv_haptic.o \
 src/drv_led.o \
 src/drv_tc.o \
 src/gpm_gpioManager.o \
@@ -401,6 +404,7 @@ src/ASF/sam/drivers/tc/tc.d \
 src/ble_bluetoothManager.d \
 src/dat_dataManager.d \
 src/dbg_debugManager.d \
+src/drv_haptic.d \
 src/drv_led.d \
 src/drv_tc.d \
 src/gpm_gpioManager.d \
@@ -477,6 +481,7 @@ src/ASF/sam/drivers/tc/tc.d \
 src/ble_bluetoothManager.d \
 src/dat_dataManager.d \
 src/dbg_debugManager.d \
+src/drv_haptic.d \
 src/drv_led.d \
 src/drv_tc.d \
 src/gpm_gpioManager.d \
@@ -544,6 +549,8 @@ LINKER_SCRIPT_DEP+=  \
 
 
 # AVR32/GNU C Compiler
+
+
 
 
 

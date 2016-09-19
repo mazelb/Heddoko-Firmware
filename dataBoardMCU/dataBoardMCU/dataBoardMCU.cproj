@@ -1281,6 +1281,12 @@
     <Compile Include="src\dbg_debugManager.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\drv_haptic.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\drv_haptic.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\drv_led.c">
       <SubType>compile</SubType>
     </Compile>

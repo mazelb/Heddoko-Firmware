@@ -8,11 +8,12 @@
 #include "asf.h"
 #include "sdc_sdCard.h"
 #include "net_wirelessNetwork.h"
+#include "subp_subProcessor.h"
 #include <stdio.h>
 #include <stdarg.h>
+#include "drv_gpio.h"
 #include "drv_uart.h"
 #include "msg_messenger.h"
-#include "drv_gpio.h"
 
 /* Global Variables */
 xQueueHandle queue_debugManager = NULL;
@@ -34,11 +35,24 @@ sdc_file_t debugLogFile =
 	.sem_bufferAccess = NULL
 };
 
+const char* moduleNameString[] = {
+"MODULE_SYSTEM_MANAGER",
+"MODULE_SDCARD",
+"MODULE_WIFI",
+"MODULE_COMMAND",
+"MODULE_DEBUG",
+"MODULE_SUB_PROCESSOR",
+"MODULE_DATA_MANAGER",
+"MODULE_BLE",
+"MODULE_NUMBER_OF_MODULES"
+};
+
 /*	Local static functions	*/
 static status_t processCommand(char* command, size_t cmdSize);
 static void processEvent(msg_message_t* message);
 static void printString(char* str);
 static void configure_console(void);
+static char* getTimeString(); 
 /*	Extern functions	*/
 /*	Extern variables	*/
 
@@ -143,6 +157,16 @@ static status_t processCommand(char* command, size_t cmdSize)
 		msg_sendBroadcastMessageSimple(MODULE_DEBUG, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_RECORDING);
 		printString("Starting to record!\r\n");
 	}
+	else if(strncmp(command, "Idle\r\n",cmdSize) == 0)
+	{		
+		msg_sendBroadcastMessageSimple(MODULE_DEBUG, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
+		printString("Entering Idle!\r\n");
+	}	
+	else if(strncmp(command, "Stream\r\n",cmdSize) == 0)
+	{		
+		msg_sendBroadcastMessageSimple(MODULE_DEBUG, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_STREAMING);
+		printString("Starting to Stream!\r\n");
+	}		
 	else if(strncmp(command, "?\r\n",cmdSize) == 0)
 	{
 		printString("Brain pack alive!\r\n");
@@ -163,10 +187,19 @@ static status_t processCommand(char* command, size_t cmdSize)
 	{
 		drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_HIGH);
 	}
+	else if(strncmp(command, "powerDown\r\n",cmdSize) == 0)
+	{
+		msg_sendMessageSimple(MODULE_SUB_PROCESSOR,MODULE_DEBUG, MSG_TYPE_SUBP_POWER_DOWN_READY, 0x00);
+	}	
+	else if(strncmp(command, "getTime\r\n",cmdSize) == 0)
+	{
+		dgb_printf(DBG_LOG_LEVEL_DEBUG,"Time: %s\r\n",getTimeString());
+	}
 	return status;	
 }
 static void processEvent(msg_message_t* message)
 {
+	subp_status_t* subpReceivedStatus = NULL; 
 	switch(message->type)
 	{
 		case MSG_TYPE_ENTERING_NEW_STATE:
@@ -177,6 +210,14 @@ static void processEvent(msg_message_t* message)
 		break;
 		case MSG_TYPE_WIFI_STATE:
 			printString("Received Wifi state event\r\n");
+		break;
+		case MSG_TYPE_ERROR:
+			dgb_printf(DBG_LOG_LEVEL_DEBUG,"Received Error from Module: %s\r\n", moduleNameString[message->source]);
+		break;		
+		case MSG_TYPE_SUBP_STATUS:
+			printString("Received subp status\r\n");
+			subpReceivedStatus = (subp_status_t*)message->parameters;
+			dgb_printf(DBG_LOG_LEVEL_DEBUG,"battery Level: %03d\r\n",subpReceivedStatus->chargeLevel);
 		break;
 	}
 } 
@@ -219,3 +260,13 @@ static void configure_console(void)
 	 */
 	#endif
 }
+
+char timeString[100] = {0}; 
+static char* getTimeString()
+{
+	uint32_t hour, minute, second; 
+	rtc_get_time(RTC,&hour,&minute,&second); 
+	sprintf(timeString,"%02d:%02d:%02d",hour,minute,second); 
+	return timeString; 
+} 
+
