@@ -276,6 +276,25 @@ status_t drv_uart_deInit(drv_uart_config_t* uartConfig)
 	status_t status = STATUS_PASS;
 	/* Disable all the interrupts. */
 	usart_disable_interrupt(uartConfig->p_usart, ALL_INTERRUPT_MASK);
+	// disable the NVIC_IRQ to prevent entering interrupt handler
+	if(uartConfig->p_usart == UART0)
+	{
+		NVIC_DisableIRQ(UART0_IRQn);
+		pio_configure_pin(PIO_PA9_IDX, PIO_TYPE_PIO_OUTPUT_0);	// disable any stray power on the UART line
+		pio_configure_pin(PIO_PA10_IDX, PIO_TYPE_PIO_OUTPUT_0);
+	}
+	else if(uartConfig->p_usart == UART1)
+	{
+		NVIC_DisableIRQ(UART1_IRQn);
+		pio_configure_pin(PIO_PB2_IDX, PIO_TYPE_PIO_OUTPUT_0);	// disable any stray power on the UART line
+		pio_configure_pin(PIO_PB3_IDX, PIO_TYPE_PIO_OUTPUT_0);
+	}
+	else if(uartConfig->p_usart == USART0)
+	{
+		NVIC_DisableIRQ(USART0_IRQn);
+		pio_configure_pin(PIO_PA5_IDX, PIO_TYPE_PIO_OUTPUT_0);	// disable any stray power on the UART line
+		pio_configure_pin(PIO_PA6_IDX, PIO_TYPE_PIO_OUTPUT_0);
+	}
 	uartMemBuf[uartConfig->mem_index].isinit = false;	
 	return status;	
 }

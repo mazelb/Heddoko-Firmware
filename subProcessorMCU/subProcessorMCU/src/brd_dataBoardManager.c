@@ -164,6 +164,11 @@ void processPacket(pkt_rawPacket_t *packet)
 					{
 						//this is an error, we should log it.
 					}
+					// stop the timer
+					if (xTimerIsTimerActive(pwrDwnRspTimeoutTimer) == pdTRUE)
+					{
+						xTimerStop(pwrDwnRspTimeoutTimer, NULL);
+					}
 				}
 			break;
 			case PACKET_COMMAND_ID_SUBP_GET_DATE_TIME:
