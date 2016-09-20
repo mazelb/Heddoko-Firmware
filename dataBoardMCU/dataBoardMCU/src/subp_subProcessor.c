@@ -40,7 +40,7 @@ static status_t streamingStateExit();
 xQueueHandle queue_subp = NULL;
 subp_config_t subp_config = 
 {
-	.rate = 10,
+	.rate = 20,
 	.sensorMask = 0x000001FF
 };
 subp_status_t subp_CurrentStatus = 
@@ -211,7 +211,10 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 				//set the time from the packet contents. 
 				setDateTimeFromPacket(packet);
 			break;
+			case PACKET_COMMAND_ID_SUBP_OUTPUT_DATA:
+			//set the time from the packet contents.
 			
+			break;			
 			default:
 			
 			break;

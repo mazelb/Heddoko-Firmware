@@ -157,6 +157,11 @@ void dbg_printString(dbg_debugLogLevel_t msgLogLevel, char* string)
 	
 }
 
+void dbg_processExternalCommand(char* command)
+{
+    
+}
+
 /***********************************************************************************************
  * processCommand(char* command, size_t cmdSize)
  * @brief A general Command processor which receives commands from Serial terminal and executes them
