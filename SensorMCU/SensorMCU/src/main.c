@@ -68,7 +68,7 @@ static void config_gpio(void)
 	port_pin_set_config(GPIO_RS485_DATA_DIRECTION_DE, &pin_conf);
 	port_pin_set_output_level(GPIO_RS485_DATA_DIRECTION_RE, GPIO_RS485_DATA_RECEIVE);
 	port_pin_set_output_level(GPIO_RS485_DATA_DIRECTION_DE, GPIO_RS485_DATA_RECEIVE);
-	pin_conf.direction  = PORT_PIN_DIR_OUTPUT;
+	pin_conf.direction  = PORT_PIN_DIR_INPUT;
 	//Setup the EM_INT pin as an 	
 	port_pin_set_config(GPIO_EM_MICRO_INT_PIN, &pin_conf);
 }
@@ -82,7 +82,7 @@ sensorSettings_t settings =
 	#else
 	.enableHPR = 0,
 	#endif
-	.baud = 460800,
+	.baud = 921600,
 	.magRate = EM_MAG_OUPUT_DATA_RATE,
 	.accelRate = EM_ACCEL_OUPUT_DATA_RATE,
 	.gyroRate = EM_GYRO_OUPUT_DATA_RATE
@@ -271,11 +271,11 @@ __attribute__((optimize("O0"))) int main(void)
 	
 	//turn on the LED
 	port_pin_set_output_level(LED_BLUE_PIN,LED_ACTIVE);
-	port_pin_set_output_level(LED_GREEN_PIN,LED_ACTIVE);
-	port_pin_set_output_level(LED_RED_PIN,LED_ACTIVE);
+	
+	//port_pin_set_output_level(LED_RED_PIN,LED_ACTIVE);
 	//delay_ms(500); 
 	sendButtonPressEvent();
-	
+	port_pin_set_output_level(LED_GREEN_PIN,LED_INACTIVE);
 	while (true) 
 	{
 		uart_status = usart_read_wait(&cmd_uart_module, &buff);
