@@ -38,7 +38,7 @@ static status_t isExpectedSensorId(uint8_t byte, uint8_t expectedId);
 static status_t isSensorRequested(uint8_t sensorId);
 static void sendCommand(sensor_commands_t commandId, uint8_t sensorId, uint32_t data);
 static void changeSensorState(sensor_state_t sensorState);
-static status_t verifyFakePacket(pkt_rawPacketNew_t packet);
+static status_t verifyFakePacket(pkt_rawPacketVarSize_t packet);
 
 /*	OBSOLETE FUNCTIONS	- SHALL BE REMOVED AFTER TESTING AND APPROVAL
 static void storePacket(pkt_rawPacket_t *packet);	// store the packet to local Full Frame structure
@@ -121,7 +121,7 @@ void sen_sensorHandlerTask(void *pvParameters)
 	uint16_t bufferOffset = 0;
 	uint8_t sensorID = 0;
 	bool firstFrame = TRUE;		// check if it is the very first frame
-	pkt_rawPacketNew_t tempPacket;	// temporary holder for individual sensor packets
+	pkt_rawPacketVarSize_t tempPacket;	// temporary holder for individual sensor packets
 	
 	// initialize the UART driver
 	sensorPortConfig = &uart0Config;
@@ -192,7 +192,7 @@ void sen_sensorHandlerTask(void *pvParameters)
 				
 				bufferOffset = ((SEN_MAX_SENSOR_ID - number_FramesReceived) * SEN_DEFAULT_DATA_SIZE) + SEN_SENSOR_FULL_FRAME_HEADER_SIZE - SEN_SENSOR_FRAME_HEADER_SIZE;
 				tempPacket.p_payload = sensorFullFrame + bufferOffset; 						// set the pointer to the set offset in the full frame array
-				status = pkt_getPacketTimedNew(sensorPortConfig, &tempPacket, 2);					// NOTE: needs a pointer to the packet and not the packet.payload
+				status = pkt_getPacketVarSizeTimed(sensorPortConfig, &tempPacket, 2);					// NOTE: needs a pointer to the packet and not the packet.payload
 
 				
 				// perform a short check to verify the integrity of the packet
@@ -671,7 +671,7 @@ void sen_preSleepProcess()
  * @param pkt_rawPacketNew_t packet: packet received from the sensor
  * @return status_t STATUS_PASS, STATUS_FAIL                     
  ************************************************************************/
-static status_t verifyFakePacket(pkt_rawPacketNew_t packet)
+static status_t verifyFakePacket(pkt_rawPacketVarSize_t packet)
 {
 	// compare the received data with the local debug structure, both should be the same
 	status_t status = STATUS_PASS;

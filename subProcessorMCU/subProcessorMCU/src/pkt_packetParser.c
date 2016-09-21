@@ -236,7 +236,7 @@ static void sendByteWithEscape(uint8_t byte, drv_uart_config_t* uartConfig)
  * @param maxTime the maximum time in ticks the function should wait for the response. 
  * @return STATUS_PASS if a string is returned,	STATUS_FAIL if the string found is larger than the buffer, or timed out
  ***********************************************************************************************/	
-status_t pkt_getPacketTimedNew(drv_uart_config_t* uartConfig, pkt_rawPacketNew_t* packet, uint32_t maxTime)
+status_t pkt_getPacketVarSizeTimed(drv_uart_config_t* uartConfig, pkt_rawPacketVarSize_t* packet, uint32_t maxTime)
 {
 	status_t result = STATUS_PASS;
 	char val;
@@ -255,7 +255,7 @@ status_t pkt_getPacketTimedNew(drv_uart_config_t* uartConfig, pkt_rawPacketNew_t
 		if(result == STATUS_PASS)
 		{
 			//process the byte as it comes in
-			if(pkt_processIncomingByteNew(packet,val) == STATUS_PASS)
+			if(pkt_processIncomingByteVarSize(packet,val) == STATUS_PASS)
 			{
 				//the packet is complete
 				result = STATUS_PASS;
@@ -277,7 +277,7 @@ status_t pkt_getPacketTimedNew(drv_uart_config_t* uartConfig, pkt_rawPacketNew_t
 	return result;
 }
 
-status_t pkt_processIncomingByteNew(pkt_rawPacketNew_t* rawPacket, uint8_t byte)
+status_t pkt_processIncomingByteVarSize(pkt_rawPacketVarSize_t* rawPacket, uint8_t byte)
 {
 	status_t status = STATUS_EAGAIN;
 	//if byte is start byte

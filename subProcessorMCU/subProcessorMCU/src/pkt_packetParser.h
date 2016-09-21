@@ -31,7 +31,7 @@ typedef struct
 	uint16_t bytesReceived; //number of bytes received
 	bool escapeFlag; //flag indicating the next byte was escaped
 	bool inError;
-}pkt_rawPacketNew_t;
+}pkt_rawPacketVarSize_t;
 //typedef void (*voidFunction_t)(void);
 //typedef void (*packetCallback_t)(rawPacket_t* packet);
 
@@ -40,7 +40,7 @@ status_t pkt_serializeRawPacket(uint8_t* destination, size_t maxDestinationLengt
 status_t pkt_sendRawPacket(drv_uart_config_t* uartConfig, uint8_t* payload, uint16_t payloadSize);
 status_t pkt_getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* packet, uint32_t maxTime);
 status_t pkt_processIncomingByte(pkt_rawPacket_t* rawPacket, uint8_t byte);
-status_t pkt_getPacketTimedNew(drv_uart_config_t* uartConfig, pkt_rawPacketNew_t* packet, uint32_t maxTime);
-status_t pkt_processIncomingByteNew(pkt_rawPacketNew_t* rawPacket, uint8_t byte);
+status_t pkt_getPacketVarSizeTimed(drv_uart_config_t* uartConfig, pkt_rawPacketVarSize_t* packet, uint32_t maxTime);
+status_t pkt_processIncomingByteVarSize(pkt_rawPacketVarSize_t* rawPacket, uint8_t byte);
 
 #endif /* PKT_PACKETPARSER_H_ */
