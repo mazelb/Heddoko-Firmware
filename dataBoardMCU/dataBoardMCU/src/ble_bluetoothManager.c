@@ -102,6 +102,7 @@ void ble_bluetoothManagerTask(void *pvParameters)
 		if (newBpStateDataAvailble)
 		{
 			sendBpStatusData();
+			newBpStateDataAvailble = false;
 		}
 		
 		vTaskDelay(10);
@@ -196,7 +197,6 @@ static void processMessage(msg_message_t message)
 static void sendBpStatusData()
 {
 	uint8_t outputData[BLE_BP_STATUS_DATA_SIZE + PACKET_HEADER_SIZE] = {0};	// frame has a two byte header
-	newBpStateDataAvailble = false;
 		
 	outputData[0] = PACKET_TYPE_MASTER_CONTROL;
 	outputData[1] = PACKET_COMMAND_ID_BP_STATUS;
