@@ -39,7 +39,7 @@ static uint8 sendWiFiData = 0;
 void HandleUartTxTraffic(uint16 txDataClientConfigDesc)
 {
     uint8   index;
-    uint8   uartTxData[MAX_MTU_SIZE - 3];
+    uint8   uartTxData[MAX_MTU_SIZE - 3];   // 3 bytes is for header
     uint16  uartTxDataLength;
     
     static uint16 uartIdleCount = UART_IDLE_TIMEOUT;
@@ -62,7 +62,7 @@ void HandleUartTxTraffic(uint16 txDataClientConfigDesc)
     
     if((0 != uartTxDataLength) && (NOTIFICATON_ENABLED == txDataClientConfigDesc))
     {
-        if(uartTxDataLength >= (mtuSize - 3))
+        if(uartTxDataLength >= (mtuSize - 3))   // 3 bytes are for header
         {
             uartIdleCount       = UART_IDLE_TIMEOUT;
             uartTxDataLength    = mtuSize - 3;
