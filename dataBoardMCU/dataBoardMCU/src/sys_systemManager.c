@@ -94,36 +94,35 @@ void sys_systemManagerTask(void* pvParameters)
 		msg_registerForMessages(MODULE_SYSTEM_MANAGER, 0xff, queue_systemManager);
 	}
 	//start the other tasks
-	if (xTaskCreate(dbg_debugTask, "DBG", TASK_DEBUG_MANAGER_STACK_SIZE, NULL, TASK_DEBUG_MANAGER_PRIORITY, NULL) != pdPASS)
+	if (xTaskCreate(dbg_debugTask, "dbg", TASK_DEBUG_MANAGER_STACK_SIZE, NULL, TASK_DEBUG_MANAGER_PRIORITY, NULL) != pdPASS)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create sub process handler task\r\n");
 	}	
-	if (xTaskCreate(subp_subProcessorTask, "SP", TASK_SUB_PROCESS_MANAGER_STACK_SIZE, NULL, TASK_SUB_PROCESS_MANAGER_PRIORITY, NULL) != pdPASS)
+	if (xTaskCreate(subp_subProcessorTask, "subp", TASK_SUB_PROCESS_MANAGER_STACK_SIZE, NULL, TASK_SUB_PROCESS_MANAGER_PRIORITY, NULL) != pdPASS)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create sub process handler task\r\n");
 	}
-	if (xTaskCreate(sdc_sdCardTask, "SDC", TASK_SD_CARD_STACK_SIZE, NULL, TASK_SD_CARD_PRIORITY, NULL) != pdPASS)
+	if (xTaskCreate(sdc_sdCardTask, "sdc", TASK_SD_CARD_STACK_SIZE, NULL, TASK_SD_CARD_PRIORITY, NULL) != pdPASS)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create sd card task\r\n");
 	}
 	if(xTaskCreate(net_wirelessNetworkTask, "wif", (4000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+4, NULL) != pdPASS)
 	{
-		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create wireless task\r\n");
+    	dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create wireless task\r\n");
 	}
 	if(xTaskCreate(ble_bluetoothManagerTask, "ble", (4000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create ble task\r\n");
 	}
-	if(xTaskCreate(gpm_gpioManagerTask, "gpm", (3000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS)
-	{
-		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create gpm task\r\n");
-	}
+	//if(xTaskCreate(gpm_gpioManagerTask, "gpm", (3000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS)
+	//{
+		//dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create gpm task\r\n");
+	//}
 	
 	vTaskDelay(200); 
 	sendStateChangeMessage(SYSTEM_STATE_INIT); 
 	
-	//vTaskDelay(5000); 
-	//sendStateChangeMessage(SYSTEM_STATE_RECORDING);
+
 	
 	while (1)
 	{		
@@ -155,6 +154,10 @@ static void processMessage(msg_message_t message)
 				processGpmMessage(message.data);
 			}
 		}
+		break;
+		case MSG_TYPE_SUBP_POWER_DOWN_REQ:
+		//right now just send back the power down ready message right away. 
+		msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_SYSTEM_MANAGER, MSG_TYPE_SUBP_POWER_DOWN_READY,NULL);
 		break;
 		default:
 		break;

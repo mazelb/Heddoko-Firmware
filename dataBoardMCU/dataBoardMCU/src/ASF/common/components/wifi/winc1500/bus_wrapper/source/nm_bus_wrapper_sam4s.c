@@ -93,8 +93,11 @@ static Pdc *g_p_pdc_spi;
 
 static sint8 spi_rw(uint8 *pu8Mosi, uint8 *pu8Miso, uint16 u16Sz)
 {
-	pdc_packet_t pdc_spi_tx_packet, pdc_spi_rx_packet;
-
+	//SMC Added max wait count so the code doesn't hang here
+    int maxWaitCount = 100000; 
+    sint8 retVal = M2M_SUCCESS;
+    pdc_packet_t pdc_spi_tx_packet, pdc_spi_rx_packet;
+    
 	pdc_spi_tx_packet.ul_addr = (uint32_t)pu8Mosi;;
 	pdc_spi_rx_packet.ul_addr = (uint32_t)pu8Miso;
 	pdc_spi_tx_packet.ul_size = u16Sz;
@@ -109,12 +112,19 @@ static sint8 spi_rw(uint8 *pu8Mosi, uint8 *pu8Miso, uint16 u16Sz)
 	pdc_tx_init(g_p_pdc_spi, &pdc_spi_tx_packet, NULL);
 	pdc_rx_init(g_p_pdc_spi, &pdc_spi_rx_packet, NULL);
 	g_p_pdc_spi->PERIPH_PTCR = PERIPH_PTCR_RXTEN | PERIPH_PTCR_TXTEN;
-	while ((CONF_WINC_SPI->SPI_SR & SPI_SR_RXBUFF) == 0)
-		;
+	
+    while ((CONF_WINC_SPI->SPI_SR & SPI_SR_RXBUFF) == 0)
+    {
+          if(maxWaitCount-- <= 0)
+          {
+              retVal = M2M_ERR_BUS_FAIL; 
+              break; 
+          }  
+    }	
 	SPI_DEASSERT_CS();
 	g_p_pdc_spi->PERIPH_PTCR = PERIPH_PTCR_TXTDIS | PERIPH_PTCR_RXTDIS;
 
-	return M2M_SUCCESS;
+	return retVal;
 }
 #endif
 
@@ -205,7 +215,9 @@ sint8 nm_bus_ioctl(uint8 u8Cmd, void* pvParameter)
 #elif defined CONF_WINC_USE_SPI
 		case NM_BUS_IOCTL_RW: {
 			tstrNmSpiRw *pstrParam = (tstrNmSpiRw *)pvParameter;
+			taskENTER_CRITICAL();
 			s8Ret = spi_rw(pstrParam->pu8InBuf, pstrParam->pu8OutBuf, pstrParam->u16Sz);
+			taskEXIT_CRITICAL();
 		}
 		break;
 #endif

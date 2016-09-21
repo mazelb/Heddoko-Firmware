@@ -44,7 +44,7 @@ void ble_bluetoothManagerTask(void *pvParameters)
 	queue_ble = xQueueCreate(10, sizeof(msg_message_t));
 	if (queue_ble != 0)
 	{
-		msg_registerForMessages(MODULE_SUB_PROCESSOR, 0xff, queue_ble);
+		msg_registerForMessages(MODULE_BLE, 0xff, queue_ble);
 	}
 	//initialize the uart packet receiver
 	if(drv_uart_init(&usart1Config) != STATUS_PASS)

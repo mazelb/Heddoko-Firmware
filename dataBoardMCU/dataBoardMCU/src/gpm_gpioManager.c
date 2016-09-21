@@ -58,9 +58,6 @@ void gpm_gpioManagerTask(void* pvParameters)
 	}
 	currentGpioTimerDuration = GPM_LONG_PRESS_DURATION;
 	
-	// register for messages
-	msg_registerForMessages(MODULE_GPIO_MANAGER, 0xff, NULL);	// NOTE: this module has no queue to receive messages, it will only be able to send messages
-	
 	while (1)
 	{
 		// first check if any timer events are generated
@@ -71,7 +68,7 @@ void gpm_gpioManagerTask(void* pvParameters)
 			gpioDurationTimerIntGenerated = false;
 			
 			// pass the respective event
-			if ((acSw1_isPressed && acSw2_isPressed) && (currentGpioTimerDuration = GPM_HARD_RESET_TIMEOUT))
+			if ((acSw1_isPressed && acSw2_isPressed) && (currentGpioTimerDuration == GPM_HARD_RESET_TIMEOUT))
 			{
 				// both the switches are pressed, send message for hard reset
 				msg_sendMessageSimple(MODULE_SYSTEM_MANAGER, MODULE_GPIO_MANAGER, MSG_TYPE_GPM_BUTTON_EVENT, GPM_BOTH_BUTTON_LONG_PRESS);
@@ -106,11 +103,8 @@ void gpm_gpioManagerTask(void* pvParameters)
 		{
 			acSw1_intGenerated = false;	// clear the flag to indicate that the interrupt was serviced
 			
-			if (acSw1_intState == GPM_INTERRUPT_LOW)	// the button was pressed
+			if (acSw1_intState == GPM_INTERRUPT_HIGH)	// the button was pressed
 			{
-				// reconfigure the interrupts
-				drv_gpio_config_interrupt(DRV_GPIO_PIN_AC_SW1, DRV_GPIO_INTERRUPT_HIGH_EDGE);
-				acSw1_intState = GPM_INTERRUPT_HIGH;
 				acSw1_isPressed = true;
 				// start the timer to determine the duration of press
 				if (acSw2_isPressed)
@@ -132,9 +126,6 @@ void gpm_gpioManagerTask(void* pvParameters)
 					// pass the message to indicate short press.
 					msg_sendMessageSimple(MODULE_SYSTEM_MANAGER, MODULE_GPIO_MANAGER, MSG_TYPE_GPM_BUTTON_EVENT, GPM_BUTTON_ONE_SHORT_PRESS);
 				}
-				// reconfigure the interrupts
-				drv_gpio_config_interrupt(DRV_GPIO_PIN_AC_SW1, DRV_GPIO_INTERRUPT_LOW_EDGE);
-				acSw1_intState = GPM_INTERRUPT_LOW;
 				acSw1_isPressed = false;
 				// stop the timer
 				xTimerStop(gpioDurationTimer, NULL);
@@ -146,11 +137,8 @@ void gpm_gpioManagerTask(void* pvParameters)
 		{
 			acSw2_intGenerated = false;	// clear the flag to indicate that the interrupt was serviced
 			
-			if (acSw2_intState == GPM_INTERRUPT_LOW)	// the button was pressed
+			if (acSw2_intState == GPM_INTERRUPT_HIGH)	// the button was pressed
 			{
-				// reconfigure the interrupts
-				drv_gpio_config_interrupt(DRV_GPIO_PIN_AC_SW2, DRV_GPIO_INTERRUPT_HIGH_EDGE);
-				acSw2_intState = GPM_INTERRUPT_HIGH;
 				acSw2_isPressed = true;
 				// start the timer to determine the duration of press
 				if (acSw1_isPressed)
@@ -172,9 +160,6 @@ void gpm_gpioManagerTask(void* pvParameters)
 					// pass the message to indicate short press.
 					msg_sendMessageSimple(MODULE_SYSTEM_MANAGER, MODULE_GPIO_MANAGER, MSG_TYPE_GPM_BUTTON_EVENT, GPM_BUTTON_TWO_SHORT_PRESS);
 				}
-				// reconfigure the interrupts
-				drv_gpio_config_interrupt(DRV_GPIO_PIN_AC_SW2, DRV_GPIO_INTERRUPT_LOW_EDGE);
-				acSw2_intState = GPM_INTERRUPT_LOW;
 				acSw2_isPressed = false;
 				// stop the timer
 				changeTimerPeriod(GPM_LONG_PRESS_DURATION);
@@ -211,6 +196,19 @@ static void changeTimerPeriod(uint32_t newPeriod)
 void acSw1_intHandler(uint32_t ul_id, uint32_t ul_mask)
 {
 	drv_gpio_service_Int(DRV_GPIO_PIN_AC_SW1, ul_mask, &acSw1_intGenerated);
+	// reconfigure the interrupt
+	if (acSw1_intState == GPM_INTERRUPT_LOW)
+	{
+		// it was a low edge interrupt, reconfigure to be a high edge
+		drv_gpio_config_interrupt(DRV_GPIO_PIN_AC_SW1, DRV_GPIO_INTERRUPT_HIGH_EDGE);
+		acSw1_intState = GPM_INTERRUPT_HIGH;
+	}
+	else
+	{
+		// it was a high edge interrupt, reconfigure to be a low edge
+		drv_gpio_config_interrupt(DRV_GPIO_PIN_AC_SW1, DRV_GPIO_INTERRUPT_LOW_EDGE);
+		acSw1_intState = GPM_INTERRUPT_LOW;
+	}
 }
 
 /***********************************************************************************************
@@ -222,6 +220,19 @@ void acSw1_intHandler(uint32_t ul_id, uint32_t ul_mask)
 void acSw2_intHandler(uint32_t ul_id, uint32_t ul_mask)
 {
 	drv_gpio_service_Int(DRV_GPIO_PIN_AC_SW2, ul_mask, &acSw2_intGenerated);
+	// reconfigure the interrupt
+	if (acSw2_intState == GPM_INTERRUPT_LOW)
+	{
+		// it was a low edge interrupt, reconfigure to be a high edge
+		drv_gpio_config_interrupt(DRV_GPIO_PIN_AC_SW2, DRV_GPIO_INTERRUPT_HIGH_EDGE);
+		acSw2_intState = GPM_INTERRUPT_HIGH;
+	}
+	else
+	{
+		// it was a high edge interrupt, reconfigure to be a low edge
+		drv_gpio_config_interrupt(DRV_GPIO_PIN_AC_SW2, DRV_GPIO_INTERRUPT_LOW_EDGE);
+		acSw2_intState = GPM_INTERRUPT_LOW;
+	}
 }
 
 /***********************************************************************************************

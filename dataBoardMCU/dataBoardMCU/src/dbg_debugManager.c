@@ -8,16 +8,17 @@
 #include "asf.h"
 #include "sdc_sdCard.h"
 #include "net_wirelessNetwork.h"
+#include "subp_subProcessor.h"
 #include <stdio.h>
 #include <stdarg.h>
+#include "drv_gpio.h"
 #include "drv_uart.h"
 #include "msg_messenger.h"
-#include "drv_gpio.h"
 
 /* Global Variables */
 xQueueHandle queue_debugManager = NULL;
 xSemaphoreHandle semaphore_dbgUartWrite = NULL; 
-dgb_debugLogLevel_t debugLogLevel = DBG_LOG_LEVEL_DEBUG; //default the log level to debug for now. 
+dbg_debugLogLevel_t debugLogLevel = DBG_LOG_LEVEL_DEBUG; //default the log level to debug for now. 
 
 volatile uint8_t debugLogBufferA[DEBUGLOG_MAX_BUFFER_SIZE] = {0} , debugLogBufferB[DEBUGLOG_MAX_BUFFER_SIZE] = {0};
 sdc_file_t debugLogFile =
@@ -34,11 +35,26 @@ sdc_file_t debugLogFile =
 	.sem_bufferAccess = NULL
 };
 
+const char* moduleNameString[] = {
+"MODULE_SYSTEM_MANAGER",
+"MODULE_SDCARD",
+"MODULE_WIFI",
+"MODULE_COMMAND",
+"MODULE_DEBUG",
+"MODULE_SUB_PROCESSOR",
+"MODULE_DATA_MANAGER",
+"MODULE_BLE",
+"MODULE_NUMBER_OF_MODULES"
+};
+
 /*	Local static functions	*/
-static status_t processCommand(char* command, size_t cmdSize);
+static status_t processCommand(dbg_commandSource_t source,char* command, size_t cmdSize);
 static void processEvent(msg_message_t* message);
 static void printString(char* str);
 static void configure_console(void);
+static char* getTimeString(); 
+static void debugSocketEventCallback(SOCKET socketId, net_socketStatus_t status);
+static void debugSocketReceivedDataCallback(SOCKET socketId, uint8_t* buf, uint16_t bufLength);
 /*	Extern functions	*/
 /*	Extern variables	*/
 
@@ -66,6 +82,19 @@ net_wirelessConfig_t wirelessConfig =
 	.channel = 255, //default to 255 so it searches all channels for the signal	
 };
 
+net_socketConfig_t debugServer =
+{
+    .endpoint.sin_addr = 0, //irrelevant for the server
+    .endpoint.sin_family = AF_INET,
+    .endpoint.sin_port = _htons(6667),
+    .sourceModule = MODULE_DEBUG,
+    .socketStatusCallback = debugSocketEventCallback,
+    .socketDataReceivedCallback = debugSocketReceivedDataCallback,
+    .socketId = -1,
+    .clientSocketId = -1
+    
+};
+
 void dbg_debugTask(void* pvParameters)
 {
 	status_t status = STATUS_PASS;
@@ -87,7 +116,7 @@ void dbg_debugTask(void* pvParameters)
 	{
 		if(drv_uart_getlineTimed(&debugUartConfig,buffer,sizeof(buffer),5) == STATUS_PASS)
 		{			
-			processCommand(buffer,strlen(buffer));
+			processCommand(DBG_CMD_SOURCE_SERIAL,buffer,strlen(buffer));
 		}
 		if(xQueueReceive(queue_debugManager, &(eventMessage), 1) == true)
 		{
@@ -104,7 +133,7 @@ status_t dbg_init()
 	return status; 
 }
 
-void dgb_printf(dgb_debugLogLevel_t msgLogLevel, char *fmt, ...) 
+void dbg_printf(dbg_debugLogLevel_t msgLogLevel, char *fmt, ...) 
 {
 	char buffer[200];
 	if(msgLogLevel <= debugLogLevel)
@@ -113,19 +142,24 @@ void dgb_printf(dgb_debugLogLevel_t msgLogLevel, char *fmt, ...)
 		va_start (va, fmt);
 		vsnprintf(buffer,sizeof(buffer), fmt, va);
 		va_end (va);
-		drv_uart_putString(&debugUartConfig,buffer); 
+		printString(buffer); 
 	}
 }
 
 
-void dbg_printString(dgb_debugLogLevel_t msgLogLevel, char* string)
+void dbg_printString(dbg_debugLogLevel_t msgLogLevel, char* string)
 {
 	//only process the message if the log level is below the 
 	if(msgLogLevel <= debugLogLevel)
 	{
-		drv_uart_putString(&debugUartConfig,string); 	
+		printString(string); 	
 	}
 	
+}
+
+void dbg_processExternalCommand(char* command)
+{
+    
 }
 
 /***********************************************************************************************
@@ -134,18 +168,31 @@ void dbg_printString(dgb_debugLogLevel_t msgLogLevel, char* string)
  * @param char* command, size_t cmdSize
  * @return STATUS_PASS if successful, STATUS_FAIL if there is an error 
  ***********************************************************************************************/
-static status_t processCommand(char* command, size_t cmdSize)
+#define MAX_RESPONSE_STRING_SIZE 255
+char responseBuffer[MAX_RESPONSE_STRING_SIZE] = {0}; 
+static status_t processCommand(dbg_commandSource_t source, char* command, size_t cmdSize)
 {
 	status_t status = STATUS_PASS; 
-	
+	size_t responseLength = 0;
 	if(strncmp(command, "Record\r\n",cmdSize) == 0)
 	{		
 		msg_sendBroadcastMessageSimple(MODULE_DEBUG, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_RECORDING);
-		printString("Starting to record!\r\n");
+        strncpy(responseBuffer,"Starting to record!\r\n", MAX_RESPONSE_STRING_SIZE);
 	}
+	else if(strncmp(command, "Idle\r\n",cmdSize) == 0)
+	{		
+		msg_sendBroadcastMessageSimple(MODULE_DEBUG, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
+		strncpy(responseBuffer,"Entering Idle!\r\n", MAX_RESPONSE_STRING_SIZE);
+	}	
+	else if(strncmp(command, "Stream\r\n",cmdSize) == 0)
+	{		
+		msg_sendBroadcastMessageSimple(MODULE_DEBUG, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_STREAMING);
+        strncpy(responseBuffer,"Starting to Stream!\r\n", MAX_RESPONSE_STRING_SIZE);		
+	}		
 	else if(strncmp(command, "?\r\n",cmdSize) == 0)
 	{
-		printString("Brain pack alive!\r\n");
+		strncpy(responseBuffer,"Brain pack alive!\r\n", MAX_RESPONSE_STRING_SIZE);
+        
 	}
 	else if(strncmp(command, "wifiConnect\r\n",cmdSize) == 0)
 	{
@@ -163,10 +210,32 @@ static status_t processCommand(char* command, size_t cmdSize)
 	{
 		drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_HIGH);
 	}
+	else if(strncmp(command, "powerDown\r\n",cmdSize) == 0)
+	{
+		msg_sendMessageSimple(MODULE_SUB_PROCESSOR,MODULE_DEBUG, MSG_TYPE_SUBP_POWER_DOWN_READY, 0x00);
+	}	
+	else if(strncmp(command, "getTime\r\n",cmdSize) == 0)
+	{
+		snprintf(responseBuffer, MAX_RESPONSE_STRING_SIZE,"Time: %s\r\n",getTimeString());
+	}
+    responseLength = strlen(responseBuffer);
+    if(responseLength > 0)
+    {
+        if(source == DBG_CMD_SOURCE_SERIAL)
+        {
+            drv_uart_putData(&debugUartConfig, responseBuffer,responseLength);
+        }
+        else if(source == DBG_CMD_SOURCE_NET)
+        {
+            net_sendPacketToClientSock(&debugServer, responseBuffer, responseLength,false); 
+        }
+        responseBuffer[0] = 0; //clear the string           
+    }        
 	return status;	
 }
 static void processEvent(msg_message_t* message)
 {
+	subp_status_t* subpReceivedStatus = NULL; 
 	switch(message->type)
 	{
 		case MSG_TYPE_ENTERING_NEW_STATE:
@@ -177,6 +246,29 @@ static void processEvent(msg_message_t* message)
 		break;
 		case MSG_TYPE_WIFI_STATE:
 			printString("Received Wifi state event\r\n");
+            if(message->data == NET_WIFI_STATE_CONNECTED)
+            {
+                if(net_createServerSocket(&debugServer, 255) == STATUS_PASS)
+                {
+                    printString("Initializing server socket\r\n");
+                }
+                else
+                {
+                   printString("Failed to initialize server socket\r\n"); 
+                }   
+            }
+            else if(message->data == NET_WIFI_STATE_DISCONNECTED)
+            {
+               net_closeSocket(&debugServer);  
+            }                                
+		break;
+		case MSG_TYPE_ERROR:
+			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received Error from Module: %s\r\n", moduleNameString[message->source]);
+		break;		
+		case MSG_TYPE_SUBP_STATUS:
+			printString("Received subp status\r\n");
+			subpReceivedStatus = (subp_status_t*)message->parameters;
+			dbg_printf(DBG_LOG_LEVEL_DEBUG,"battery Level: %03d\r\n",subpReceivedStatus->chargeLevel);
 		break;
 	}
 } 
@@ -195,6 +287,12 @@ static void printString(char* str)
 	{
 		drv_uart_putString(&debugUartConfig, str);
 	}
+    if(debugServer.clientSocketId > -1)
+    {
+        
+        net_sendPacketToClientSock(&debugServer, str, strlen(str),true); 
+    }
+    
 }
 
 static void configure_console(void)
@@ -218,4 +316,38 @@ static void configure_console(void)
 	 * emits one character at a time.
 	 */
 	#endif
+}
+
+char timeString[100] = {0}; 
+static char* getTimeString()
+{
+	uint32_t hour, minute, second; 
+	rtc_get_time(RTC,&hour,&minute,&second); 
+	sprintf(timeString,"%02d:%02d:%02d",hour,minute,second); 
+	return timeString; 
+} 
+
+static void debugSocketEventCallback(SOCKET socketId, net_socketStatus_t status)
+{
+    switch (status)
+    {
+        case NET_SOCKET_STATUS_SERVER_OPEN:
+            printString("Debug Server Open!\r\n");
+        break;
+        case NET_SOCKET_STATUS_SERVER_OPEN_FAILED:
+            printString("Debug Server Open Failed!\r\n");
+            //close the debug server socket
+            net_closeSocket(&debugServer);
+        break;
+        case NET_SOCKET_STATUS_CLIENT_CONNECTED:
+            printString("Client Connected!\r\n");
+        break;
+        case NET_SOCKET_STATUS_CLIENT_DISCONNECTED:
+            printString("Client Disconnected!\r\n");
+        break;        
+    }
+}
+static void debugSocketReceivedDataCallback(SOCKET socketId, uint8_t* buf, uint16_t bufLength)
+{
+    processCommand(DBG_CMD_SOURCE_NET,buf,strnlen(buf,bufLength));
 }
