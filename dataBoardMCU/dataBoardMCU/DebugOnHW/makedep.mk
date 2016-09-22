@@ -36,11 +36,15 @@ src\ASF\common\components\wifi\winc1500\socket\source\socket.c
 
 src\ASF\common\components\wifi\winc1500\spi_flash\source\spi_flash.c
 
+src\ASF\sam\drivers\efc\efc.c
+
 src\ASF\sam\drivers\matrix\matrix.c
 
 src\ASF\sam\drivers\spi\spi.c
 
 src\ASF\sam\drivers\tc\tc.c
+
+src\ASF\sam\services\flash_efc\flash_efc.c
 
 src\ble_bluetoothManager.c
 
@@ -59,6 +63,8 @@ src\gpm_gpioManager.c
 src\net_wirelessNetwork.c
 
 src\drv_piezo.c
+
+src\nvm_nvMemInterface.c
 
 src\pkt_packetParser.c
 

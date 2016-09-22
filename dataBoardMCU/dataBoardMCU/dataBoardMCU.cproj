@@ -40,13 +40,14 @@
           <option id="sam.drivers.pdc" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam.drivers.pio" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam.drivers.rstc" value="Add" config="" content-id="Atmel.ASF" />
+          <option id="sam.drivers.tc" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam.drivers.tc.appnote" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam.drivers.uart" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam.drivers.usart" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam.drivers.wdt" value="Add" config="" content-id="Atmel.ASF" />
           <option id="common.services.fs.fatfs" value="Add" config="" content-id="Atmel.ASF" />
           <option id="thirdparty.os.freertos.version" value="Add" config="7.3.0" content-id="Atmel.ASF" />
-          <option id="sam.drivers.tc" value="Add" config="" content-id="Atmel.ASF" />
+          <option id="sam.services.flash" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam.utils.cmsis.sam4s.source.template" value="Add" config="" content-id="Atmel.ASF" />
           <option id="common.utils" value="Add" config="" content-id="Atmel.ASF" />
           <option id="config.board.sam4s_xplained_pro.led" value="Add" config="yes" content-id="Atmel.ASF" />
@@ -387,6 +388,10 @@
           <file path="src/ASF/sam/drivers/matrix/matrix.h" framework="" version="3.31.0" source="sam\drivers\matrix\matrix.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam/drivers/tc/tc.c" framework="" version="3.31.0" source="sam\drivers\tc\tc.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam/drivers/tc/tc.h" framework="" version="3.31.0" source="sam\drivers\tc\tc.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam/drivers/efc/efc.c" framework="" version="3.31.0" source="sam\drivers\efc\efc.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam/drivers/efc/efc.h" framework="" version="3.31.0" source="sam\drivers\efc\efc.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam/services/flash_efc/flash_efc.c" framework="" version="3.31.0" source="sam\services\flash_efc\flash_efc.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam/services/flash_efc/flash_efc.h" framework="" version="3.31.0" source="sam\services\flash_efc\flash_efc.h" changed="False" content-id="Atmel.ASF" />
         </files>
         <documentation help="http://asf.atmel.com/docs/3.31.0/common.applications.user_application.xplained_pro.sam4s_xplained_pro/html/index.html" />
         <offline-documentation help="" />
@@ -398,7 +403,7 @@
       </framework-data>
     </AsfFrameworkConfig>
     <avrtool>com.atmel.avrdbg.tool.atmelice</avrtool>
-    <avrtoolserialnumber>J41800006052</avrtoolserialnumber>
+    <avrtoolserialnumber>J41800029774</avrtoolserialnumber>
     <avrdeviceexpectedsignature>0x28970CE0</avrdeviceexpectedsignature>
     <avrtoolinterface>SWD</avrtoolinterface>
     <com_atmel_avrdbg_tool_edbg>
@@ -446,7 +451,7 @@
         <InterfaceName>SWD</InterfaceName>
       </ToolOptions>
       <ToolType>com.atmel.avrdbg.tool.atmelice</ToolType>
-      <ToolNumber>J41800006052</ToolNumber>
+      <ToolNumber>J41800029774</ToolNumber>
       <ToolName>Atmel-ICE</ToolName>
     </com_atmel_avrdbg_tool_atmelice>
   </PropertyGroup>
@@ -515,6 +520,8 @@
       <Value>../src/ASF/sam/drivers/spi</Value>
       <Value>../src/ASF/sam/drivers/matrix</Value>
       <Value>../src/ASF/sam/drivers/tc</Value>
+      <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>../src/ASF/sam/services/flash_efc</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.level>Optimize for size (-Os)</armgcc.compiler.optimization.level>
@@ -578,6 +585,8 @@
       <Value>../src/ASF/sam/drivers/spi</Value>
       <Value>../src/ASF/sam/drivers/matrix</Value>
       <Value>../src/ASF/sam/drivers/tc</Value>
+      <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>../src/ASF/sam/services/flash_efc</Value>
     </ListValues>
   </armgcc.assembler.general.IncludePaths>
   <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM4=true -D__FREERTOS__ -DBOARD=SAM4S_XPLAINED_PRO -D__SAM4SD32C__ -Dprintf=iprintf -Dscanf=iscanf</armgcc.preprocessingassembler.general.AssemblerFlags>
@@ -627,6 +636,8 @@
       <Value>../src/ASF/sam/drivers/spi</Value>
       <Value>../src/ASF/sam/drivers/matrix</Value>
       <Value>../src/ASF/sam/drivers/tc</Value>
+      <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>../src/ASF/sam/services/flash_efc</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
 </ArmGcc>
@@ -697,6 +708,8 @@
       <Value>../src/ASF/sam/drivers/spi</Value>
       <Value>../src/ASF/sam/drivers/matrix</Value>
       <Value>../src/ASF/sam/drivers/tc</Value>
+      <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>../src/ASF/sam/services/flash_efc</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.OtherFlags>-fdata-sections</armgcc.compiler.optimization.OtherFlags>
@@ -760,6 +773,8 @@
       <Value>../src/ASF/sam/drivers/spi</Value>
       <Value>../src/ASF/sam/drivers/matrix</Value>
       <Value>../src/ASF/sam/drivers/tc</Value>
+      <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>../src/ASF/sam/services/flash_efc</Value>
     </ListValues>
   </armgcc.assembler.general.IncludePaths>
   <armgcc.assembler.debugging.DebugLevel>Default (-g)</armgcc.assembler.debugging.DebugLevel>
@@ -810,6 +825,8 @@
       <Value>../src/ASF/sam/drivers/spi</Value>
       <Value>../src/ASF/sam/drivers/matrix</Value>
       <Value>../src/ASF/sam/drivers/tc</Value>
+      <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>../src/ASF/sam/services/flash_efc</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
   <armgcc.preprocessingassembler.debugging.DebugLevel>Default (-Wa,-g)</armgcc.preprocessingassembler.debugging.DebugLevel>
@@ -881,6 +898,8 @@
       <Value>../src/ASF/sam/drivers/spi</Value>
       <Value>../src/ASF/sam/drivers/matrix</Value>
       <Value>../src/ASF/sam/drivers/tc</Value>
+      <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>../src/ASF/sam/services/flash_efc</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.OtherFlags>-fdata-sections</armgcc.compiler.optimization.OtherFlags>
@@ -944,6 +963,8 @@
       <Value>../src/ASF/sam/drivers/spi</Value>
       <Value>../src/ASF/sam/drivers/matrix</Value>
       <Value>../src/ASF/sam/drivers/tc</Value>
+      <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>../src/ASF/sam/services/flash_efc</Value>
     </ListValues>
   </armgcc.assembler.general.IncludePaths>
   <armgcc.assembler.debugging.DebugLevel>Default (-g)</armgcc.assembler.debugging.DebugLevel>
@@ -994,6 +1015,8 @@
       <Value>../src/ASF/sam/drivers/spi</Value>
       <Value>../src/ASF/sam/drivers/matrix</Value>
       <Value>../src/ASF/sam/drivers/tc</Value>
+      <Value>../src/ASF/sam/drivers/efc</Value>
+      <Value>../src/ASF/sam/services/flash_efc</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
   <armgcc.preprocessingassembler.debugging.DebugLevel>Default (-Wa,-g)</armgcc.preprocessingassembler.debugging.DebugLevel>
@@ -1051,6 +1074,7 @@
     <Folder Include="src\ASF\sam\boards\" />
     <Folder Include="src\ASF\sam\boards\sam4s_xplained_pro\" />
     <Folder Include="src\ASF\sam\drivers\" />
+    <Folder Include="src\ASF\sam\drivers\efc\" />
     <Folder Include="src\ASF\sam\drivers\hsmci\" />
     <Folder Include="src\ASF\sam\drivers\matrix\" />
     <Folder Include="src\ASF\sam\drivers\pdc\" />
@@ -1066,6 +1090,8 @@
     <Folder Include="src\ASF\sam\drivers\uart\" />
     <Folder Include="src\ASF\sam\drivers\usart\" />
     <Folder Include="src\ASF\sam\drivers\wdt\" />
+    <Folder Include="src\ASF\sam\services\" />
+    <Folder Include="src\ASF\sam\services\flash_efc\" />
     <Folder Include="src\ASF\sam\utils\" />
     <Folder Include="src\ASF\sam\utils\cmsis\" />
     <Folder Include="src\ASF\sam\utils\cmsis\sam4s\" />
@@ -1233,6 +1259,12 @@
     <Compile Include="src\ASF\common\components\wifi\winc1500\spi_flash\source\spi_flash.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\ASF\sam\drivers\efc\efc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\sam\drivers\efc\efc.h">
+      <SubType>compile</SubType>
+    </None>
     <Compile Include="src\ASF\sam\drivers\matrix\matrix.c">
       <SubType>compile</SubType>
     </Compile>
@@ -1249,6 +1281,12 @@
       <SubType>compile</SubType>
     </Compile>
     <None Include="src\ASF\sam\drivers\tc\tc.h">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="src\ASF\sam\services\flash_efc\flash_efc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\sam\services\flash_efc\flash_efc.h">
       <SubType>compile</SubType>
     </None>
     <Compile Include="src\ble_bluetoothManager.c">
@@ -1318,6 +1356,12 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\drv_piezo.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\nvm_nvMemInterface.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\nvm_nvMemInterface.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\pkt_packetCommandsList.h">
