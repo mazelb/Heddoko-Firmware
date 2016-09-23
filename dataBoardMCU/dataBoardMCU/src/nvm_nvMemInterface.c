@@ -10,7 +10,7 @@
 #include "dbg_debugManager.h"
 
 /*	Local variables	*/
-nvmSettings_t defaultSettings = 
+nvmSettings_t defaultSettings =		// default settings that are loaded if the flash has not been written before
 {
 	.validSignature = NULL,
 	.suitNumber = "Sxxxxx",
@@ -19,7 +19,8 @@ nvmSettings_t defaultSettings =
 	.debugLevel = DBG_LOG_LEVEL_ERROR,
 	.serverPortNumber = 0,
 	.streamPortNumber = 0,
-	.debugPortNumber = 0,
+	.debugPortNumber = 6667,
+	.advPortNumber = 6668,
 	.defaultWifiConfig =
 	{
 		.channel = NULL,
@@ -84,9 +85,17 @@ status_t nvm_readFromFlash(nvmSettings_t *p_settings, uint32_t size)
 		{
 			// the flash has not been written before.
 			dbg_printString(DBG_LOG_LEVEL_WARNING, "Flash has never been written to\r\n");
-			// write the default settings 
 			
-			return STATUS_FAIL;
+			// write the default settings 
+			if (nvm_writeToFlash(&defaultSettings, sizeof(defaultSettings))	== STATUS_PASS)
+			{
+				memcpy(p_settings, &defaultSettings, sizeof(nvmSettings_t));
+				return STATUS_PASS;	// default settings written successfully
+			}
+			else
+			{
+				return STATUS_FAIL;	// failed to write default settings
+			}
 		}
 		return STATUS_PASS;
 	} 
@@ -96,4 +105,16 @@ status_t nvm_readFromFlash(nvmSettings_t *p_settings, uint32_t size)
 		dbg_printString(DBG_LOG_LEVEL_ERROR, "Failed to read Flash\r\n");
 		return STATUS_FAIL;
 	}
+}
+
+/***********************************************************************************************
+ * nvm_eraseFlash(void)
+ * @brief Erase the flash
+ * @param void
+ * @return STATUS_PASS if successful, STATUS_FAIL if there is an error
+ ***********************************************************************************************/
+status_t nvm_eraseFlash(void)
+{
+	flash_erase_user_signature();
+	return STATUS_PASS;
 }

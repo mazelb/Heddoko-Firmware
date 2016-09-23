@@ -31,5 +31,6 @@ typedef struct
 
 status_t nvm_writeToFlash(nvmSettings_t *p_settings, uint32_t size);
 status_t nvm_readFromFlash(nvmSettings_t *p_settings, uint32_t size);
+status_t nvm_eraseFlash(void);
 
 #endif /* NVM_NVMEMINTERFACE_H_ */

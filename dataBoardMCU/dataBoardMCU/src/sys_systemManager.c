@@ -54,25 +54,6 @@ drv_haptic_patternElement_t hapticPatternArray[] =
 {
 	{100, 1}
 };
-nvmSettings_t systemSettings = 
-{
-	.validSignature = NULL,
-	.suitNumber = "S34512",
-	.hapticEnable = true,
-	.piezoEnable = false,
-	.debugLevel = DBG_LOG_LEVEL_WARNING,
-	.serverPortNumber = 0,
-	.streamPortNumber = 0,
-	.debugPortNumber = 0,
-	.defaultWifiConfig = 
-	{
-		.channel = NULL,
-		.passphrase = NULL,
-		.securityType = M2M_WIFI_SEC_INVALID,
-		.ssid = NULL
-	}
-};
-nvmSettings_t systemSettingsRead;
 
 /*	Local static functions	*/
 static void sendStateChangeMessage(sys_manager_systemState_t state);
@@ -106,11 +87,6 @@ void sys_systemManagerTask(void* pvParameters)
 	
 	drv_haptic_init(&hapticConfig);
 	drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
-	
-	// write to flash
-	status = nvm_writeToFlash(&systemSettings, sizeof(systemSettings));
-	vTaskDelay(200);
-	status = nvm_readFromFlash(&systemSettingsRead, sizeof(nvmSettings_t));
 	
 	vTaskDelay(200);
 	queue_systemManager = xQueueCreate(10, sizeof(msg_message_t));
