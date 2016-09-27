@@ -126,7 +126,9 @@ void subp_subProcessorTask(void *pvParameters)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"failed to open UART0 for subc\r\n"); 
 	}
-	//send get status command
+	//send stop streaming message
+    sendStreamMessage(&subpUart, 0x00); 
+    //send get status command
 	sendGetStatusMessage(&subpUart);
 	
 	//send the get time command to the power board
@@ -200,14 +202,20 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 					}
 				}
 				lastTimeStamp = rawFullFrame->timeStamp;
-				dgb_printf(DBG_LOG_LEVEL_DEBUG,"%d,%d,%d,%d,%d\r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,drv_uart_getDroppedBytes(&subpUart));
+                if(rawFullFrame->sensorCount != 9)
+                {
+				    dbg_printf(DBG_LOG_LEVEL_DEBUG,"%d,%d,%d,%d,%d \r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,drv_uart_getDroppedBytes(&subpUart));
+                }                
 								
 			break;
 			case PACKET_COMMAND_ID_SUBP_GET_DATE_TIME_RESP:
 				//set the time from the packet contents. 
 				setDateTimeFromPacket(packet);
 			break;
+			case PACKET_COMMAND_ID_SUBP_OUTPUT_DATA:
+			//set the time from the packet contents.
 			
+			break;			
 			default:
 			
 			break;
@@ -287,6 +295,7 @@ static void processMessage(msg_message_t message)
 			if(message.data == 0)
 			{
 				wifiConnected = false;
+                
 			}
 			else
 			{
@@ -387,11 +396,13 @@ static status_t recordingStateEntry()
 	//open/create recording data file
 	status =  sdc_openFile(&dataLogFile, dataLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DATA_LOG);		
 	//write file header to log	
-	
-	//send config to power board
-	sendConfigtMessage(&subpUart,subp_config.rate,subp_config.sensorMask);
-	//send stream start command to power board. 
-	sendStreamMessage(&subpUart, 0x01);
+	if(status == STATUS_PASS)
+    {
+	    //send config to power board
+	    sendConfigtMessage(&subpUart,subp_config.rate,subp_config.sensorMask);
+	    //send stream start command to power board. 
+	    sendStreamMessage(&subpUart, 0x01);
+    }    
 	return status;
 }
 
@@ -419,16 +430,17 @@ static status_t streamingStateEntry()
 	}
 	//create the udp socket
 	dbg_printString(DBG_LOG_LEVEL_DEBUG, "Creating streaming socket\r\n");
-	status = net_createUdpSocket(&streamingSocket, 255);
-	
+	status = net_createUdpSocket(&streamingSocket, 255);	
 	//open/create recording data file
 	status |=  sdc_openFile(&dataLogFile, dataLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DATA_LOG);
 	//write file header to log
-	
-	//send config to power board
-	sendConfigtMessage(&subpUart,subp_config.rate,subp_config.sensorMask);
-	//send stream start command to power board.
-	sendStreamMessage(&subpUart, 0x01);
+	if(status == STATUS_PASS)
+    {
+	    //send config to power board
+	    sendConfigtMessage(&subpUart,subp_config.rate,subp_config.sensorMask);
+	    //send stream start command to power board.
+	    sendStreamMessage(&subpUart, 0x01);
+    }    
 	return status;
 }
 

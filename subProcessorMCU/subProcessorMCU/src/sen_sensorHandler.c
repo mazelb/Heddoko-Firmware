@@ -192,7 +192,7 @@ void sen_sensorHandlerTask(void *pvParameters)
 				
 				bufferOffset = ((SEN_MAX_SENSOR_ID - number_FramesReceived) * SEN_DEFAULT_DATA_SIZE) + SEN_SENSOR_FULL_FRAME_HEADER_SIZE - SEN_SENSOR_FRAME_HEADER_SIZE;
 				tempPacket.p_payload = sensorFullFrame + bufferOffset; 						// set the pointer to the set offset in the full frame array
-				status = pkt_getPacketTimedNew(sensorPortConfig, &tempPacket, 2);					// NOTE: needs a pointer to the packet and not the packet.payload
+				status = pkt_getPacketVarSizeTimed(sensorPortConfig, &tempPacket, 2);					// NOTE: needs a pointer to the packet and not the packet.payload
 
 				
 				// perform a short check to verify the integrity of the packet

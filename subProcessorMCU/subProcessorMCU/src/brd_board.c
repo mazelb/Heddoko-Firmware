@@ -19,7 +19,7 @@ drv_uart_config_t uart0Config =
 	.mem_index = 0,
 	.uart_options =
 	{
-		.baudrate   = SENSOR_BUS_SPEED_LOW,
+		.baudrate   = SENSOR_BUS_SPEED_HIGH,
 		.charlength = CONF_CHARLENGTH,
 		.paritytype = CONF_PARITY,
 		.stopbits   = CONF_STOPBITS

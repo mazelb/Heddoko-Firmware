@@ -20,16 +20,11 @@
     #include "app_LED.h"
     
     #define PACKET_TYPE_MASTER_CONTROL                  0x01
-    #define PACKET_TYPE_BLUETOOTH_MODULE                0x04
+    #define PACKET_TYPE_BLUETOOTH_MODULE                0x06
     
     #define PACKET_COMMAND_ID_GPS_DATA_REQ              0x41
     #define PACKET_COMMAND_ID_GPS_DATA_RESP             0x42
-//    #define PACKET_COMMAND_ID_SSID_DATA_REQ             0x43
-//    #define PACKET_COMMAND_ID_SSID_DATA_RESP            0x44
-//    #define PACKET_COMMAND_ID_PASSPHRASE_DATA_REQ       0x45
-//    #define PACKET_COMMAND_ID_PASSPHRASE_DATA_RESP      0x46
-//    #define PACKET_COMMAND_ID_SECURITY_TYPE_DATA_REQ    0x47
-//    #define PACKET_COMMAND_ID_SECURITY_TYPE_DATA_RESP   0x48
+    #define PACKET_COMMAND_ID_BP_STATUS                 0x43
     #define PACKET_COMMAND_ID_DEFAULT_WIFI_DATA         0x48
     #define PACKET_COMMAND_ID_ALL_WIFI_DATA_REQ			0x49
     #define PACKET_COMMAND_ID_ALL_WIFI_DATA_RESP		0x4a
@@ -52,7 +47,7 @@
     *   Conditional compilation parameters
     ***************************************/      
     //#define     FLOW_CONTROL
-    #define     PRINT_MESSAGE_LOG
+    //#define     PRINT_MESSAGE_LOG
     #define     LOW_POWER_MODE
     
     /***************************************

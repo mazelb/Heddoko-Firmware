@@ -19,6 +19,25 @@
 
 #define MAX_NUMBER_OF_SOCKETS 5
 
+typedef enum
+{
+    NET_WIFI_STATE_INIT,
+    NET_WIFI_STATE_DISCONNECTED,
+    NET_WIFI_STATE_CONNECTED,
+    NET_WIFI_STATE_CONNECTING,
+    NET_WIFI_STATE_ERROR
+}net_wifiState_t;
+
+typedef enum
+{
+    NET_SOCKET_STATUS_CLIENT_CONNECTED,
+    NET_SOCKET_STATUS_CLIENT_DISCONNECTED,
+    NET_SOCKET_STATUS_SERVER_OPEN,
+    NET_SOCKET_STATUS_SERVER_OPEN_FAILED    
+}net_socketStatus_t;
+
+
+
 typedef struct
 {
 	char ssid[33]; //ssid
@@ -27,14 +46,8 @@ typedef struct
 	uint8_t channel; //by default will use 255, which is the search all channels option.
 }net_wirelessConfig_t;
 
-typedef enum
-{
-	NET_WIFI_STATE_INIT,
-	NET_WIFI_STATE_DISCONNECTED,
-	NET_WIFI_STATE_CONNECTED,
-	NET_WIFI_STATE_CONNECTING,
-	NET_WIFI_STATE_ERROR
-}net_wifiState_t;
+typedef void (*socketStatusCallback_t)(SOCKET socketId, net_socketStatus_t status);
+typedef void (*socketDataReceivedCallback_t)(SOCKET socketId, uint8_t* buf, uint16_t bufLength);
 
 typedef struct
 {
@@ -42,11 +55,13 @@ typedef struct
 	struct sockaddr_in endpoint;	//end point for the socket
 	modules_t sourceModule;			//the owning module
 	uint8_t* buffer;
-	size_t bufferLength; 		
+	size_t bufferLength; 	
+  	SOCKET clientSocketId;
+    socketStatusCallback_t socketStatusCallback;
+    socketDataReceivedCallback_t socketDataReceivedCallback; 
 }net_socketConfig_t;
 
 
-typedef void (*clientConnectedCallback_t)(SOCKET socketId);
 
 void net_wirelessNetworkTask(void *pvParameters);
 status_t net_connectToNetwork(net_wirelessConfig_t* wirelessConfig);
@@ -54,6 +69,8 @@ status_t net_disconnectFromNetwork();
 
 status_t net_createUdpSocket(net_socketConfig_t* socket, size_t bufferSize);
 status_t net_sendUdpPacket(net_socketConfig_t* socket, uint8_t* packetBuf, uint32_t packetBufLength);
+status_t net_createServerSocket(net_socketConfig_t* sock, size_t receiveBufSize);
+status_t net_sendPacketToClientSock(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength, bool semaphoreNeeded);
 status_t net_closeSocket(net_socketConfig_t* socket); 
 
 
