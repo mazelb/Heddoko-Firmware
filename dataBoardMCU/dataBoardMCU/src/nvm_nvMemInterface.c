@@ -17,16 +17,16 @@ nvmSettings_t defaultSettings =		// default settings that are loaded if the flas
 	.hapticEnable = true,
 	.piezoEnable = true,
 	.debugLevel = DBG_LOG_LEVEL_ERROR,
-	.serverPortNumber = 0,
-	.streamPortNumber = 0,
+	.serverPortNumber = 6665,
+	.streamPortNumber = 6669,
 	.debugPortNumber = 6667,
 	.advPortNumber = 6668,
 	.defaultWifiConfig =
 	{
-		.channel = NULL,
-		.passphrase = NULL,
-		.securityType = M2M_WIFI_SEC_INVALID,
-		.ssid = NULL
+		.channel = 255,
+		.passphrase = "heddoko123",
+		.securityType = M2M_WIFI_SEC_WPA_PSK,
+		.ssid = "heddokoTestNet"
 	}
 };
 
