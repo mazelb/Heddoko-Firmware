@@ -52,6 +52,7 @@
 /*	Bluetooth module commands	TODO Refactor these commands*/
 #define PACKET_COMMAND_ID_GPS_DATA_REQ              0x41
 #define PACKET_COMMAND_ID_GPS_DATA_RESP             0x42
+#define PACKET_COMMAND_ID_BP_STATUS					0x43
 //#define PACKET_COMMAND_ID_SSID_DATA_REQ             0x43
 //#define PACKET_COMMAND_ID_SSID_DATA_RESP            0x44
 //#define PACKET_COMMAND_ID_PASSPHRASE_DATA_REQ       0x45

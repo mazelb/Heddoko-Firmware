@@ -81,8 +81,8 @@ void sys_systemManagerTask(void* pvParameters)
 	drv_led_init(&ledConfiguration);
 	drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
 	
-	drv_piezo_init(&piezoConfig);
-	drv_piezo_playPattern(noteElementsArray, (sizeof(noteElementsArray) / sizeof(drv_piezo_noteElement_t)));
+	//drv_piezo_init(&piezoConfig);
+	//drv_piezo_playPattern(noteElementsArray, (sizeof(noteElementsArray) / sizeof(drv_piezo_noteElement_t)));
 	
 	drv_haptic_init(&hapticConfig);
 	drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
@@ -108,16 +108,16 @@ void sys_systemManagerTask(void* pvParameters)
 	}
 	if(xTaskCreate(net_wirelessNetworkTask, "wif", (4000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+4, NULL) != pdPASS)
 	{
-		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create wireless task\r\n");
+    	dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create wireless task\r\n");
 	}
 	if(xTaskCreate(ble_bluetoothManagerTask, "ble", (4000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create ble task\r\n");
 	}
-	if(xTaskCreate(gpm_gpioManagerTask, "gpm", (3000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS)
-	{
-		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create gpm task\r\n");
-	}
+	//if(xTaskCreate(gpm_gpioManagerTask, "gpm", (3000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS)
+	//{
+		//dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create gpm task\r\n");
+	//}
 	
 	vTaskDelay(200); 
 	sendStateChangeMessage(SYSTEM_STATE_INIT); 
@@ -176,29 +176,14 @@ static void processGpmMessage(uint32_t data)
 	switch (data)
 	{
 		case GPM_BUTTON_ONE_SHORT_PRESS:
-			drv_led_set(DRV_LED_BLUE, DRV_LED_SOLID);
-			drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
-			drv_piezo_playPattern(&noteElementsArray[2], 1);
 		break;
 		case GPM_BUTTON_ONE_LONG_PRESS:
-			drv_led_set(DRV_LED_BLUE, DRV_LED_FLASH);
-			drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
-			drv_piezo_playPattern(&noteElementsArray[1], 2);
 		break;
 		case GPM_BUTTON_TWO_SHORT_PRESS:
-			drv_led_set(DRV_LED_RED, DRV_LED_SOLID);
-			drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
-			drv_piezo_playPattern(&noteElementsArray[2], 1);
 		break;
 		case GPM_BUTTON_TWO_LONG_PRESS:
-			drv_led_set(DRV_LED_RED, DRV_LED_FLASH);
-			drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
-			drv_piezo_playPattern(&noteElementsArray[1], 2);
 		break;
 		case GPM_BOTH_BUTTON_LONG_PRESS:
-			drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
-			drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
-			drv_piezo_playPattern(noteElementsArray, (sizeof(noteElementsArray) / sizeof(drv_piezo_noteElement_t)));
 		break;
 		default:
 		break;
