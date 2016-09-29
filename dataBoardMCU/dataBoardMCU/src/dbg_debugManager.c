@@ -55,6 +55,8 @@ static void configure_console(void);
 static char* getTimeString(); 
 static void debugSocketEventCallback(SOCKET socketId, net_socketStatus_t status);
 static void debugSocketReceivedDataCallback(SOCKET socketId, uint8_t* buf, uint16_t bufLength);
+static status_t dbg_openDebugLog();
+
 /*	Extern functions	*/
 /*	Extern variables	*/
 
@@ -243,6 +245,14 @@ static void processEvent(msg_message_t* message)
 		break; 
 		case MSG_TYPE_SDCARD_STATE:
 			printString("Received SD Card state Event\r\n");
+			if (message->data == SD_CARD_MOUNTED)
+			{
+				// SD-card is mounted, open the debug log file.
+				if (dbg_openDebugLog() != STATUS_PASS)
+				{
+					dbg_printf(DBG_LOG_LEVEL_ERROR, "Failed to open debug log file.\r\n");
+				}
+			}
 		break;
 		case MSG_TYPE_WIFI_STATE:
 			printString("Received Wifi state event\r\n");
@@ -272,9 +282,35 @@ static void processEvent(msg_message_t* message)
 		break;
 	}
 } 
+
+static status_t dbg_openDebugLog()
+{
+	// Check if the debug log file has exceeded the file size limit, if so, swap the debug log files.
+	// swapping of the files should occur here as it is file specific and not something sd card manager should handle
+	status_t status = STATUS_PASS;
+	size_t debugLogSize = 0;
+	
+	status = sdc_checkFileSize(&debugLogFile, &debugLogSize);
+	
+	if (debugLogSize > DEBUG_LOG_MAX_FILE_SIZE)
+	{
+		// swap the debug log files
+		
+	}
+	else
+	{
+		status = sdc_openFile(&debugLogFile, debugLogFile.fileName, SDC_FILE_OPEN_READ_WRITE_DEBUG_LOG);
+	}
+	
+	return status;	
+}
+
 static void printString(char* str)
 {
-	//if the semaphore is initialized, use it, otherwise just send the data.
+	// write the file to SD-card
+	sdc_writeToFile(&debugLogFile, str, strlen(str));
+	
+	//if the semaphore is initialized, use it, otherwise just send the data.	
 	if(semaphore_dbgUartWrite != NULL)
 	{
 		if(xSemaphoreTake(semaphore_dbgUartWrite,5) == true)

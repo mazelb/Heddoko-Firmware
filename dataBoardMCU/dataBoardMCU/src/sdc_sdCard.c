@@ -506,6 +506,51 @@ status_t sdc_closeFile(sdc_file_t* fileObject)
 	return status;
 }
 
+status_t sdc_checkFileSize(sdc_file_t* fileObject, size_t *size)
+{
+	status_t status = STATUS_PASS;
+	FRESULT res;
+	FILINFO vFileInfo;
+	
+	if ((fileObject == NULL) || (fileObject->fileOpen == TRUE))
+	{
+		// return if either the file is open or it is a null pointer
+		return STATUS_FAIL;
+	}
+	
+	if (xSemaphoreTake(semaphore_fatFsAccess, 10) == true)
+	{
+		// check if the file is present, if yes then check the size
+		res = f_stat(fileObject->fileName, &vFileInfo);
+		if (res == FR_OK)
+		{
+			// file exist
+			*size = (size_t) vFileInfo.fsize;
+			status = STATUS_PASS;
+		}
+		else if (res == FR_NO_FILE)
+		{
+			// file does not exist
+			*size = NULL;
+			status = STATUS_PASS;
+		}
+		else
+		{
+			// failed to check file size.
+			status = STATUS_FAIL;
+		}
+		
+		xSemaphoreGive(semaphore_fatFsAccess);
+	}
+	else
+	{
+		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to get semaphore - check file size\r");
+		status = STATUS_FAIL;
+	}
+	
+	return status;
+}
+
 void initSdGpio()
 {
 	//gpio_configure_pin(SD_MMC_0_CD_GPIO, SD_MMC_0_CD_FLAGS);
