@@ -53,6 +53,7 @@ typedef struct
 
 int drv_i2c_init(drv_twi_config_t*  twi_config);
 int drv_i2c_write(slave_twi_config_t* slave_twi_config, uint8_t reg, uint8_t data);
+int drv_i2c_write_bytes(slave_twi_config_t* slave_twi_config, uint8_t reg, uint8_t* data, uint8_t length);
 int drv_i2c_read(slave_twi_config_t* slave_twi_config, uint8_t reg, uint8_t* data, uint8_t length);
 int drv_i2c_enable_interrupt(drv_twi_config_t* twi_config, uint32_t ul_sources);
 int drv_i2c_disable_interrupt(drv_twi_config_t* twi_config, uint32_t ul_sources);

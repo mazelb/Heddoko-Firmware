@@ -124,7 +124,7 @@ slave_twi_config_t em7180Config=
 	#ifdef HW_V1_2 //this may be temporary, it's due to the SA0 pin seems to be floating.
 	.address = 0x28,
 	#else
-	.address = 0x29,
+	.address = 0x28,
 	#endif  
 	.drv_twi_options = &twiConfig
 };
@@ -149,7 +149,7 @@ pkt_packetParserConfiguration_t packetParserConfig =
 };
 void readUniqueId()
 {
-	uint8_t* localSerialNumber = 0x0080A00C;
+	uint8_t* localSerialNumber = 0x0080A00C; //this is the memory address where the serial number lives. 
 	memcpy(settings.serialNumber,localSerialNumber,16);
 }
 /** Callback function for the EXTINT driver, called when an external interrupt

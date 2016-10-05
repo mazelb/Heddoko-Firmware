@@ -28,6 +28,19 @@
 #define EM_INTERRUPT_CONFIG_REGISTER	0x33
 #define EM_RUN_REQUEST_REGISTER			0x34
 
+#define EM_LOAD_PARAM_BYTE_0			0x60
+#define EM_LOAD_PARAM_BYTE_1			0x61
+#define EM_LOAD_PARAM_BYTE_2			0x62
+#define EM_LOAD_PARAM_BYTE_3			0x63
+#define EM_PARAM_REQUEST				0x64
+
+#define EM_PARAM_ACKNOWLEDGE			0x3A
+#define EM_READ_PARAM_BYTE_0			0x3B
+#define EM_READ_PARAM_BYTE_1			0x3C
+#define EM_READ_PARAM_BYTE_2			0x3D
+#define EM_READ_PARAM_BYTE_3			0x3E
+
+
 #define EM_MAG_RATE_ACTUAL_REGISTER		0x45
 #define EM_ACCEL_RATE_ACTUAL_REGISTER	0x46
 #define EM_GYRO_RATE_ACTUAL_REGISTER	0x47
@@ -91,4 +104,21 @@ typedef struct
 }imuFrame_t;
 #pragma	pack(pop)
 
+#pragma pack(push, 1) //make sure the byte alignment is 1
+typedef struct
+{
+	uint8_t paramNumber;	//parameter number for the ack read back. 
+	uint32_t parameter;		//4 bytes of the parameter
+}sen_requestParam_t;
+
+typedef struct
+{
+	uint32_t parameter;		//4 bytes of the parameter
+	uint8_t paramNumber;	//parameter number (for load first bit must be set)
+}sen_loadParam_t;
+
+
+
+
+#pragma	pack(pop)
 #endif /* IMU_H_ */

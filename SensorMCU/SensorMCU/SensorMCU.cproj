@@ -5,7 +5,7 @@
     <ProjectVersion>6.2</ProjectVersion>
     <ToolchainName>com.Atmel.ARMGCC.C</ToolchainName>
     <ProjectGuid>{0b4deebe-567d-4b3f-9212-a34d713ca9f9}</ProjectGuid>
-    <avrdevice>ATSAMD10D14AM</avrdevice>
+    <avrdevice>ATSAMD10C14A</avrdevice>
     <avrdeviceseries>samd10</avrdeviceseries>
     <OutputType>Executable</OutputType>
     <Language>C</Language>
