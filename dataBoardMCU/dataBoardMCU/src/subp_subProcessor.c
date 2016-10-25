@@ -95,7 +95,9 @@ net_socketConfig_t streamingSocket =
 	.endpoint.sin_addr = 0xFFFFFFFF, //broadcast Address
 	.endpoint.sin_family = AF_INET,
 	.endpoint.sin_port = _htons(6669),
-	.sourceModule = MODULE_WIFI
+	.sourceModule = MODULE_WIFI,
+    .socketId = -1,
+    .clientSocketId = -1
 };
 
 sys_manager_systemState_t subpState = SYSTEM_STATE_INIT; 
@@ -148,8 +150,20 @@ void subp_subProcessorTask(void *pvParameters)
 		vTaskDelay(3);		// carefully assign the delay as one packet can be as fast as 10ms
 	}
 }
+
+void subp_sendStringToUSB(char* string, size_t length)
+{
+    uint8_t packetBytes[255] = {0};
+    packetBytes[0] = PACKET_TYPE_MASTER_CONTROL;
+    packetBytes[1] = PACKET_COMMAND_ID_SUBP_OUTPUT_DATA;     
+    memcpy(&(packetBytes[2]), string, length); 
+    pkt_sendRawPacket(&subpUart, packetBytes, length+3); 
+    
+}
+
 char tempString[200] = {0};
 uint32_t packetReceivedCount = 0;
+
 uint32_t lastTimeStamp = 0;	
 static void processRawPacket(pkt_rawPacket_t* packet)
 {
@@ -172,6 +186,7 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 				//the pointer is sent only, so it doesn't take up to much space on the queue. 
 				msg_sendMessage(MODULE_DEBUG, MODULE_SUB_PROCESSOR, MSG_TYPE_SUBP_STATUS, &subp_CurrentStatus); 
 				msg_sendMessage(MODULE_BLE, MODULE_SUB_PROCESSOR, MSG_TYPE_SUBP_STATUS, &subp_CurrentStatus);
+                msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_SUBP_STATUS, &subp_CurrentStatus);
 			break;
 			case PACKET_COMMAND_ID_SUBP_POWER_DOWN_REQ:
 				//we received a power down request, let the system manager know. 
@@ -180,7 +195,13 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 			case PACKET_COMMAND_ID_SUBP_FULL_FRAME:
 				//this is a frame, cast the payload to the rawFrame type. 
 				rawFullFrame = (subp_fullImuFrameSet_t*) (&packet->payload[2]);
-				protoPacketInit();
+				if(rawFullFrame->sensorCount == 0)
+                {
+                    //there are no frames in this packet. don't save it. 
+                    
+                    return; 
+                }
+                protoPacketInit();
 				convertFullFrameToProtoBuff(rawFullFrame,&dataFrameProtoPacket);	
 				//Serialize protobuf packet		
 				serializedProtoBuf[0] = PACKET_TYPE_PROTO_BUF;		
@@ -204,7 +225,7 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 				lastTimeStamp = rawFullFrame->timeStamp;
                 if(rawFullFrame->sensorCount != 9)
                 {
-				    dbg_printf(DBG_LOG_LEVEL_DEBUG,"%d,%d,%d,%d,%d \r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,drv_uart_getDroppedBytes(&subpUart));
+				    //dbg_printf(DBG_LOG_LEVEL_DEBUG,"%d,%d,%d,%d,%d \r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,drv_uart_getDroppedBytes(&subpUart));
                 }                
 								
 			break;
@@ -213,7 +234,7 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 				setDateTimeFromPacket(packet);
 			break;
 			case PACKET_COMMAND_ID_SUBP_OUTPUT_DATA:
-			//set the time from the packet contents.
+			    dbg_processCommand(DBG_CMD_SOURCE_USB, (packet->payload)+2, packet->payloadSize - 2);
 			
 			break;			
 			default:
@@ -254,7 +275,7 @@ static void processMessage(msg_message_t message)
 					msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_ERROR, NULL);
 				}
 			}
-			else if(message.data == SYSTEM_STATE_IDLE)
+			else if(message.data == SYSTEM_STATE_IDLE || message.data == SYSTEM_STATE_ERROR)
 			{
 				if(subpState == SYSTEM_STATE_RECORDING)
 				{
@@ -264,7 +285,7 @@ static void processMessage(msg_message_t message)
 				{
 					streamingStateExit();
 				}
-				subpState = SYSTEM_STATE_IDLE; 
+				subpState = message.data; 
 			}
 		}
 		break;

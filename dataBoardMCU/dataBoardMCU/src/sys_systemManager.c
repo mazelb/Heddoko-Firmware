@@ -43,6 +43,33 @@ drv_piezo_noteElement_t noteElementsArray[] =
 	{4000, 300},
 	//{000, 250}
 };
+drv_piezo_noteElement_t startRecordingTone[] =
+{
+    {2500, 150},
+    //{000, 250},
+    {3000, 150},
+    //{000, 250},
+    {3500, 150},
+    //{000, 250}
+};
+drv_piezo_noteElement_t stopRecordingTone[] =
+{
+    {3500, 150},
+    //{000, 250},
+    {3000, 150},
+    //{000, 250},
+    {2500, 150},
+    //{000, 250}
+};
+drv_piezo_noteElement_t errorTone[] =
+{
+    {800, 300},
+    //{000, 250},
+    {800, 300},
+    //{000, 250},
+};
+
+
 drv_haptic_config_t hapticConfig =
 {
 	.hapticGpio = DRV_GPIO_PIN_HAPTIC_OUT,
@@ -57,7 +84,7 @@ drv_haptic_patternElement_t hapticPatternArray[] =
 /*	Local static functions	*/
 static void sendStateChangeMessage(sys_manager_systemState_t state);
 static void processMessage(msg_message_t message);
-static void processGpmMessage(uint32_t data);
+static void processButtonEvent(uint32_t data);
 /*	Extern functions	*/
 /*	Extern variables	*/
 
@@ -79,9 +106,9 @@ void sys_systemManagerTask(void* pvParameters)
 		.blueLed = DRV_GPIO_PIN_BLUE_LED
 	};
 	drv_led_init(&ledConfiguration);
-	drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
+	drv_led_set(DRV_LED_BLUE,DRV_LED_FLASH);
 	
-	//drv_piezo_init(&piezoConfig);
+	drv_piezo_init(&piezoConfig);
 	//drv_piezo_playPattern(noteElementsArray, (sizeof(noteElementsArray) / sizeof(drv_piezo_noteElement_t)));
 	
 	drv_haptic_init(&hapticConfig);
@@ -98,6 +125,10 @@ void sys_systemManagerTask(void* pvParameters)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create sub process handler task\r\n");
 	}	
+	if(xTaskCreate(gpm_gpioManagerTask, "gpm", (3000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
+	{
+    	dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create gpm task\r\n");
+	} 
 	if (xTaskCreate(subp_subProcessorTask, "subp", TASK_SUB_PROCESS_MANAGER_STACK_SIZE, NULL, TASK_SUB_PROCESS_MANAGER_PRIORITY, NULL) != pdPASS)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create sub process handler task\r\n");
@@ -114,16 +145,10 @@ void sys_systemManagerTask(void* pvParameters)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create ble task\r\n");
 	}
-	//if(xTaskCreate(gpm_gpioManagerTask, "gpm", (3000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS)
-	//{
-		//dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create gpm task\r\n");
-	//}
-	
-	vTaskDelay(200); 
-	sendStateChangeMessage(SYSTEM_STATE_INIT); 
-	
 
 	
+	vTaskDelay(200); 
+	sendStateChangeMessage(SYSTEM_STATE_INIT); 	
 	while (1)
 	{		
 		if(xQueueReceive(queue_systemManager, &(eventMessage), 1) == true)
@@ -137,28 +162,64 @@ void sys_systemManagerTask(void* pvParameters)
 
 static void processMessage(msg_message_t message)
 {
-	switch(message.type)
+	subp_status_t* subpReceivedStatus = NULL; 
+    switch(message.type)
 	{
 		case MSG_TYPE_ENTERING_NEW_STATE:
 		break;
 		case MSG_TYPE_ERROR:
+     
 		break;
 		case MSG_TYPE_SDCARD_STATE:
+            if(message.data == SD_CARD_MOUNTED)
+            {
+                if(currentState == SYSTEM_STATE_INIT || currentState == SYSTEM_STATE_ERROR)
+                {
+                    currentState = SYSTEM_STATE_IDLE;
+                    msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE); 
+                    drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID); 
+                }   
+            }
+            else
+            {
+                currentState = SYSTEM_STATE_ERROR;
+                drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));             
+                msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_ERROR);
+                drv_led_set(DRV_LED_YELLOW, DRV_LED_FLASH);   
+            }                                
 		break;
 		case MSG_TYPE_WIFI_STATE:
+        
 		break;
 		case MSG_TYPE_GPM_BUTTON_EVENT:
 		{
-			if (message.source == MODULE_GPIO_MANAGER)
-			{
-				processGpmMessage(message.data);
-			}
+			processButtonEvent(message.data);
+			
 		}
 		break;
 		case MSG_TYPE_SUBP_POWER_DOWN_REQ:
 		//right now just send back the power down ready message right away. 
 		msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_SYSTEM_MANAGER, MSG_TYPE_SUBP_POWER_DOWN_READY,NULL);
 		break;
+		case MSG_TYPE_SUBP_STATUS:
+		    subpReceivedStatus = (subp_status_t*)message.parameters;		
+		    if(currentState == SYSTEM_STATE_RECORDING)
+            {
+                if(subpReceivedStatus->streamState != 0) //stream state not equal to idle
+                {
+                    if(subpReceivedStatus->sensorMask == 0)
+                    {
+                        //no sensors were detected, we need to report that theres an error and end the recording. 
+                        drv_led_set(DRV_LED_YELLOW, DRV_LED_FLASH);  
+                        drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));
+                        msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
+                        vTaskDelay(200); 
+                        currentState = SYSTEM_STATE_IDLE; // go to error state. 
+                        drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID);  
+                    }
+                }   
+            }                
+		break;        
 		default:
 		break;
 		
@@ -171,19 +232,36 @@ static void sendStateChangeMessage(sys_manager_systemState_t state)
 	msg_sendBroadcastMessage(&message);
 }
 
-static void processGpmMessage(uint32_t data)
+static void processButtonEvent(uint32_t data)
 {
 	switch (data)
 	{
 		case GPM_BUTTON_ONE_SHORT_PRESS:
+                          
 		break;
 		case GPM_BUTTON_ONE_LONG_PRESS:
 		break;
 		case GPM_BUTTON_TWO_SHORT_PRESS:
+            if(currentState == SYSTEM_STATE_IDLE)
+            {
+                msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_RECORDING);        
+                currentState = SYSTEM_STATE_RECORDING;                
+                drv_led_set(DRV_LED_RED, DRV_LED_SOLID); 
+                drv_piezo_playPattern(startRecordingTone, (sizeof(startRecordingTone) / sizeof(drv_piezo_noteElement_t)));
+            }
+            else if(currentState == SYSTEM_STATE_RECORDING)
+            {
+                msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);        
+                currentState = SYSTEM_STATE_IDLE;                
+                drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID);      
+                drv_piezo_playPattern(stopRecordingTone, (sizeof(stopRecordingTone) / sizeof(drv_piezo_noteElement_t)));             
+            }              
 		break;
 		case GPM_BUTTON_TWO_LONG_PRESS:
+        
 		break;
 		case GPM_BOTH_BUTTON_LONG_PRESS:
+        //restart the system. 
 		break;
 		default:
 		break;

@@ -32,15 +32,15 @@ typedef struct
 	float32_t Quaternion_y;
 	float32_t Quaternion_z;
 	float32_t Quaternion_w;
-	uint16_t Magnetic_x;
-	uint16_t Magnetic_y;
-	uint16_t Magnetic_z;
-	uint16_t Acceleration_x;
-	uint16_t Acceleration_y;
-	uint16_t Acceleration_z;
-	uint16_t Rotation_x;
-	uint16_t Rotation_y;
-	uint16_t Rotation_z;
+	int16_t Magnetic_x;
+	int16_t Magnetic_y;
+	int16_t Magnetic_z;
+	int16_t Acceleration_x;
+	int16_t Acceleration_y;
+	int16_t Acceleration_z;
+	int16_t Rotation_x;
+	int16_t Rotation_y;
+	int16_t Rotation_z;
 }subp_imuFrame_t;
 #pragma	pack(pop)
 
@@ -95,5 +95,6 @@ typedef struct
 
 
 void subp_subProcessorTask(void *pvParameters);
+void subp_sendStringToUSB(char* string, size_t length);
 
 #endif /* SUBP_SUBPROCESSOR_H_ */

@@ -47,8 +47,9 @@ const char* moduleNameString[] = {
 "MODULE_NUMBER_OF_MODULES"
 };
 
+bool debugMsgOverUsb = false; 
+
 /*	Local static functions	*/
-static status_t processCommand(dbg_commandSource_t source,char* command, size_t cmdSize);
 static void processEvent(msg_message_t* message);
 static void printString(char* str);
 static void configure_console(void);
@@ -77,8 +78,8 @@ drv_uart_config_t debugUartConfig =
 net_wirelessConfig_t wirelessConfig = 
 {
 	.securityType = M2M_WIFI_SEC_WPA_PSK,
-	.passphrase = "heddoko123",
-	.ssid = "heddokoTestNet",	
+	.passphrase = "test$891",
+	.ssid = "HeddokoTest2ghz",	
 	.channel = 255, //default to 255 so it searches all channels for the signal	
 };
 
@@ -86,7 +87,7 @@ net_socketConfig_t debugServer =
 {
     .endpoint.sin_addr = 0, //irrelevant for the server
     .endpoint.sin_family = AF_INET,
-    .endpoint.sin_port = _htons(6667),
+    .endpoint.sin_port = _htons(6663),
     .sourceModule = MODULE_DEBUG,
     .socketStatusCallback = debugSocketEventCallback,
     .socketDataReceivedCallback = debugSocketReceivedDataCallback,
@@ -116,7 +117,7 @@ void dbg_debugTask(void* pvParameters)
 	{
 		if(drv_uart_getlineTimed(&debugUartConfig,buffer,sizeof(buffer),5) == STATUS_PASS)
 		{			
-			processCommand(DBG_CMD_SOURCE_SERIAL,buffer,strlen(buffer));
+			dbg_processCommand(DBG_CMD_SOURCE_SERIAL,buffer,strlen(buffer));
 		}
 		if(xQueueReceive(queue_debugManager, &(eventMessage), 1) == true)
 		{
@@ -157,10 +158,6 @@ void dbg_printString(dbg_debugLogLevel_t msgLogLevel, char* string)
 	
 }
 
-void dbg_processExternalCommand(char* command)
-{
-    
-}
 
 /***********************************************************************************************
  * processCommand(char* command, size_t cmdSize)
@@ -170,7 +167,7 @@ void dbg_processExternalCommand(char* command)
  ***********************************************************************************************/
 #define MAX_RESPONSE_STRING_SIZE 255
 char responseBuffer[MAX_RESPONSE_STRING_SIZE] = {0}; 
-static status_t processCommand(dbg_commandSource_t source, char* command, size_t cmdSize)
+status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cmdSize)
 {
 	status_t status = STATUS_PASS; 
 	size_t responseLength = 0;
@@ -218,6 +215,18 @@ static status_t processCommand(dbg_commandSource_t source, char* command, size_t
 	{
 		snprintf(responseBuffer, MAX_RESPONSE_STRING_SIZE,"Time: %s\r\n",getTimeString());
 	}
+    else if(strncmp(command, "debugEn1\r\n",cmdSize) == 0)
+	{
+		debugMsgOverUsb = true; 
+	}
+    else if(strncmp(command, "debugEn0\r\n",cmdSize) == 0)
+	{
+		debugMsgOverUsb = false; 
+	}         
+    else if((cmdSize > 10) && strncmp(command, "PwrBrdMsg:",10) == 0)
+    {
+        strncpy(responseBuffer, command, sizeof(responseBuffer));
+    }    
     responseLength = strlen(responseBuffer);
     if(responseLength > 0)
     {
@@ -229,6 +238,10 @@ static status_t processCommand(dbg_commandSource_t source, char* command, size_t
         {
             net_sendPacketToClientSock(&debugServer, responseBuffer, responseLength,false); 
         }
+        else if(source == DBG_CMD_SOURCE_USB)
+        {
+            subp_sendStringToUSB(responseBuffer,responseLength); 
+        }   
         responseBuffer[0] = 0; //clear the string           
     }        
 	return status;	
@@ -268,7 +281,7 @@ static void processEvent(msg_message_t* message)
 		case MSG_TYPE_SUBP_STATUS:
 			printString("Received subp status\r\n");
 			subpReceivedStatus = (subp_status_t*)message->parameters;
-			dbg_printf(DBG_LOG_LEVEL_DEBUG,"battery Level: %03d\r\n",subpReceivedStatus->chargeLevel);
+			dbg_printf(DBG_LOG_LEVEL_DEBUG,"bat: %03d mask: %04x\r\n",subpReceivedStatus->chargeLevel,subpReceivedStatus->sensorMask);
 		break;
 	}
 } 
@@ -292,6 +305,12 @@ static void printString(char* str)
         
         net_sendPacketToClientSock(&debugServer, str, strlen(str),true); 
     }
+    
+    if(debugMsgOverUsb)
+    {
+        subp_sendStringToUSB(str,strlen(str));     
+    }    
+    
     
 }
 
@@ -349,5 +368,5 @@ static void debugSocketEventCallback(SOCKET socketId, net_socketStatus_t status)
 }
 static void debugSocketReceivedDataCallback(SOCKET socketId, uint8_t* buf, uint16_t bufLength)
 {
-    processCommand(DBG_CMD_SOURCE_NET,buf,strnlen(buf,bufLength));
+    dbg_processCommand(DBG_CMD_SOURCE_NET,buf,strnlen(buf,bufLength));
 }

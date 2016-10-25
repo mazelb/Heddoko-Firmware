@@ -155,7 +155,8 @@ void chrg_task_chargeMonitor(void *pvParameters)
 				break;
 				case CHRG_CHARGER_STATE_CHARGE_COMPLETE:
 				{
-					sprintf(tempString,"PwrBrdMsg:Receive Battery Full indication at ??%d level\r\n", batteryCharge);
+					ltc2941GetCharge(&ltc2941Config, batteryCharge);
+                    sprintf(tempString,"PwrBrdMsg:Receive Battery Full indication at %d level\r\n", batteryCharge);
 					dat_sendDebugMsgToDataBoard(tempString);
 					ltc2941SetChargeComplete(&ltc2941Config);									
 					drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
@@ -166,7 +167,8 @@ void chrg_task_chargeMonitor(void *pvParameters)
 					eventMessage.sysEvent = SYS_EVENT_LOW_BATTERY; 
 					if(mgr_eventQueue != NULL)
 					{
-						sprintf(tempString,"PwrBrdMsg:Receive Low Battery indication at ??%d level\r\n", batteryCharge);
+						ltc2941GetCharge(&ltc2941Config, batteryCharge);
+                        sprintf(tempString,"PwrBrdMsg:Receive Low Battery indication at ??%d level\r\n", batteryCharge);
 						dat_sendDebugMsgToDataBoard(tempString);
 						ltc2941SetCharge(&ltc2941Config, CHARGE_EMPTY_VALUE); //set the gas gauge to zero. 						
 						if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
@@ -187,7 +189,7 @@ void chrg_task_chargeMonitor(void *pvParameters)
 				case CHRG_CHARGER_STATE_INVALID_CODE:
 				default:
 				{
-					//drv_led_set(DRV_LED_TURQUOISE,DRV_LED_FLASH);	
+					drv_led_set(DRV_LED_TURQUOISE,DRV_LED_FLASH);	
 					//turn off LED for now, figure out what to do with this state later
 					dat_sendDebugMsgToDataBoard("PwrBrdMsg:Battery Fault\r\n");
 					drv_led_set(DRV_LED_OFF,DRV_LED_SOLID);

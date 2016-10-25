@@ -530,6 +530,7 @@ static void wifi_cb(uint8 msg_type, void *msg_data)
 			/* If Wi-Fi is disconnected. */
 			dbg_printString(DBG_LOG_LEVEL_DEBUG,"Wi-Fi disconnected!\r\n");
 			currentWifiState = NET_WIFI_STATE_DISCONNECTED;
+            msg_sendBroadcastMessageSimple(MODULE_WIFI, MSG_TYPE_WIFI_STATE, currentWifiState);
 			//m2m_wifi_connect((char *)MAIN_WLAN_SSID, sizeof(MAIN_WLAN_SSID),
 					//MAIN_WLAN_AUTH, (char *)MAIN_WLAN_PSK, M2M_WIFI_CH_ALL);
 		}

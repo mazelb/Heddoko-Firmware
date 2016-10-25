@@ -16,14 +16,14 @@ static void drv_gpio_int_cd(uint32_t ul_id, uint32_t ul_mask);
 drv_gpio_config_t gpioConfig[] = 
 {
 	/*  PIN ID					PIN MODE				  INITIAL PIN STATE       INTERRUPT MODE				INTERRUPT HANDLER  PULL UP EN  DEBOUNCE EN	setFlag     current State*/
-	{DRV_GPIO_ID_PIN_PW_SW,		DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_LOW_EDGE, drv_gpio_int_pw,		TRUE,	TRUE,			0,	DRV_GPIO_PIN_STATE_LOW},
+	{DRV_GPIO_ID_PIN_PW_SW,		DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_NONE, drv_gpio_int_pw,		TRUE,	TRUE,			0,	DRV_GPIO_PIN_STATE_LOW},
 	{DRV_GPIO_ID_PIN_AC_SW1,	DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_LOW_EDGE, drv_gpio_int_sw1,	TRUE,	TRUE,			0,	DRV_GPIO_PIN_STATE_LOW},
 	{DRV_GPIO_ID_PIN_AC_SW2,	DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_LOW, DRV_GPIO_INTERRUPT_LOW_EDGE, drv_gpio_int_sw2,	TRUE,	TRUE,			0,	DRV_GPIO_PIN_STATE_LOW},	
 	{DRV_GPIO_ID_PIN_BLE_RST,	DRV_GPIO_PIN_MODE_OUTPUT,  DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_NONE,	NULL,	TRUE,	TRUE,							0,	DRV_GPIO_PIN_STATE_HIGH},
 	{DRV_GPIO_ID_PIN_GREEN_LED,	DRV_GPIO_PIN_MODE_OUTPUT,  DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_NONE,	NULL,	TRUE,	TRUE,							0,	DRV_GPIO_PIN_STATE_LOW},
 	{DRV_GPIO_ID_PIN_BLUE_LED,	DRV_GPIO_PIN_MODE_OUTPUT,  DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_NONE,  NULL,	FALSE,	TRUE,							0,	DRV_GPIO_PIN_STATE_LOW},
 	{DRV_GPIO_ID_PIN_RED_LED,	DRV_GPIO_PIN_MODE_OUTPUT,  DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_NONE,	NULL,	FALSE,	TRUE,							0,	DRV_GPIO_PIN_STATE_LOW},	
-	{DRV_GPIO_ID_PIN_SD_CD,		DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_HIGH_EDGE	 , drv_gpio_int_cd,	TRUE,	TRUE,			0,	DRV_GPIO_PIN_STATE_LOW},
+	{DRV_GPIO_ID_PIN_SD_CD,		DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_LOW_EDGE	 , drv_gpio_int_cd,	TRUE,	TRUE,			0,	DRV_GPIO_PIN_STATE_LOW},
 	{DRV_GPIO_ID_PIN_USB_DET,	DRV_GPIO_PIN_MODE_INPUT,  DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_NONE    , NULL,				FALSE,	FALSE,			0,	DRV_GPIO_PIN_STATE_HIGH},
 	{DRV_GPIO_ID_PIN_SUBP_GPIO,	DRV_GPIO_PIN_MODE_INPUT, DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_NONE	 , NULL,				FALSE,	TRUE,			0,	DRV_GPIO_PIN_STATE_HIGH},
 	{DRV_GPIO_ID_PIN_AUX_GPIO,	DRV_GPIO_PIN_MODE_INPUT, DRV_GPIO_PIN_STATE_HIGH, DRV_GPIO_INTERRUPT_NONE    , NULL,				FALSE,	TRUE,			0,	DRV_GPIO_PIN_STATE_HIGH},	
@@ -446,8 +446,9 @@ status_t drv_gpio_disable_interrupt_all(void)
 void drv_gpio_service_Int(drv_gpio_pins_t pin, uint32_t ul_mask, bool *intGeneratedFlag)
 {
 	uint32_t PinMask = pio_get_pin_group_mask(gpioConfig[pin].pinId);
-	pio_disable_interrupt(PIOA, PinMask);
-	uint32_t ReadIsr = PIOA->PIO_ISR;
+	Pio *p_pio = pio_get_pin_group(gpioConfig[pin].pinId);	//peripheral ID
+    pio_disable_interrupt(p_pio, PinMask);
+	uint32_t ReadIsr = p_pio->PIO_ISR;
 	if (PinMask == ul_mask)
 	{
 		*intGeneratedFlag = TRUE;	// set the flag to indicate that the interrupt was generated
@@ -456,7 +457,7 @@ void drv_gpio_service_Int(drv_gpio_pins_t pin, uint32_t ul_mask, bool *intGenera
 	{
 		*intGeneratedFlag = FALSE;	// no interrupt was generated
 	}
-	pio_enable_interrupt(PIOA, PinMask);
+	pio_enable_interrupt(p_pio, PinMask);
 }
 
 /*	Interrupt Handlers definitions for GPIOs	*/
