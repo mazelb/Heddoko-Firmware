@@ -13,6 +13,7 @@
  * @copy Heddoko (2015)
  */
 #include "drv_i2c.h"
+#include "string.h"
 #include "common.h"
 
 extern unsigned long sgSysTickCount;
@@ -76,6 +77,35 @@ int drv_i2c_write(slave_twi_config_t* slave_twi_config, uint8_t reg, uint8_t dat
 	
 	return STATUS_PASS;
 }
+
+int drv_i2c_write_bytes(slave_twi_config_t* slave_twi_config, uint8_t reg, uint8_t* data, uint8_t length)
+{
+	int status = STATUS_FAIL;
+	//Write one byte to desired register
+	uint8_t dataPacket[10] = {0};
+	struct i2c_master_packet packet;
+	dataPacket[0] = reg;
+	if(length < 9)
+	{
+		memcpy(&dataPacket[1], data, length);	
+	}
+	else
+	{
+		return STATUS_FAIL;
+	}	
+	packet.data = &dataPacket[0];
+	packet.data_length = length+1;
+	packet.address = (uint32_t) slave_twi_config->address;
+	packet.ten_bit_address = false;
+	packet.high_speed = false;	
+	status = i2c_master_write_packet_wait(&slave_twi_config->drv_twi_options->module, &packet);
+	if (status != STATUS_OK)
+	{
+		return STATUS_FAIL;
+	}	
+	return STATUS_PASS;
+}
+
 
 int drv_i2c_read(slave_twi_config_t* slave_twi_config, uint8_t reg, uint8_t* data, uint8_t length)
 {
