@@ -37,7 +37,7 @@
 #include "drv_i2c.h"
 #include "imu.h"
 
-#define SENSOR_ID_DEFAULT 0
+#define SENSOR_ID_DEFAULT 3
 
 /** Handler for the device SysTick module, called when the SysTick counter
  *  reaches the set period.
@@ -124,7 +124,7 @@ slave_twi_config_t em7180Config=
 	#ifdef HW_V1_2 //this may be temporary, it's due to the SA0 pin seems to be floating.
 	.address = 0x28,
 	#else
-	.address = 0x29,
+	.address = 0x28,
 	#endif  
 	.drv_twi_options = &twiConfig
 };
@@ -149,7 +149,7 @@ pkt_packetParserConfiguration_t packetParserConfig =
 };
 void readUniqueId()
 {
-	uint8_t* localSerialNumber = 0x0080A00C;
+	uint8_t* localSerialNumber = 0x0080A00C; //this is the memory address where the serial number lives. 
 	memcpy(settings.serialNumber,localSerialNumber,16);
 }
 /** Callback function for the EXTINT driver, called when an external interrupt
@@ -271,11 +271,15 @@ __attribute__((optimize("O0"))) int main(void)
 	
 	//turn on the LED
 	port_pin_set_output_level(LED_BLUE_PIN,LED_ACTIVE);
-	
+	//delay_ms(5000); 
+	//port_pin_set_output_level(LED_BLUE_PIN,LED_INACTIVE);	
+	//port_pin_set_output_level(LED_GREEN_PIN,LED_ACTIVE);
+	//delay_ms(5000); 
+	//port_pin_set_output_level(LED_GREEN_PIN,LED_INACTIVE);
 	//port_pin_set_output_level(LED_RED_PIN,LED_ACTIVE);
-	//delay_ms(500); 
+	
 	sendButtonPressEvent();
-	port_pin_set_output_level(LED_GREEN_PIN,LED_INACTIVE);
+	//port_pin_set_output_level(LED_GREEN_PIN,LED_INACTIVE);
 	while (true) 
 	{
 		uart_status = usart_read_wait(&cmd_uart_module, &buff);
