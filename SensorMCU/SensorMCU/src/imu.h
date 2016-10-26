@@ -101,6 +101,7 @@ typedef struct
 	int16_t Rotation_x;
 	int16_t Rotation_y;
 	int16_t Rotation_z;
+	uint8_t frameStatus; //status of the frame. 
 }imuFrame_t;
 #pragma	pack(pop)
 

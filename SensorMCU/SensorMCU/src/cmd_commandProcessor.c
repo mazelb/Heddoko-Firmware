@@ -28,7 +28,7 @@ volatile cmd_debugStructure_t debugStructure =
 	.receiveErrorCount = 0
 };
 
-volatile uint8_t outputDataBuffer[100] = {0};
+volatile uint8_t outputDataBuffer[256] = {0};
 volatile imuFrame_t imuFrameData =
 {
 	.Quaternion_x = 0.1,
@@ -105,11 +105,11 @@ int resetAndInitialize(slave_twi_config_t* slave_config)
 	}
 	//#endif
 	//enable the Raw data output
-	status = drv_i2c_write(slave_config, EM_ALGORITHM_CONTROL_REGISTER, 0x02);
-	if (status != STATUS_PASS)
-	{
-		return STATUS_FAIL;
-	}
+	//status = drv_i2c_write(slave_config, EM_ALGORITHM_CONTROL_REGISTER, 0x02);
+	//if (status != STATUS_PASS)
+	//{
+		//return STATUS_FAIL;
+	//}
 	
 	//mag rate
 	status = drv_i2c_write(slave_config, EM_MAG_RATE_CONFIG_REGISTER, settings.magRate);
@@ -153,9 +153,9 @@ void sendImuDataFrame()
 	outputDataBuffer[0] = PACKET_TYPE_IMU_SENSOR;
 	outputDataBuffer[1] = PACKET_COMMAND_ID_GET_FRAME_RESP;
 	outputDataBuffer[2] = settings.sensorId;
-	memcpy(outputDataBuffer+3,&imuFrameData,34);
+	memcpy(outputDataBuffer+3,&imuFrameData,35);
 	//delay_us(100);
-	pkt_SendRawPacket(outputDataBuffer, 37);	
+	pkt_SendRawPacket(outputDataBuffer, 38);	
 }
 void sendSetImuIdResponse()
 {
@@ -191,6 +191,16 @@ void sendGetStatusResponse()
 	if(drv_i2c_read(&em7180Config, EM_GYRO_RATE_ACTUAL_REGISTER, &data, 1) == STATUS_PASS)
 	{
 		debugStructure.gyroReadErrorCount = data;
+	}
+	//read the algorithm status and update the status parameter.	
+	if(drv_i2c_read(&em7180Config, 0x38, &data, 1) == STATUS_PASS)
+	{
+		debugStructure.statusMask = data; 
+	}
+	//read the event status register to report it aswell
+	if(drv_i2c_read(&em7180Config, 0x35, &data, 1) == STATUS_PASS)
+	{
+		debugStructure.statusMask |= (data<<8); 
 	}
 	memcpy(outputDataBuffer+3,&debugStructure,24);
 	//delay_us(100);
@@ -357,9 +367,11 @@ void sendWarmStartUpValues()
 }
 
 
-void updateImuData()
+__attribute__((optimize("O0"))) void updateImuData()
 {
 	uint8_t statusRegister = 0x00; 
+	uint8_t algoStatus = 0x00; 
+	
 	status_t status = drv_i2c_read(&em7180Config, 0x35, &statusRegister, 1);
 	if(status == STATUS_PASS)
 	{	
@@ -389,6 +401,52 @@ void updateImuData()
 			}	
 		}
 	}
+	//read the algorithm status and update the LEDs accordingly. 
+	status = drv_i2c_read(&em7180Config, 0x38, &algoStatus, 1);
+	//check if the frame status has changed since the last time is was read...
+	if(imuFrameData.frameStatus != algoStatus)
+	{	
+		//check the calibration stable bit
+		if((algoStatus & (1<<3)) > 0)
+		{
+			//check the magnetic transient bit
+			if((algoStatus & (1<<4)) > 0)
+			{
+				//there is a magnetic transient set to turquoise 
+				port_pin_set_output_level(LED_RED_PIN,LED_INACTIVE);
+				port_pin_set_output_level(LED_GREEN_PIN,LED_ACTIVE);
+				port_pin_set_output_level(LED_BLUE_PIN,LED_ACTIVE);
+			}
+			else
+			{			
+				//check for board stillness
+				if((algoStatus & (1<<2)) > 0)
+				{
+					//board is still, no magnetic transient, cal is stable set to blue
+					port_pin_set_output_level(LED_RED_PIN,LED_INACTIVE);
+					port_pin_set_output_level(LED_GREEN_PIN,LED_INACTIVE);
+					port_pin_set_output_level(LED_BLUE_PIN,LED_ACTIVE);				
+				}
+				else
+				{
+					//no magnetic transient, cal is stable, not still, set to green
+					port_pin_set_output_level(LED_RED_PIN,LED_INACTIVE);
+					port_pin_set_output_level(LED_GREEN_PIN,LED_ACTIVE);
+					port_pin_set_output_level(LED_BLUE_PIN,LED_INACTIVE);	
+				}
+			
+			}
+		}
+		else
+		{
+			//Cal is not stable, set to red. 
+			port_pin_set_output_level(LED_RED_PIN,LED_ACTIVE);
+			port_pin_set_output_level(LED_GREEN_PIN,LED_INACTIVE);
+			port_pin_set_output_level(LED_BLUE_PIN,LED_INACTIVE);			
+		}
+		imuFrameData.frameStatus = algoStatus; 
+	}
+	
 }
 
 void updateImuDataFake()
@@ -509,7 +567,7 @@ void cmd_processPacket(rawPacket_t* packet)
 			case PACKET_COMMAND_ID_UPDATE_WARMUP_PARAM:
 				updateWarmStartUpValues();
 			break;
-			case PACKET_COMMAND_ID_GET_WARMUP_PARAM_RESP:
+			case PACKET_COMMAND_ID_GET_WARMUP_PARAM:
 				//check if the ID matches the one assigned
 				if(packet->payload[2] == settings.sensorId)
 				{

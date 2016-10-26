@@ -25,7 +25,7 @@ void sendQueuedPacket()
 {
 	usart_write_buffer_wait(pktConfig->uartModule,&queuedPacket,queuedPacketIndex);
 	#ifdef HW_V1_2
-	port_pin_toggle_output_level(LED_GREEN_PIN);
+	//port_pin_toggle_output_level(LED_GREEN_PIN);
 	#endif
 }
 void sendByte(uint8_t byte)
