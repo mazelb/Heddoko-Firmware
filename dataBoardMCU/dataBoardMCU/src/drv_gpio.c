@@ -511,13 +511,13 @@ void drv_gpio_int_sw1(uint32_t ul_id, uint32_t ul_mask)
 void drv_gpio_int_sw2(uint32_t ul_id, uint32_t ul_mask)
 {
 	uint32_t PinMask = pio_get_pin_group_mask(gpioConfig[DRV_GPIO_PIN_AC_SW2].pinId);
-	pio_disable_interrupt(PIOA, PinMask);
-	uint32_t ReadIsr = PIOA->PIO_ISR;
+	pio_disable_interrupt(PIOB, PinMask);
+	uint32_t ReadIsr = PIOB->PIO_ISR;
 	if (PinMask == ul_mask)
 	{
 		gpioConfig[DRV_GPIO_PIN_AC_SW2].gpioSetFlag = 1;
 	}
-	pio_enable_interrupt(PIOA, PinMask);
+	pio_enable_interrupt(PIOB, PinMask);
 }
 
 

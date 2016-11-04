@@ -184,6 +184,13 @@ void processPacket(pkt_rawPacket_t *packet)
 				// send out power down request to the data board
 				brd_sendPowerDownReq();
 			break;
+			case PACKET_COMMAND_ID_SUBP_FORCE_RESTART:
+                //check verification bytes to make sure the packet is valid. 
+                if((packet->payload[2] == 0x5E) && (packet->payload[3] == 0xE5))
+                {
+                    rstc_start_software_reset(RSTC);	
+                }                    
+			break;            
 			default:
 			break;
 		}

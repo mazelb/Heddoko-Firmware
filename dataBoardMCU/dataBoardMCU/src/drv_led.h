@@ -48,6 +48,7 @@ typedef enum
 	DRV_LED_YELLOW,
 	DRV_LED_WHITE,
 	DRV_LED_TURQUOISE,
+    DRV_LED_PURPLE,
 	DRV_LED_OFF
 }drv_led_color_type_t;
 

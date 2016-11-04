@@ -11,7 +11,7 @@
 #ifndef COMMON_H_
 #define COMMON_H_
 
-#define VERSION "V0.2a"
+#define VERSION "0.0.0.1"
 
 #define ALL_INTERRUPT_MASK  0xffffffff
 #define TRUE 1
@@ -56,7 +56,7 @@ typedef enum
 #define TASK_COMMAND_PROC_STACK_SIZE         (2048/sizeof(portSTACK_TYPE))
 #define TASK_COMMAND_PROC_PRIORITY			 (tskIDLE_PRIORITY + 5)
 
-#define TASK_SENSOR_HANDLER_STACK_SIZE		 (2048/sizeof(portSTACK_TYPE))
+#define TASK_SENSOR_HANDLER_STACK_SIZE		 (3072/sizeof(portSTACK_TYPE))
 #define TASK_SENSOR_HANDLER_PRIORITY		 (tskIDLE_PRIORITY + 6)
 
 #define TASK_DATA_BOARD_MANAGER_STACK_SIZE	 (2048/sizeof(portSTACK_TYPE))

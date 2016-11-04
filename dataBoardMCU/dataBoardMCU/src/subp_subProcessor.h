@@ -41,6 +41,7 @@ typedef struct
 	int16_t Rotation_x;
 	int16_t Rotation_y;
 	int16_t Rotation_z;
+    uint8_t frameStatus; 
 }subp_imuFrame_t;
 #pragma	pack(pop)
 
@@ -96,5 +97,6 @@ typedef struct
 
 void subp_subProcessorTask(void *pvParameters);
 void subp_sendStringToUSB(char* string, size_t length);
+void subp_sendForcedRestartMessage();
 
 #endif /* SUBP_SUBPROCESSOR_H_ */

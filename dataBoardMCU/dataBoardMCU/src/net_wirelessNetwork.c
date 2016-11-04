@@ -464,8 +464,8 @@ static status_t deRegisterSocket(net_socketConfig_t* socket)
 
 static status_t sendAdvertisingPacket(net_socketConfig_t* advertisingSocket)
 {
-	char firmwareVersion[] = "V2.0"; 
-	char serialNumber[] = "BP00001";
+	char firmwareVersion[] = "0.0.0.1"; 
+	char serialNumber[] = "BP00004";
 	uint8_t serializedPacket[255]; 	
 	Heddoko__Packet advertisingProtoPacket;
 	heddoko__packet__init(&advertisingProtoPacket);

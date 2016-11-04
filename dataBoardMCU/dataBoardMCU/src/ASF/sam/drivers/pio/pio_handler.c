@@ -52,7 +52,7 @@
  * constant can be increased, but the current value is the smallest possible one
  * that will be compatible with all existing projects.
  */
-#define MAX_INTERRUPT_SOURCES       7
+#define MAX_INTERRUPT_SOURCES       10
 
 /**
  * Describes a PIO interrupt source, including the PIO instance triggering the
@@ -148,7 +148,7 @@ uint32_t pio_handler_set(Pio *p_pio, uint32_t ul_id, uint32_t ul_mask,
 	int i = 0;
 	for(i=0;i<gs_ul_nb_sources; i++)
 	{
-		if(gs_interrupt_sources[i].id == ul_id)
+		if(gs_interrupt_sources[i].id == ul_id && gs_interrupt_sources[i].mask == ul_mask)
 		{
 			pSource = &(gs_interrupt_sources[i]);
 			pSource->id = ul_id;

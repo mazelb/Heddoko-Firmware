@@ -45,7 +45,7 @@ void gpm_gpioManagerTask(void* pvParameters)
 	UNUSED(pvParameters);
 	
 	// register for button interrupts, save the current interrupt state
-	//drv_gpio_config_interrupt_handler(DRV_GPIO_PIN_AC_SW1, DRV_GPIO_INTERRUPT_LOW_EDGE, (void*)acSw1_intHandler);
+	drv_gpio_config_interrupt_handler(DRV_GPIO_PIN_AC_SW1, DRV_GPIO_INTERRUPT_LOW_EDGE, (void*)acSw1_intHandler);
 	acSw1_intState = GPM_INTERRUPT_LOW;
 	drv_gpio_config_interrupt_handler(DRV_GPIO_PIN_AC_SW2, DRV_GPIO_INTERRUPT_LOW_EDGE, (void*)acSw2_intHandler);
 	acSw2_intState = GPM_INTERRUPT_LOW;

@@ -21,6 +21,7 @@ static void processRawPacket(pkt_rawPacket_t* packet);
 static void processMessage(msg_message_t message);
 status_t convertFullFrameToProtoBuff(subp_fullImuFrameSet_t* rawFullFrame, Heddoko__Packet* protoPacket);
 //message senders
+static void sendForcedRestartMessage(drv_uart_config_t* uartConfig);
 static void sendGetStatusMessage(drv_uart_config_t* uartConfig);
 static void sendStreamMessage(drv_uart_config_t* uartConfig, uint8_t enable);
 static void sendGetTimeRequestMessage(drv_uart_config_t* uartConfig);
@@ -160,6 +161,11 @@ void subp_sendStringToUSB(char* string, size_t length)
     pkt_sendRawPacket(&subpUart, packetBytes, length+3); 
     
 }
+void subp_sendForcedRestartMessage()
+{
+    sendForcedRestartMessage(&subpUart);     
+}
+
 
 char tempString[200] = {0};
 uint32_t packetReceivedCount = 0;
@@ -362,7 +368,7 @@ status_t convertFullFrameToProtoBuff(subp_fullImuFrameSet_t* rawFullFrame, Heddo
 		if(i<rawFullFrame->sensorCount)
 		{		
 			protoPacket->fulldataframe->imudataframe[i]->imuid = rawFullFrame->frames[i].sensorId;
-			protoPacket->fulldataframe->imudataframe[i]->sensormask = 0x1fff;	//as it has all the values from the sensor
+			protoPacket->fulldataframe->imudataframe[i]->sensormask = 0x1fff | (rawFullFrame->frames[i].frameStatus << 16) ;	//as it has all the values from the sensor
 			protoPacket->fulldataframe->imudataframe[i]->has_sensormask = true;
 			
 			protoPacket->fulldataframe->imudataframe[i]->accel_x = rawFullFrame->frames[i].Acceleration_x;
@@ -370,7 +376,7 @@ status_t convertFullFrameToProtoBuff(subp_fullImuFrameSet_t* rawFullFrame, Heddo
 			protoPacket->fulldataframe->imudataframe[i]->accel_z = rawFullFrame->frames[i].Acceleration_z;
 			protoPacket->fulldataframe->imudataframe[i]->has_accel_x = true;
 			protoPacket->fulldataframe->imudataframe[i]->has_accel_y = true;
-			protoPacket->fulldataframe->imudataframe[i]->has_accel_z = true;
+			protoPacket->fulldataframe->imudataframe[i]->has_accel_z = +true;
 
 			protoPacket->fulldataframe->imudataframe[i]->quat_x_yaw = rawFullFrame->frames[i].Quaternion_x;
 			protoPacket->fulldataframe->imudataframe[i]->quat_y_pitch = rawFullFrame->frames[i].Quaternion_y;
@@ -483,6 +489,12 @@ static void sendGetStatusMessage(drv_uart_config_t* uartConfig)
 {
 	uint8_t getStatusBytes[2] = {0x01,PACKET_COMMAND_ID_SUBP_GET_STATUS};
 	pkt_sendRawPacket(uartConfig,getStatusBytes, sizeof(getStatusBytes));
+}
+
+static void sendForcedRestartMessage(drv_uart_config_t* uartConfig)
+{
+    uint8_t restartBytes[] = {0x01,PACKET_COMMAND_ID_SUBP_FORCE_RESTART,0x5E,0xE5};
+    pkt_sendRawPacket(uartConfig,restartBytes, sizeof(restartBytes));
 }
 
 static void sendStreamMessage(drv_uart_config_t* uartConfig, uint8_t enable)

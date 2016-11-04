@@ -273,6 +273,10 @@ static void set_led_color(drv_led_color_type_t ledColor)
 				drv_gpio_setPinState(ledConfig.greenLed, DRV_GPIO_PIN_STATE_LOW);
 				drv_gpio_setPinState(ledConfig.blueLed, DRV_GPIO_PIN_STATE_LOW);
 				break;
+            case DRV_LED_PURPLE:
+             	drv_gpio_setPinState(ledConfig.redLed, DRV_GPIO_PIN_STATE_LOW);
+             	drv_gpio_setPinState(ledConfig.blueLed, DRV_GPIO_PIN_STATE_LOW);
+             	break; 
 			case DRV_LED_OFF:
 				drv_gpio_setPinState(ledConfig.redLed, DRV_GPIO_PIN_STATE_HIGH);
 				drv_gpio_setPinState(ledConfig.greenLed, DRV_GPIO_PIN_STATE_HIGH);
@@ -307,7 +311,11 @@ static void toggle_led_color(drv_led_color_type_t ledColor)
 		drv_gpio_togglePin(ledConfig.redLed);
 		drv_gpio_togglePin(ledConfig.greenLed);
 		drv_gpio_togglePin(ledConfig.blueLed);
-		break;
+		break;        
+        case DRV_LED_PURPLE:
+        drv_gpio_togglePin(ledConfig.redLed);
+        drv_gpio_togglePin(ledConfig.blueLed);
+        break;
 		case DRV_LED_TURQUOISE:
 		drv_gpio_togglePin(ledConfig.greenLed);
 		drv_gpio_togglePin(ledConfig.blueLed);

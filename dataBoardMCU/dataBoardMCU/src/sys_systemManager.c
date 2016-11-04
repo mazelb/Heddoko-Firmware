@@ -29,6 +29,7 @@
 /* Global Variables */
 xQueueHandle queue_systemManager = NULL;
 sys_manager_systemState_t currentState = SYSTEM_STATE_INIT; 
+static net_wifiState_t sysNetworkState = NET_WIFI_STATE_INIT;
 
 drv_piezo_config_t piezoConfig =
 {
@@ -68,7 +69,11 @@ drv_piezo_noteElement_t errorTone[] =
     {800, 300},
     //{000, 250},
 };
-
+drv_piezo_noteElement_t btnPress[] =
+{
+    {2500, 250},
+    {3000, 250}    
+};
 
 drv_haptic_config_t hapticConfig =
 {
@@ -80,7 +85,13 @@ drv_haptic_patternElement_t hapticPatternArray[] =
 {
 	{100, 1}
 };
-
+net_wirelessConfig_t wirelessConfiguration =
+{
+    .securityType = M2M_WIFI_SEC_WPA_PSK,
+    .passphrase = "qwerty123",//"heddoko123",//"test$891",
+    .ssid = "Heddoko_NoNetTest2Ghz",//"heddokoTestNet",//"HeddokoTest2ghz",
+    .channel = 255, //default to 255 so it searches all channels for the signal
+};
 /*	Local static functions	*/
 static void sendStateChangeMessage(sys_manager_systemState_t state);
 static void processMessage(msg_message_t message);
@@ -189,7 +200,27 @@ static void processMessage(msg_message_t message)
             }                                
 		break;
 		case MSG_TYPE_WIFI_STATE:
-        
+            if(message.data == NET_WIFI_STATE_CONNECTED)
+            {
+                if(currentState == SYSTEM_STATE_IDLE)
+                {
+                    drv_led_set(DRV_LED_TURQUOISE, DRV_LED_SOLID); 
+                }
+            }
+            else if(message.data == NET_WIFI_STATE_DISCONNECTED)
+            {
+                if(sysNetworkState != NET_WIFI_STATE_CONNECTED)
+                {
+                    //since we were trying to connect, this is an error. 
+                    drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));             
+                }
+                if(currentState == SYSTEM_STATE_IDLE)
+                {
+                    drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID); 
+                }
+            }
+            sysNetworkState = message.data; 
+            
 		break;
 		case MSG_TYPE_GPM_BUTTON_EVENT:
 		{
@@ -203,7 +234,7 @@ static void processMessage(msg_message_t message)
 		break;
 		case MSG_TYPE_SUBP_STATUS:
 		    subpReceivedStatus = (subp_status_t*)message.parameters;		
-		    if(currentState == SYSTEM_STATE_RECORDING)
+		    if(currentState == SYSTEM_STATE_RECORDING || currentState == SYSTEM_STATE_STREAMING)
             {
                 if(subpReceivedStatus->streamState != 0) //stream state not equal to idle
                 {
@@ -215,7 +246,15 @@ static void processMessage(msg_message_t message)
                         msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
                         vTaskDelay(200); 
                         currentState = SYSTEM_STATE_IDLE; // go to error state. 
-                        drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID);  
+                        if(sysNetworkState == NET_WIFI_STATE_CONNECTED)
+                        {
+                            drv_led_set(DRV_LED_TURQUOISE, DRV_LED_SOLID); 
+                        }
+                        else
+                        {
+                            drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID);      
+                        }
+                        
                     }
                 }   
             }                
@@ -237,31 +276,69 @@ static void processButtonEvent(uint32_t data)
 	switch (data)
 	{
 		case GPM_BUTTON_ONE_SHORT_PRESS:
-                          
+            if(currentState == SYSTEM_STATE_IDLE)
+            {
+                if(sysNetworkState == NET_WIFI_STATE_CONNECTED)
+                {
+                    msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_STREAMING);
+                    currentState = SYSTEM_STATE_STREAMING;
+                    drv_led_set(DRV_LED_PURPLE, DRV_LED_SOLID);
+                    drv_piezo_playPattern(startRecordingTone, (sizeof(startRecordingTone) / sizeof(drv_piezo_noteElement_t)));                    
+                }
+                else
+                {
+                    msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_RECORDING);
+                    currentState = SYSTEM_STATE_RECORDING;
+                    drv_led_set(DRV_LED_RED, DRV_LED_SOLID);
+                    drv_piezo_playPattern(startRecordingTone, (sizeof(startRecordingTone) / sizeof(drv_piezo_noteElement_t)));                 
+                }
+
+            }
+            else if(currentState == SYSTEM_STATE_RECORDING)
+            {
+                msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
+                currentState = SYSTEM_STATE_IDLE;
+                drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID);
+                drv_piezo_playPattern(stopRecordingTone, (sizeof(stopRecordingTone) / sizeof(drv_piezo_noteElement_t)));
+            }
+            else if(currentState == SYSTEM_STATE_STREAMING)
+            {
+                msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
+                currentState = SYSTEM_STATE_IDLE;
+                if(sysNetworkState == NET_WIFI_STATE_CONNECTED)
+                {
+                    drv_led_set(DRV_LED_TURQUOISE, DRV_LED_SOLID);
+                }
+                else
+                {
+                    drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID);    
+                }
+                
+                drv_piezo_playPattern(stopRecordingTone, (sizeof(stopRecordingTone) / sizeof(drv_piezo_noteElement_t)));                   
+            }                                          
 		break;
 		case GPM_BUTTON_ONE_LONG_PRESS:
 		break;
 		case GPM_BUTTON_TWO_SHORT_PRESS:
-            if(currentState == SYSTEM_STATE_IDLE)
-            {
-                msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_RECORDING);        
-                currentState = SYSTEM_STATE_RECORDING;                
-                drv_led_set(DRV_LED_RED, DRV_LED_SOLID); 
-                drv_piezo_playPattern(startRecordingTone, (sizeof(startRecordingTone) / sizeof(drv_piezo_noteElement_t)));
-            }
-            else if(currentState == SYSTEM_STATE_RECORDING)
-            {
-                msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);        
-                currentState = SYSTEM_STATE_IDLE;                
-                drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID);      
-                drv_piezo_playPattern(stopRecordingTone, (sizeof(stopRecordingTone) / sizeof(drv_piezo_noteElement_t)));             
-            }              
+        drv_piezo_playPattern(btnPress, (sizeof(btnPress) / sizeof(drv_piezo_noteElement_t)));       
 		break;
 		case GPM_BUTTON_TWO_LONG_PRESS:
+        //try to connect to the wifi network. 
+        drv_piezo_playPattern(btnPress, (sizeof(btnPress) / sizeof(drv_piezo_noteElement_t)));                   
+        
+        if(sysNetworkState == NET_WIFI_STATE_CONNECTED)
+        {
+            net_disconnectFromNetwork(); 
+        }
+        else
+        {
+            net_connectToNetwork(&wirelessConfiguration);
+        }
         
 		break;
 		case GPM_BOTH_BUTTON_LONG_PRESS:
         //restart the system. 
+            subp_sendForcedRestartMessage();
 		break;
 		default:
 		break;

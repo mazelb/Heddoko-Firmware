@@ -17,15 +17,17 @@
 #include "arm_math.h"
 
 /*	Local defines	*/
-#define SEN_DEFAULT_DATA_FRAME_LENGTH		37	// the size of data frame from the sensor
-#define SEN_DEFAULT_DATA_SIZE				35	// the size of actual unwrapped data
+
+#define SEN_DEFAULT_DATA_SIZE				36	// the size of actual unwrapped data (with status byte)
 #define SEN_SENSOR_FRAME_HEADER_SIZE		2	// first two byte are header in the frame received from the sensor
+#define SEN_DEFAULT_DATA_FRAME_LENGTH		SEN_SENSOR_FRAME_HEADER_SIZE + SEN_DEFAULT_DATA_SIZE// the size of data frame from the sensor
 #define SEN_SENSOR_FRAME_SENID_OFFSET		SEN_SENSOR_FRAME_HEADER_SIZE	// the sensor id is offset by the amount of bytes of header
 #define SEN_LOOP_PERIOD						12	// this is the amount of time(ms) taken by the loop to execute
 #define SEN_MAX_NUM_SENSORS					9	// the maximum number of sensor used in the product
 #define SEN_MAX_SENSOR_ID					8	// sensorId range from 0 to 8
 #define SEN_MIN_SENSOR_ID					0
 #define SEN_SENSOR_FULL_FRAME_HEADER_SIZE	7	// the sensor full frame has a header of 7 bytes
+#define SEN_FULL_FRAME_MAX_LENGTH           (SEN_MAX_NUM_SENSORS * SEN_DEFAULT_DATA_FRAME_LENGTH) + SEN_SENSOR_FULL_FRAME_HEADER_SIZE
 
 /*	Static function forward declarations	*/
 static void sendPacket(uint8_t *data, uint8_t length);	// send raw packet over UART
@@ -66,7 +68,7 @@ static uint8_t sensorLoopCount = 0;		// cycles from 1 to 9 which correspond to t
 uint8_t dataRate = 0, numReqSensors = 0;
 static drv_uart_config_t *sensorPortConfig;
 uint32_t reqSensorMask = 0, detectedSensorMask = 0;
-uint8_t sensorFullFrame[SEN_MAX_NUM_SENSORS * SEN_DEFAULT_DATA_FRAME_LENGTH] = {0}; // with a little overhead, the final frame is 322 bytes.
+uint8_t sensorFullFrame[356] = {0}; // with a little overhead, the final frame is 322 bytes.
 
 #ifdef ENABLE_SENSORS_DEBUG_MODE
 /*	IMU packet	*/
@@ -77,15 +79,16 @@ typedef struct
 	float32_t Quaternion_y;
 	float32_t Quaternion_z;
 	float32_t Quaternion_w;
-	uint16_t Magnetic_x;
-	uint16_t Magnetic_y;
-	uint16_t Magnetic_z;
-	uint16_t Acceleration_x;
-	uint16_t Acceleration_y;
-	uint16_t Acceleration_z;
-	uint16_t Rotation_x;
-	uint16_t Rotation_y;
-	uint16_t Rotation_z;
+	int16_t Magnetic_x;
+	int16_t Magnetic_y;
+	int16_t Magnetic_z;
+	int16_t Acceleration_x;
+	int16_t Acceleration_y;
+	int16_t Acceleration_z;
+	int16_t Rotation_x;
+	int16_t Rotation_y;
+	int16_t Rotation_z;
+    uint8_t status; 
 }imuFrame_t;
 #pragma	pack(pop)
 imuFrame_t imuFrameData =
@@ -102,7 +105,8 @@ imuFrame_t imuFrameData =
 	.Acceleration_z = 6,
 	.Rotation_x = 7,
 	.Rotation_y = 8,
-	.Rotation_z = 9
+	.Rotation_z = 9,
+    .status = 0;
 };
 #endif
 
@@ -182,7 +186,7 @@ void sen_sensorHandlerTask(void *pvParameters)
 			if (isSensorRequested(sensorID) == STATUS_PASS)		// only fetch the frame if the sensor is requested
 			{
 				sendCommand(COMMAND_ID_GET_FRAME, sensorID, NULL);											// actual sensor id count is 0 to 8
-				vTaskDelay(1);
+				//vTaskDelay(1);
 			
 				// fetch the packet from buffer
 				
@@ -192,12 +196,14 @@ void sen_sensorHandlerTask(void *pvParameters)
 				
 				bufferOffset = ((SEN_MAX_SENSOR_ID - number_FramesReceived) * SEN_DEFAULT_DATA_SIZE) + SEN_SENSOR_FULL_FRAME_HEADER_SIZE - SEN_SENSOR_FRAME_HEADER_SIZE;
 				tempPacket.p_payload = sensorFullFrame + bufferOffset; 						// set the pointer to the set offset in the full frame array
-				status = pkt_getPacketVarSizeTimed(sensorPortConfig, &tempPacket, 2);					// NOTE: needs a pointer to the packet and not the packet.payload
+				status = pkt_getPacketVarSizeTimed(sensorPortConfig, &tempPacket, 1);					// NOTE: needs a pointer to the packet and not the packet.payload
 
-				
-				// perform a short check to verify the integrity of the packet
-				if (status != STATUS_PASS || ((tempPacket.payloadSize != SEN_DEFAULT_DATA_FRAME_LENGTH) || 
-					(isExpectedSensorId(sensorFullFrame[bufferOffset + SEN_SENSOR_FRAME_SENID_OFFSET], sensorID)) != STATUS_PASS))	// check for the size of packet and a valid sensor ID
+				//status = STATUS_PASS;
+				// perform a short check to verify the integrity of the packet (tempPacket.payloadSize >= (SEN_DEFAULT_DATA_FRAME_LENGTH-1)) ||
+                
+				if (status != STATUS_PASS ||  
+					(isExpectedSensorId(sensorFullFrame[bufferOffset + SEN_SENSOR_FRAME_SENID_OFFSET], sensorID)) != STATUS_PASS
+                    || (tempPacket.payloadSize <= SEN_DEFAULT_DATA_FRAME_LENGTH-1))	// check for the size of packet and a valid sensor ID
 				{
 					// this is a corrupt frame, should discard it
 					detectedSensorMask &= ~(0x01 << (sensorID));		// clear the detected sensor mask
@@ -205,8 +211,7 @@ void sen_sensorHandlerTask(void *pvParameters)
 					{
 						changeSensorState(SENSOR_ERROR);
 					}
-				}
-				
+				}				
 				else
 				{
 					#ifdef ENABLE_SENSORS_DEBUG_MODE
@@ -544,7 +549,8 @@ static void sendFullFrame()
 		sensorFullFrame[buffOffset + 5] = (sysTickCount >> 16) & 0xff;
 		sensorFullFrame[buffOffset + 6] = (sysTickCount >> 24) & 0xff;
 		// calculate the frame size, keep 7 bytes for the main frame header
-		frameSize = (number_FramesReceived * SEN_DEFAULT_DATA_SIZE) + SEN_SENSOR_FULL_FRAME_HEADER_SIZE;
+		//frameSize = (number_FramesReceived * 36) + 7;
+        frameSize = (number_FramesReceived * SEN_DEFAULT_DATA_SIZE) + SEN_SENSOR_FULL_FRAME_HEADER_SIZE;
 		// send the packet out.
 		pkt_sendRawPacket(dataRouterConfiguration.dataBoardUart, &sensorFullFrame[buffOffset], frameSize);	// TODO: reduce the packet size according to the number of sensors present
 		xSemaphoreGive(semaphore_dataBoardUart);
