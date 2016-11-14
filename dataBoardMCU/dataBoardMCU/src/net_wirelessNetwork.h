@@ -36,7 +36,13 @@ typedef enum
     NET_SOCKET_STATUS_SERVER_OPEN_FAILED    
 }net_socketStatus_t;
 
-
+typedef struct  
+{
+    uint16_t* advertisingPort;
+    char* serialNumber;
+    uint8_t advertisingInterval;
+    uint16_t* configurationPort;   
+}net_moduleConfig_t;
 
 typedef struct
 {

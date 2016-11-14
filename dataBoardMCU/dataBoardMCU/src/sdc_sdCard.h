@@ -56,6 +56,12 @@ typedef enum
 	SDC_FILE_OPEN_READ_WRITE_DEBUG_LOG	
 }sdc_FileOpenMode_t;
 
+
+typedef struct  
+{
+    char* serialNumber;     
+}sdc_moduleConfig_t;
+
 /***********************************************************************************************
  * sdc_sdCardTask(void *pvParameters)
  * @brief The task that handles communication with the SD card. This task initializes the SD card,

@@ -10,6 +10,7 @@
 #define SUBP_SUBPROCESSOR_H_
 #include "asf.h"
 #include "common.h"
+#include "net_wirelessNetwork.h"
 
 #define PACKET_QUEUE_LENGTH 10
 #define MAX_NUMBER_OF_IMU_SENSORS 9
@@ -92,8 +93,20 @@ typedef struct
 {
 	uint8_t rate;
 	uint32_t sensorMask; 
-}subp_config_t;
+    char filename[100]; 
+}subp_recordingConfig_t;
 
+typedef struct 
+{
+    in_addr ipaddress; 
+    uint16_t streamPort; 
+}subp_streamConfig_t;
+
+typedef struct  
+{
+    subp_recordingConfig_t* recordingConfig;
+    subp_streamConfig_t* streamConfig;
+}subp_moduleConfig_t;
 
 void subp_subProcessorTask(void *pvParameters);
 void subp_sendStringToUSB(char* string, size_t length);

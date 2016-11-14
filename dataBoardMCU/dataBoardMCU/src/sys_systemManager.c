@@ -25,6 +25,8 @@
 #include "drv_haptic.h"
 #include "drv_piezo.h"
 #include "gpm_gpioManager.h"
+#include "nvm_nvMemInterface.h"
+#include "cfg_configurationManager.h"
 
 /* Global Variables */
 xQueueHandle queue_systemManager = NULL;
@@ -85,6 +87,7 @@ drv_haptic_patternElement_t hapticPatternArray[] =
 {
 	{100, 1}
 };
+
 net_wirelessConfig_t wirelessConfiguration =
 {
     .securityType = M2M_WIFI_SEC_WPA_PSK,
@@ -92,6 +95,12 @@ net_wirelessConfig_t wirelessConfiguration =
     .ssid = "Heddoko_NoNetTest2Ghz",//"heddokoTestNet",//"HeddokoTest2ghz",
     .channel = 255, //default to 255 so it searches all channels for the signal
 };
+nvmSettings_t currentSystemSettings; 
+bool settingsChanges = false; 
+subp_moduleConfig_t subProcessorSettings = {0,0}; 
+net_moduleConfig_t wirelessNetworkSettings;    
+sdc_moduleConfig_t sdCardSettings;  
+cfg_moduleConfig_t configModuleSettings;
 /*	Local static functions	*/
 static void sendStateChangeMessage(sys_manager_systemState_t state);
 static void processMessage(msg_message_t message);
@@ -116,7 +125,21 @@ void sys_systemManagerTask(void* pvParameters)
 		.greenLed = DRV_GPIO_PIN_GREEN_LED,
 		.blueLed = DRV_GPIO_PIN_BLUE_LED
 	};
-	drv_led_init(&ledConfiguration);
+	if(nvm_readFromFlash(&currentSystemSettings) != STATUS_PASS)
+    {        
+        //umm this is pretty bad, we should do something here.    
+    }
+    //copy over the settings to the module configuration structures.  
+    subProcessorSettings.recordingConfig = &(currentSystemSettings.recordingCfg); 
+    subProcessorSettings.streamConfig = &(currentSystemSettings.streamCfg); 
+    wirelessNetworkSettings.advertisingInterval = 5;
+    wirelessNetworkSettings.advertisingPort = &(currentSystemSettings.advPortNumber);
+    wirelessNetworkSettings.configurationPort = &(currentSystemSettings.serverPortNumber); 
+    wirelessNetworkSettings.serialNumber = currentSystemSettings.serialNumber; 
+    sdCardSettings.serialNumber = currentSystemSettings.serialNumber;
+    configModuleSettings.serialNumber = currentSystemSettings.serialNumber;
+    configModuleSettings.configPort = currentSystemSettings.serverPortNumber; 
+    drv_led_init(&ledConfiguration);
 	drv_led_set(DRV_LED_BLUE,DRV_LED_FLASH);
 	
 	drv_piezo_init(&piezoConfig);
@@ -132,7 +155,7 @@ void sys_systemManagerTask(void* pvParameters)
 		msg_registerForMessages(MODULE_SYSTEM_MANAGER, 0xff, queue_systemManager);
 	}
 	//start the other tasks
-	if (xTaskCreate(dbg_debugTask, "dbg", TASK_DEBUG_MANAGER_STACK_SIZE, NULL, TASK_DEBUG_MANAGER_PRIORITY, NULL) != pdPASS)
+	if (xTaskCreate(dbg_debugTask, "dbg", TASK_DEBUG_MANAGER_STACK_SIZE, &(currentSystemSettings.debugCfg), TASK_DEBUG_MANAGER_PRIORITY, NULL) != pdPASS)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create sub process handler task\r\n");
 	}	
@@ -140,26 +163,30 @@ void sys_systemManagerTask(void* pvParameters)
 	{
     	dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create gpm task\r\n");
 	} 
-	if (xTaskCreate(subp_subProcessorTask, "subp", TASK_SUB_PROCESS_MANAGER_STACK_SIZE, NULL, TASK_SUB_PROCESS_MANAGER_PRIORITY, NULL) != pdPASS)
+	if (xTaskCreate(subp_subProcessorTask, "subp", TASK_SUB_PROCESS_MANAGER_STACK_SIZE, &subProcessorSettings, TASK_SUB_PROCESS_MANAGER_PRIORITY, NULL) != pdPASS)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create sub process handler task\r\n");
 	}
-	if (xTaskCreate(sdc_sdCardTask, "sdc", TASK_SD_CARD_STACK_SIZE, NULL, TASK_SD_CARD_PRIORITY, NULL) != pdPASS)
+	if (xTaskCreate(sdc_sdCardTask, "sdc", TASK_SD_CARD_STACK_SIZE, &sdCardSettings, TASK_SD_CARD_PRIORITY, NULL) != pdPASS)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create sd card task\r\n");
 	}
-	if(xTaskCreate(net_wirelessNetworkTask, "wif", (4000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+4, NULL) != pdPASS)
+	if(xTaskCreate(net_wirelessNetworkTask, "wif", (4000/sizeof(portSTACK_TYPE)), &wirelessNetworkSettings, tskIDLE_PRIORITY+4, NULL) != pdPASS)
 	{
     	dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create wireless task\r\n");
-	}
+	}    
 	if(xTaskCreate(ble_bluetoothManagerTask, "ble", (4000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create ble task\r\n");
 	}
-
-	
+	if(xTaskCreate(cfg_configurationTask, "cfg", (4000/sizeof(portSTACK_TYPE)), &configModuleSettings, tskIDLE_PRIORITY+3, NULL) != pdPASS)
+	{
+    	dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create cfg task\r\n");
+	}
 	vTaskDelay(200); 
 	sendStateChangeMessage(SYSTEM_STATE_INIT); 	
+    
+    
 	while (1)
 	{		
 		if(xQueueReceive(queue_systemManager, &(eventMessage), 1) == true)
@@ -224,14 +251,31 @@ static void processMessage(msg_message_t message)
 		break;
 		case MSG_TYPE_GPM_BUTTON_EVENT:
 		{
-			processButtonEvent(message.data);
-			
+			processButtonEvent(message.data);			
 		}
 		break;
 		case MSG_TYPE_SUBP_POWER_DOWN_REQ:
-		//right now just send back the power down ready message right away. 
-		msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_SYSTEM_MANAGER, MSG_TYPE_SUBP_POWER_DOWN_READY,NULL);
+			if(settingsChanges == true)
+            {
+                nvm_writeToFlash(&currentSystemSettings);    
+            }                
+			msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_SYSTEM_MANAGER, MSG_TYPE_SUBP_POWER_DOWN_READY,NULL);
 		break;
+        case MSG_TYPE_STREAM_CONFIG:
+            //copy over the settings, set the flag to let the system know it needs to save the settings before powering down. 
+            settingsChanges = true; 
+            memcpy(&(currentSystemSettings.streamCfg),message.parameters, sizeof(subp_streamConfig_t));
+        break;
+        case MSG_TYPE_RECORDING_CONFIG:
+            //copy over the settings, set the flag to let the system know it needs to save the settings before powering down.
+            settingsChanges = true; 
+            memcpy(&(currentSystemSettings.recordingCfg),message.parameters, sizeof(subp_recordingConfig_t));
+        break;
+        case MSG_TYPE_WIFI_CONFIG:
+            settingsChanges = true;  //set flag to have settings saved
+            memcpy(&(currentSystemSettings.defaultWifiConfig),message.parameters, sizeof(net_wirelessConfig_t));
+            
+        break;
 		case MSG_TYPE_SUBP_STATUS:
 		    subpReceivedStatus = (subp_status_t*)message.parameters;		
 		    if(currentState == SYSTEM_STATE_RECORDING || currentState == SYSTEM_STATE_STREAMING)
@@ -258,7 +302,15 @@ static void processMessage(msg_message_t message)
                     }
                 }   
             }                
-		break;        
+		break;
+        case MSG_TYPE_SET_SERIAL:
+           //always write to flash when setting the serial number. 
+           strncpy(currentSystemSettings.serialNumber, message.parameters, 10); 
+           nvm_writeToFlash(&currentSystemSettings);             
+        break;      
+        case MSG_TYPE_SAVE_SETTINGS:
+            nvm_writeToFlash(&currentSystemSettings);             
+        break;  
 		default:
 		break;
 		
@@ -320,7 +372,9 @@ static void processButtonEvent(uint32_t data)
 		case GPM_BUTTON_ONE_LONG_PRESS:
 		break;
 		case GPM_BUTTON_TWO_SHORT_PRESS:
-        drv_piezo_playPattern(btnPress, (sizeof(btnPress) / sizeof(drv_piezo_noteElement_t)));       
+			drv_led_set(DRV_LED_RED, DRV_LED_SOLID);
+			drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
+			drv_piezo_playPattern(&noteElementsArray[2], 1);
 		break;
 		case GPM_BUTTON_TWO_LONG_PRESS:
         //try to connect to the wifi network. 
@@ -332,7 +386,7 @@ static void processButtonEvent(uint32_t data)
         }
         else
         {
-            net_connectToNetwork(&wirelessConfiguration);
+            net_connectToNetwork(&(currentSystemSettings.defaultWifiConfig));
         }
         
 		break;

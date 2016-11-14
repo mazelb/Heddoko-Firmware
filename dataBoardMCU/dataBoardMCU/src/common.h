@@ -13,7 +13,7 @@
 
 #include "arm_math.h"
 
-#define VERSION "V0.1"
+#define VERSION "0.0.0.1"
 /*
 * Changes from previous version:
 * @brief: see VersionNotes.txt for details
@@ -46,7 +46,7 @@ typedef enum
 	MODULE_SYSTEM_MANAGER=0,
 	MODULE_SDCARD,
 	MODULE_WIFI,
-	MODULE_COMMAND,
+	MODULE_CONFIG_MANAGER,
 	MODULE_DEBUG,
 	MODULE_SUB_PROCESSOR,
 	MODULE_DATA_MANAGER,

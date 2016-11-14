@@ -36,9 +36,9 @@ char dataLogFileName[SD_CARD_FILENAME_LENGTH] = {0};
 sdc_file_t *openFilesArray[MAX_OPEN_FILES] = {NULL};
 volatile bool sdInsertWaitTimeoutFlag = FALSE;
 xTimerHandle sdTimeOutTimer = NULL;
-volatile char serialNumber[] = "S00001";
+//volatile char serialNumber[] = "S00001";
 volatile sd_card_status_t sdCardStatus = SD_CARD_REMOVED; 
-	
+sdc_moduleConfig_t* moduleConfig; 	
 /*	extern variables	*/
 
 
@@ -73,7 +73,7 @@ void sdc_sdCardTask(void *pvParameters)
 	status_t status = STATUS_PASS;
 	msg_message_t eventMessage;
 	drv_gpio_pin_state_t sdCd_oldVal, sdCd_newVal;
-	
+	moduleConfig = (sdc_moduleConfig_t*)pvParameters;
 	msg_queue_sdCard = xQueueCreate(10, sizeof(msg_message_t));
 	if (msg_queue_sdCard != 0)
 	{
@@ -411,7 +411,7 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 			if(status == STATUS_PASS)
 			{
 				//create the filename
-				snprintf(dataLogFileName, SD_CARD_FILENAME_LENGTH, "%s/%s_%s%05d.hsm",dirName, serialNumber, filename, fileIndexNumber);				
+				snprintf(dataLogFileName, SD_CARD_FILENAME_LENGTH, "%s/%s_%s%05d.hsm",dirName, moduleConfig->serialNumber, filename, fileIndexNumber);				
 				res = f_open(&fileObject->fileObj, (char const *) dataLogFileName, FA_OPEN_ALWAYS | FA_WRITE);
 				if (res == FR_OK)
 				{

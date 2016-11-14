@@ -14,6 +14,7 @@
 #include "drv_gpio.h"
 #include "drv_uart.h"
 #include "msg_messenger.h"
+#include "nvm_nvMemInterface.h"
 
 /* Global Variables */
 xQueueHandle queue_debugManager = NULL;
@@ -56,8 +57,12 @@ static void configure_console(void);
 static char* getTimeString(); 
 static void debugSocketEventCallback(SOCKET socketId, net_socketStatus_t status);
 static void debugSocketReceivedDataCallback(SOCKET socketId, uint8_t* buf, uint16_t bufLength);
+static status_t processRecordCfg(char* command);
+static status_t processStreamCfg(char* command);
+static status_t processWifiCfg(char* command);
 /*	Extern functions	*/
 /*	Extern variables	*/
+extern nvmSettings_t currentSystemSettings;
 
 
 
@@ -150,10 +155,12 @@ void dbg_printf(dbg_debugLogLevel_t msgLogLevel, char *fmt, ...)
 
 void dbg_printString(dbg_debugLogLevel_t msgLogLevel, char* string)
 {
-	//only process the message if the log level is below the 
+	char buffer[200];
+    //only process the message if the log level is below the 
 	if(msgLogLevel <= debugLogLevel)
 	{
-		printString(string); 	
+		strncpy(buffer,string, strlen(string)); 
+        printString(buffer); 	
 	}
 	
 }
@@ -166,11 +173,13 @@ void dbg_printString(dbg_debugLogLevel_t msgLogLevel, char* string)
  * @return STATUS_PASS if successful, STATUS_FAIL if there is an error 
  ***********************************************************************************************/
 #define MAX_RESPONSE_STRING_SIZE 255
+char newSerialNumber[10] = {0}; 
 char responseBuffer[MAX_RESPONSE_STRING_SIZE] = {0}; 
 status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cmdSize)
 {
 	status_t status = STATUS_PASS; 
 	size_t responseLength = 0;
+    int cmdLength = 0;
 	if(strncmp(command, "Record\r\n",cmdSize) == 0)
 	{		
 		msg_sendBroadcastMessageSimple(MODULE_DEBUG, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_RECORDING);
@@ -185,12 +194,64 @@ status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cm
 	{		
 		msg_sendBroadcastMessageSimple(MODULE_DEBUG, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_STREAMING);
         strncpy(responseBuffer,"Starting to Stream!\r\n", MAX_RESPONSE_STRING_SIZE);		
-	}		
+	}
+    else if(strncmp(command, "recordCfg",9) == 0)
+	{		
+		if(processRecordCfg(command+9) == STATUS_PASS)
+        {
+            strncpy(responseBuffer,"ACK\r\n", MAX_RESPONSE_STRING_SIZE);
+        }
+        else
+        {
+            strncpy(responseBuffer,"NACK\r\n", MAX_RESPONSE_STRING_SIZE);
+        }             
+        		
+	}	
+    else if(strncmp(command, "streamCfg",9) == 0)
+	{		
+		if(processStreamCfg(command+9) == STATUS_PASS)
+        {
+            strncpy(responseBuffer,"ACK\r\n", MAX_RESPONSE_STRING_SIZE);
+        }
+        else
+        {
+            strncpy(responseBuffer,"NACK\r\n", MAX_RESPONSE_STRING_SIZE);
+        }        		
+	}	    
+    else if(strncmp(command, "wifiCfg",7) == 0)
+	{		
+		if(processWifiCfg(command+7) == STATUS_PASS)
+        {
+            strncpy(responseBuffer,"ACK\r\n", MAX_RESPONSE_STRING_SIZE);
+        }
+        else
+        {
+            strncpy(responseBuffer,"NACK\r\n", MAX_RESPONSE_STRING_SIZE);
+        }             
+        		
+	}
+    else if(strncmp(command,"setSerial",9) == 0)
+    {
+        cmdLength = strlen(command+9); 
+        strncpy(newSerialNumber, command+9, cmdLength-2); 
+        msg_sendMessage(MODULE_SYSTEM_MANAGER,MODULE_DEBUG,MSG_TYPE_SET_SERIAL,newSerialNumber); 
+        snprintf(responseBuffer, MAX_RESPONSE_STRING_SIZE,"Serial Set: %s\r\n",newSerialNumber);
+    }
+    else if(strncmp(command,"saveConfig",10) == 0)
+    {
+        msg_sendMessage(MODULE_SYSTEM_MANAGER,MODULE_DEBUG,MSG_TYPE_SAVE_SETTINGS,NULL); 
+        strncpy(responseBuffer,"ACK\r\n", MAX_RESPONSE_STRING_SIZE);
+    }        		
 	else if(strncmp(command, "?\r\n",cmdSize) == 0)
 	{
-		strncpy(responseBuffer,"Brain pack alive!\r\n", MAX_RESPONSE_STRING_SIZE);
-        
+		strncpy(responseBuffer,"Brain pack alive!\r\n", MAX_RESPONSE_STRING_SIZE);        
 	}
+    else if(strncmp(command, "getSettings\r\n",cmdSize) == 0)
+    {
+           snprintf(responseBuffer,MAX_RESPONSE_STRING_SIZE,"SSID:%s\r\nkey:%s\r\nAdvertisingPort:%d\r\nConfigPort:%d\r\nStreamPort:%d\r\n",
+           currentSystemSettings.defaultWifiConfig.ssid,currentSystemSettings.defaultWifiConfig.passphrase,currentSystemSettings.advPortNumber,
+           currentSystemSettings.serverPortNumber, currentSystemSettings.streamCfg.streamPort);
+    }        
 	else if(strncmp(command, "wifiConnect\r\n",cmdSize) == 0)
 	{
 		net_connectToNetwork(&wirelessConfig);
@@ -214,14 +275,17 @@ status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cm
 	else if(strncmp(command, "getTime\r\n",cmdSize) == 0)
 	{
 		snprintf(responseBuffer, MAX_RESPONSE_STRING_SIZE,"Time: %s\r\n",getTimeString());
+        
 	}
     else if(strncmp(command, "debugEn1\r\n",cmdSize) == 0)
 	{
 		debugMsgOverUsb = true; 
+        strncpy(responseBuffer,"ACK\r\n", MAX_RESPONSE_STRING_SIZE);
 	}
     else if(strncmp(command, "debugEn0\r\n",cmdSize) == 0)
 	{
 		debugMsgOverUsb = false; 
+        strncpy(responseBuffer,"ACK\r\n", MAX_RESPONSE_STRING_SIZE);
 	}         
     else if((cmdSize > 10) && strncmp(command, "PwrBrdMsg:",10) == 0)
     {
@@ -252,22 +316,22 @@ static void processEvent(msg_message_t* message)
 	switch(message->type)
 	{
 		case MSG_TYPE_ENTERING_NEW_STATE:
-			printString("Received Entering New State event\r\n");			
+			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received Entering New State event\r\n");			
 		break; 
 		case MSG_TYPE_SDCARD_STATE:
-			printString("Received SD Card state Event\r\n");
+			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received SD Card state Event\r\n");
 		break;
 		case MSG_TYPE_WIFI_STATE:
-			printString("Received Wifi state event\r\n");
+			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received Wifi state event\r\n");
             if(message->data == NET_WIFI_STATE_CONNECTED)
             {
                 if(net_createServerSocket(&debugServer, 255) == STATUS_PASS)
                 {
-                    printString("Initializing server socket\r\n");
+                    dbg_printf(DBG_LOG_LEVEL_DEBUG,"Initializing server socket\r\n");
                 }
                 else
                 {
-                   printString("Failed to initialize server socket\r\n"); 
+                   dbg_printf(DBG_LOG_LEVEL_DEBUG,"Failed to initialize server socket\r\n"); 
                 }   
             }
             else if(message->data == NET_WIFI_STATE_DISCONNECTED)
@@ -279,7 +343,7 @@ static void processEvent(msg_message_t* message)
 			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received Error from Module: %s\r\n", moduleNameString[message->source]);
 		break;		
 		case MSG_TYPE_SUBP_STATUS:
-			printString("Received subp status\r\n");
+			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received subp status\r\n");
 			subpReceivedStatus = (subp_status_t*)message->parameters;
 			dbg_printf(DBG_LOG_LEVEL_DEBUG,"bat: %03d mask: %04x\r\n",subpReceivedStatus->chargeLevel,subpReceivedStatus->sensorMask);
 		break;
@@ -301,8 +365,7 @@ static void printString(char* str)
 		drv_uart_putString(&debugUartConfig, str);
 	}
     if(debugServer.clientSocketId > -1)
-    {
-        
+    {        
         net_sendPacketToClientSock(&debugServer, str, strlen(str),true); 
     }
     
@@ -369,4 +432,68 @@ static void debugSocketEventCallback(SOCKET socketId, net_socketStatus_t status)
 static void debugSocketReceivedDataCallback(SOCKET socketId, uint8_t* buf, uint16_t bufLength)
 {
     dbg_processCommand(DBG_CMD_SOURCE_NET,buf,strnlen(buf,bufLength));
+}
+subp_recordingConfig_t newRecordingCfg;
+static status_t processRecordCfg(char* command)
+{   
+    //the format of the recordCfg command is, "recordCfg,<filename>,<sensor mask in hex>,<dataRate>\r\n"   
+    int ret = sscanf(command, ", %s ,%x,%u\r\n",newRecordingCfg.filename, &(newRecordingCfg.sensorMask), &(newRecordingCfg.rate)); 
+    //the ret value should be 3 if the information was correctly parsed. 
+    if(ret == 3)
+    {
+        //send to both modules, TODO in the future use the broadcast method when all the module have their masks configured. 
+        msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_DEBUG, MSG_TYPE_RECORDING_CONFIG,&newRecordingCfg);
+        msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_DEBUG, MSG_TYPE_RECORDING_CONFIG,&newRecordingCfg);    
+        return STATUS_PASS;
+    }
+    else
+    {
+        return STATUS_FAIL;
+    }
+}
+
+subp_streamConfig_t newStreamCfg;
+static status_t processStreamCfg(char* command)
+{   
+    int ip[4] = {0,0,0,0}; 
+    //the format of the streamCfg command is, "streamCfg,<Port>,<IP Address xxx.xxx.xxx.xxx>\r\n"   
+    int ret = sscanf(command, ",%d,%d.%d.%d.%d\r\n",&(newStreamCfg.streamPort), ip,ip+1,ip+2,ip+3); 
+    //the ret value should be 5 if the information was correctly parsed. 
+    if(ret == 5)
+    {
+        
+        newStreamCfg.ipaddress.s_addr = (ip[3] << 24) | (ip[2] << 16) | (ip[1] << 8) | ip[0] ; 
+        //send to both modules, TODO in the future use the broadcast method when all the module have their masks configured. 
+        msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_DEBUG, MSG_TYPE_STREAM_CONFIG,&newStreamCfg);
+        msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_DEBUG, MSG_TYPE_STREAM_CONFIG,&newStreamCfg);    
+        return STATUS_PASS;
+    }
+    else
+    {
+        return STATUS_FAIL;
+    }
+}
+
+static status_t processWifiCfg(char* command)
+{
+    int securitySetting = 0; 
+    //the format of the streamCfg command is, "wifiCfg,<SSID>,<Passphrase><securityMode 1 = none, 2 = WPA, 3 = WEP>\r\n"   
+    int ret = sscanf(command, ", %s , %s ,%d\r\n",&(wirelessConfig.ssid),&(wirelessConfig.passphrase),&securitySetting); 
+    //the ret value should be 3 if the information was correctly parsed. 
+    if(ret == 3)
+    {
+        
+        if(securitySetting < 1 || securitySetting > 3)
+        {
+            //invalid security setting
+            return STATUS_FAIL;
+        }
+        wirelessConfig.securityType = securitySetting; 
+        msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_DEBUG, MSG_TYPE_WIFI_CONFIG,&wirelessConfig);    
+        return STATUS_PASS;
+    }
+    else
+    {
+        return STATUS_FAIL;
+    }    
 }

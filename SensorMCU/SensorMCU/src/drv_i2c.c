@@ -20,18 +20,18 @@ extern unsigned long sgSysTickCount;
 
 typedef struct
 {
-	twi_fifo_typedef rx_fifo; 
+	//twi_fifo_typedef rx_fifo; 
 	uint8_t isinit; 
 	uint8_t readReq;
 	uint32_t readReqDataLength;
-	uint8_t twi_rx_fifo_not_empty_flag; // this flag is automatically set and cleared by the software buffer
-	uint8_t twi_rx_fifo_full_flag;      // this flag is automatically set and cleared by the software buffer
-	uint8_t twi_rx_fifo_ovf_flag;       // this flag is not automatically cleared by the software buffer	
+	//uint8_t twi_rx_fifo_not_empty_flag; // this flag is automatically set and cleared by the software buffer
+	//uint8_t twi_rx_fifo_full_flag;      // this flag is automatically set and cleared by the software buffer
+	//uint8_t twi_rx_fifo_ovf_flag;       // this flag is not automatically cleared by the software buffer	
 	uint32_t twi_rx_fifo_dropped_bytes; 
-	twi_fifo_typedef tx_fifo; 
-	uint8_t twi_tx_fifo_not_empty_flag; // this flag is automatically set and cleared by the software buffer
-	uint8_t twi_tx_fifo_full_flag;      // this flag is automatically set and cleared by the software buffer
-	uint8_t twi_tx_fifo_ovf_flag;       // this flag is not automatically cleared by the software buffer	
+	//twi_fifo_typedef tx_fifo; 
+	//uint8_t twi_tx_fifo_not_empty_flag; // this flag is automatically set and cleared by the software buffer
+	//uint8_t twi_tx_fifo_full_flag;      // this flag is automatically set and cleared by the software buffer
+	//uint8_t twi_tx_fifo_ovf_flag;       // this flag is not automatically cleared by the software buffer	
 	uint32_t twi_tx_fifo_dropped_bytes; 
 		
 }drv_i2c_memory_buf_t;

@@ -12,7 +12,7 @@
 #include "sys_systemManager.h"
 #include "drv_uart.h"
 #include "dbg_debugManager.h"
-#include "net_wirelessNetwork.h"
+
 #include "heddokoPacket.pb-c.h"
 #include "pkt_packetParser.h"
 
@@ -27,9 +27,9 @@ static void sendStreamMessage(drv_uart_config_t* uartConfig, uint8_t enable);
 static void sendGetTimeRequestMessage(drv_uart_config_t* uartConfig);
 static void sendConfigtMessage(drv_uart_config_t* uartConfig, uint8_t rate, uint32_t sensorMask);
 static void sendPwrDownResponseMessage(drv_uart_config_t* uartConfig);
-//possibly move this somewhere else, such as the 
 static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet);
-
+static void processStreamConfig(subp_streamConfig_t* streamConfig);
+static void processRecordConfig(subp_recordingConfig_t* recordConfig);
 void protoPacketInit();
 //state change event functions
 static status_t recordingStateEntry();
@@ -39,10 +39,11 @@ static status_t streamingStateExit();
 
 /*	Local variables	*/
 xQueueHandle queue_subp = NULL;
-subp_config_t subp_config = 
+subp_recordingConfig_t recordingConfig = 
 {
 	.rate = 20,
-	.sensorMask = 0x000001FF
+	.sensorMask = 0x000001FF,
+	.filename = "datalog"
 };
 subp_status_t subp_CurrentStatus = 
 {
@@ -118,8 +119,13 @@ void subp_subProcessorTask(void *pvParameters)
 		.escapeFlag = 0,
 		.payloadSize = 0
 	};
-	
-	queue_subp = xQueueCreate(10, sizeof(msg_message_t));
+	//copy over the settings
+    subp_moduleConfig_t* moduleConfig = (subp_moduleConfig_t*)pvParameters;
+    processStreamConfig(moduleConfig->streamConfig); 
+    processRecordConfig(moduleConfig->recordingConfig); 
+    
+    
+    queue_subp = xQueueCreate(10, sizeof(msg_message_t));
 	if (queue_subp != 0)
 	{
 		msg_registerForMessages(MODULE_SUB_PROCESSOR, 0xff, queue_subp);
@@ -193,6 +199,7 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 				msg_sendMessage(MODULE_DEBUG, MODULE_SUB_PROCESSOR, MSG_TYPE_SUBP_STATUS, &subp_CurrentStatus); 
 				msg_sendMessage(MODULE_BLE, MODULE_SUB_PROCESSOR, MSG_TYPE_SUBP_STATUS, &subp_CurrentStatus);
                 msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_SUBP_STATUS, &subp_CurrentStatus);
+                msg_sendMessage(MODULE_CONFIG_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_SUBP_STATUS, &subp_CurrentStatus);
 			break;
 			case PACKET_COMMAND_ID_SUBP_POWER_DOWN_REQ:
 				//we received a power down request, let the system manager know. 
@@ -317,6 +324,12 @@ static void processMessage(msg_message_t message)
 			sendPwrDownResponseMessage(&subpUart);
 		}
 		break;
+        case MSG_TYPE_STREAM_CONFIG:
+            processStreamConfig(message.parameters);
+        break;
+        case MSG_TYPE_RECORDING_CONFIG:
+            processRecordConfig(message.parameters);
+        break; 
 		case MSG_TYPE_WIFI_STATE:
 		{
 			if(message.data == 0)
@@ -426,7 +439,7 @@ static status_t recordingStateEntry()
 	if(status == STATUS_PASS)
     {
 	    //send config to power board
-	    sendConfigtMessage(&subpUart,subp_config.rate,subp_config.sensorMask);
+	    sendConfigtMessage(&subpUart,recordingConfig.rate,recordingConfig.sensorMask);
 	    //send stream start command to power board. 
 	    sendStreamMessage(&subpUart, 0x01);
     }    
@@ -464,7 +477,7 @@ static status_t streamingStateEntry()
 	if(status == STATUS_PASS)
     {
 	    //send config to power board
-	    sendConfigtMessage(&subpUart,subp_config.rate,subp_config.sensorMask);
+	    sendConfigtMessage(&subpUart,recordingConfig.rate,recordingConfig.sensorMask);
 	    //send stream start command to power board.
 	    sendStreamMessage(&subpUart, 0x01);
     }    
@@ -483,6 +496,18 @@ static status_t streamingStateExit()
 	
 	return status;
 }
+static void processStreamConfig(subp_streamConfig_t* streamConfig)
+{
+    streamingSocket.endpoint.sin_port = _htons(streamConfig->streamPort);
+    streamingSocket.endpoint.sin_addr.s_addr = streamConfig->ipaddress.s_addr;
+}
+static void processRecordConfig(subp_recordingConfig_t* recordConfig)
+{
+      strcpy(dataLogFile.fileName,recordConfig->filename);
+      recordingConfig.rate = recordConfig->rate;
+      recordingConfig.sensorMask = recordConfig->sensorMask;  
+}
+
 
 //message sending functions
 static void sendGetStatusMessage(drv_uart_config_t* uartConfig)

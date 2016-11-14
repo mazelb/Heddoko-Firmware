@@ -20,7 +20,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg);
 static void processEvent(msg_message_t* message);
 static status_t registerSocket(net_socketConfig_t* socket);
 static status_t deRegisterSocket(net_socketConfig_t* socket);
-static status_t sendAdvertisingPacket(net_socketConfig_t* advertisingSocket);
+static status_t sendAdvertisingPacket(net_socketConfig_t* advertisingSocket, net_moduleConfig_t* taskConfig);
 /*	Local variables	*/
 xSemaphoreHandle semaphore_wifiAccess = NULL;
 xQueueHandle queue_netManager = NULL;
@@ -61,6 +61,7 @@ static SOCKET udp_socket = -1;
 uint8_t receiveBuffer[512] = {0};
 	
 net_wifiState_t currentWifiState = NET_WIFI_STATE_DISCONNECTED; 	
+net_moduleConfig_t taskConfiguration = {6668,NULL,5};
 	
 struct sockaddr_in udpAddr = 
 {
@@ -70,7 +71,8 @@ struct sockaddr_in udpAddr =
 };	
 void net_wirelessNetworkTask(void *pvParameters)
 {
-	tstrWifiInitParam param;
+	net_moduleConfig_t* taskConfig = (net_moduleConfig_t*)pvParameters; 
+    tstrWifiInitParam param;
 	int8_t ret;
 	msg_message_t eventMessage;
 	currentWifiState = NET_WIFI_STATE_INIT;
@@ -125,10 +127,10 @@ void net_wirelessNetworkTask(void *pvParameters)
 		
 		if(currentWifiState == NET_WIFI_STATE_CONNECTED)
 		{
-			if(xTaskGetTickCount() > (advertisingPacketLastSentTime +5000))
+			if(xTaskGetTickCount() > (advertisingPacketLastSentTime + (taskConfig->advertisingInterval*1000)))
 			{
 				advertisingPacketLastSentTime = xTaskGetTickCount();
-				sendAdvertisingPacket(&advertisingSocket);
+				sendAdvertisingPacket(&advertisingSocket, taskConfig);
 			}
       		//if (tcp_server_socket < 0)
       		//{
@@ -462,19 +464,18 @@ static status_t deRegisterSocket(net_socketConfig_t* socket)
 	return status;
 }
 
-static status_t sendAdvertisingPacket(net_socketConfig_t* advertisingSocket)
+static status_t sendAdvertisingPacket(net_socketConfig_t* advertisingSocket, net_moduleConfig_t* taskConfig)
 {
-	char firmwareVersion[] = "0.0.0.1"; 
-	char serialNumber[] = "BP00004";
+	static char firmwareVersion[] = VERSION;
 	uint8_t serializedPacket[255]; 	
-	Heddoko__Packet advertisingProtoPacket;
+	Heddoko__Packet advertisingProtoPacket; 
 	heddoko__packet__init(&advertisingProtoPacket);
 	//TODO Fill this information with the real stuff that is sent on boot. 
 	advertisingProtoPacket.type = HEDDOKO__PACKET_TYPE__AdvertisingPacket;
 	advertisingProtoPacket.firmwareversion = firmwareVersion; 
-	advertisingProtoPacket.serialnumber = serialNumber;
+	advertisingProtoPacket.serialnumber = taskConfig->serialNumber;
 	advertisingProtoPacket.has_configurationport = true;
-	advertisingProtoPacket.configurationport = 6666; 
+	advertisingProtoPacket.configurationport = *(taskConfig->configurationPort); 
 	serializedPacket[0] = PACKET_TYPE_PROTO_BUF;
 	size_t packetLength = heddoko__packet__pack(&advertisingProtoPacket, serializedPacket+1); //increment packet pointer by one for packet type
 	packetLength += 1; //increment length to account for the packet type.

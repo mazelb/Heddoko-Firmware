@@ -26,6 +26,12 @@ typedef enum
     DBG_CMD_SOURCE_USB
 }dbg_commandSource_t;
 
+typedef struct  
+{
+    dbg_debugLogLevel_t logLevel;
+    uint16_t debugPort; 
+}dbg_debugConfiguration_t;
+
 void dbg_debugTask(void* pvParameters);
 status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cmdSize);
 void dbg_printf(dbg_debugLogLevel_t msgLogLevel, char *fmt, ...);

@@ -37,7 +37,7 @@
 #include "drv_i2c.h"
 #include "imu.h"
 
-#define SENSOR_ID_DEFAULT 3
+#define SENSOR_ID_DEFAULT 0
 
 /** Handler for the device SysTick module, called when the SysTick counter
  *  reaches the set period.

@@ -103,6 +103,7 @@ status_t pkt_getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* pack
 	}
 	return result; 
 }
+
 status_t pkt_processIncomingByte(pkt_rawPacket_t* rawPacket, uint8_t byte)
 {
 	status_t status = STATUS_EAGAIN;
