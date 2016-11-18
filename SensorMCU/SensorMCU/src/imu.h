@@ -88,10 +88,10 @@
 #pragma pack(push, 1)
 typedef struct
 {
-	float32_t Quaternion_x;
-	float32_t Quaternion_y;
-	float32_t Quaternion_z;
-	float32_t Quaternion_w;
+	uint32_t Quaternion_x; //quaternions are actually floats but I do not need to process it as such. 
+	uint32_t Quaternion_y;
+	uint32_t Quaternion_z;
+	uint32_t Quaternion_w;
 	int16_t Magnetic_x;
 	int16_t Magnetic_y;
 	int16_t Magnetic_z;

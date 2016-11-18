@@ -4,7 +4,11 @@
 
 src\ASF\sam0\drivers\extint\extint_sam_d_r\extint.c
 
+src\ASF\sam0\drivers\nvm\nvm.c
+
 src\ASF\sam0\drivers\sercom\i2c\i2c_sam0\i2c_master.c
+
+src\ASF\sam0\services\eeprom\emulator\eeprom.c
 
 src\cmd_commandProcessor.c
 

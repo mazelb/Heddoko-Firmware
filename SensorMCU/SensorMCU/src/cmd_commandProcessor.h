@@ -37,6 +37,12 @@
 #define PACKET_COMMAND_ID_SET_RATES				0x24
 #define PACKET_COMMAND_ID_SET_WARMUP_PARAM		0x25
 #define PACKET_COMMAND_ID_SET_RANGE_PARAM		0x26
+#define PACKET_COMMAND_ID_SET_CONFIG			0x27
+#define PACKET_COMMAND_ID_GET_CONFIG			0x28
+#define PACKET_COMMAND_ID_GET_CONFIG_RESP		0x29
+#define PACKET_COMMAND_ID_SAVE_TO_NVM			0x2A
+
+
 
 typedef struct  
 {
@@ -50,7 +56,9 @@ typedef struct
 
 int resetAndInitialize(slave_twi_config_t* slave_config);
 void sendButtonPressEvent();
+void sendGetStatusResponse();
 void cmd_processPacket(rawPacket_t* packet);
+
 
 
 

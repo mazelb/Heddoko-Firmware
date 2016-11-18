@@ -31,10 +31,10 @@ volatile cmd_debugStructure_t debugStructure =
 volatile uint8_t outputDataBuffer[256] = {0};
 volatile imuFrame_t imuFrameData =
 {
-	.Quaternion_x = 0.1,
-	.Quaternion_y = 0.2,
-	.Quaternion_z = 0.3,
-	.Quaternion_w = 0.4,
+	.Quaternion_x = 0x40066666,
+	.Quaternion_y = 0x40066666,
+	.Quaternion_z = 0x40066666,
+	.Quaternion_w = 0x40066666,
 	.Magnetic_x = 1,
 	.Magnetic_y = 2,
 	.Magnetic_z = 3,
@@ -46,7 +46,13 @@ volatile imuFrame_t imuFrameData =
 	.Rotation_z = 9
 };
 volatile uint32_t configParameterValues[4] = {0xDEADBEEF,0xDEADBEEF,0xDEADBEEF,0xDEADBEEF};
-volatile uint32_t warmUpParameterValues[35] = {0}; 	
+extern uint32_t warmUpParameterValues[35]; 	
+
+//set range parameters
+void setRangeParameters(uint32_t* rangeParameters); 
+void setWarmUpParameters(uint32_t* warmUpParameters);
+
+
 
 int resetAndInitialize(slave_twi_config_t* slave_config)
 {
@@ -57,8 +63,8 @@ int resetAndInitialize(slave_twi_config_t* slave_config)
 	{
 		return STATUS_FAIL;
 	}	
-	//Read SW1_Int over and over again until it is high, then the device is ready to go. 
-	//TODO remove this delay
+	//Read interupt pin from Sentral over and over again until it is high, then the device is ready to go. 
+	//TODO remove this delay	
 	delay_ms(1000);	//wait for the device to complete EEPROM upload
 	
 	status = drv_i2c_read(slave_config, EM_SENTRAL_STATUS_REGISTER, &readData[0], 1);
@@ -89,27 +95,13 @@ int resetAndInitialize(slave_twi_config_t* slave_config)
 	//#ifdef HPR
 	if(settings.enableHPR == 1)
 	{
-		//read the algorithm control register
-		status = drv_i2c_read(slave_config, EM_ALGORITHM_CONTROL_REGISTER, &readData[0], 1);
-		if (status != STATUS_PASS)
-		{
-			return STATUS_FAIL;
-		}
-		readData[0] |= EM_HPR_OUTPUT_ENABLE_MASK;	//switch to head, pitch, roll mode
-		//write back to register
-		status = drv_i2c_write(slave_config, EM_ALGORITHM_CONTROL_REGISTER, readData[0]);
-		if (status != STATUS_PASS)
-		{
-			return STATUS_FAIL;
-		}
+		settings.algoControlReg |= EM_HPR_OUTPUT_ENABLE_MASK;	//switch to head, pitch, roll mode
 	}
-	//#endif
-	//enable the Raw data output
-	//status = drv_i2c_write(slave_config, EM_ALGORITHM_CONTROL_REGISTER, 0x02);
-	//if (status != STATUS_PASS)
-	//{
-		//return STATUS_FAIL;
-	//}
+	status = drv_i2c_write(slave_config, EM_ALGORITHM_CONTROL_REGISTER, settings.algoControlReg);
+	if (status != STATUS_PASS)
+	{
+		return STATUS_FAIL;
+	}	
 	
 	//mag rate
 	status = drv_i2c_write(slave_config, EM_MAG_RATE_CONFIG_REGISTER, settings.magRate);
@@ -145,6 +137,18 @@ int resetAndInitialize(slave_twi_config_t* slave_config)
 	{
 		return STATUS_FAIL;
 	}
+	
+	if(settings.warmUpValid && settings.loadWarmupOnBoot)
+	{
+		setWarmUpParameters(warmUpParameterValues); 
+	}
+	if(settings.loadRangesOnBoot)
+	{
+		setRangeParameters(settings.sensorRange); 
+	}
+	
+	
+	
 	return STATUS_PASS;
 }
 
@@ -162,7 +166,7 @@ void sendSetImuIdResponse()
 	outputDataBuffer[0] = PACKET_TYPE_IMU_SENSOR;
 	outputDataBuffer[1] = PACKET_COMMAND_ID_SET_IMU_ID_RESP;
 	memcpy(outputDataBuffer+2,settings.serialNumber,16);
-	pkt_SendRawPacket(outputDataBuffer, 18);	
+	pkt_SendRawPacket(outputDataBuffer, 18);		
 }
 
 void sendButtonPressEvent()
@@ -173,6 +177,20 @@ void sendButtonPressEvent()
 	pkt_SendRawPacket(outputDataBuffer, 18);	
 }
 
+void sendConfiguration()
+{
+	//create the return packet
+	outputDataBuffer[0] = PACKET_TYPE_IMU_SENSOR;
+	outputDataBuffer[1] = PACKET_COMMAND_ID_GET_CONFIG_RESP;
+	outputDataBuffer[2] = settings.sensorId;
+	//read the control register before sending it. 
+	drv_i2c_read(&em7180Config, EM_ALGORITHM_CONTROL_REGISTER, &(settings.algoControlReg), 1);
+	outputDataBuffer[3] = settings.algoControlReg;
+	outputDataBuffer[4] = settings.loadWarmupOnBoot;
+	outputDataBuffer[5] = settings.loadRangesOnBoot;	
+	memcpy(outputDataBuffer+6,&(settings.sensorRange),8);
+	pkt_SendRawPacket(outputDataBuffer, 14);
+}
 
 void sendGetStatusResponse()
 {
@@ -211,13 +229,13 @@ __attribute__((optimize("O0"))) status_t readParameter(uint8_t parameterNumber, 
 {
 	status_t status = STATUS_FAIL; 
 	sen_requestParam_t returnedParameter = {0,0}; 
-	int32_t maxReadAttempts = 10; 	
+	int32_t maxReadAttempts = 20; 	
 	//set the parameter request register to the value we want to read
 	drv_i2c_write(&em7180Config, EM_PARAM_REQUEST, parameterNumber);
 	//if this is the first read, then set the algorithm control value to 0x80 (parameter transfer bit)
 	if(firstRead == true)
 	{
-		drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, 0x80); 
+		drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, settings.algoControlReg | 0x80); 
 	}
 	while(maxReadAttempts-- > 0) 
 	{
@@ -248,7 +266,7 @@ __attribute__((optimize("O0"))) status_t writeParameter(uint8_t parameterNumber,
 	//if this is the first write, then set the algorithm control value to 0x80 (parameter transfer bit)
 	if(firstWrite == true)
 	{
-		drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, 0x80);
+		drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER,settings.algoControlReg | 0x80);
 	}
 	while(maxReadAttempts-- > 0)
 	{
@@ -269,13 +287,13 @@ __attribute__((optimize("O0"))) status_t writeParameter(uint8_t parameterNumber,
 void updateAllConfigParameters()
 {
 	//get parameters 74-80
-	
+	status_t status = STATUS_PASS; 
 	uint8_t parameterNumber = 0x4A; 
 	int i = 0;
 	bool firstValue = true; 
 	for(i = 0; i<4 ; i++)
 	{
-		readParameter(parameterNumber, firstValue, &(configParameterValues[i]));
+		status |= readParameter(parameterNumber, firstValue, &(configParameterValues[i]));
 		//reset the first value
 		if(firstValue)
 		{
@@ -283,8 +301,13 @@ void updateAllConfigParameters()
 		}
 		parameterNumber++;		
 	}
+	if(status == STATUS_PASS)
+	{
+		memcpy(&(settings.sensorRange),configParameterValues,8); //copy the ranges to the settings structure. 	
+	}
+	
 	//reset the algorithm control register
-	drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, 0x00); 
+	drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, settings.algoControlReg); //send the configured algo control register.  
 	//reset the parameter request register
 	drv_i2c_write(&em7180Config, EM_PARAM_REQUEST, 0x00);
 	
@@ -314,7 +337,7 @@ void setRangeParameters(uint32_t* rangeParameters)
 		parameterNumber++;
 	}
 	//reset the algorithm control register
-	drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, 0x00);
+	drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, settings.algoControlReg);
 	//reset the parameter request register
 	drv_i2c_write(&em7180Config, EM_PARAM_REQUEST, 0x00);	
 }
@@ -335,25 +358,48 @@ void setWarmUpParameters(uint32_t* warmUpParameters)
 		parameterNumber++;
 	}
 	//reset the algorithm control register
-	drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, 0x00);
+	drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, settings.algoControlReg);
 	//reset the parameter request register
 	drv_i2c_write(&em7180Config, EM_PARAM_REQUEST, 0x00);	
 }
-void updateWarmStartUpValues()
+status_t updateWarmStartUpValues()
 {
 	uint8_t parameterNumber = 0x01;
 	int i = 0;
 	bool firstValue = true;
+	uint8_t algoStatus = 0;
+	status_t status = STATUS_PASS; 
 	for(i = 0; i<35 ; i++)
 	{
-		readParameter(parameterNumber, firstValue, &(warmUpParameterValues[i]));
+		status |= readParameter(parameterNumber, firstValue, &(warmUpParameterValues[i]));
 		//reset the first value
 		if(firstValue)
 		{
 			firstValue = false;
 		}
 		parameterNumber++;
-	}		
+	}
+	if(status == STATUS_PASS)
+	{
+		//verify that the cal was stable when the parameters were read. 
+		status = drv_i2c_read(&em7180Config, 0x38, &algoStatus, 1);
+		if(algoStatus & (1<<3) > 0)
+		{
+			//magnetic cal is complete
+			settings.warmUpValid = 1; //set warm up valid to true
+		}
+		else
+		{
+			settings.warmUpValid = 0;
+		}
+	}
+	else
+	{
+		//the warm up parameters are not valid. 
+		settings.warmUpValid = 0;
+	}
+	
+	return status; 		
 }
 
 void sendWarmStartUpValues()
@@ -449,6 +495,7 @@ __attribute__((optimize("O0"))) void updateImuData()
 	
 }
 
+#ifdef SUPPORT_DEBUG_COMMANDS
 void updateImuDataFake()
 {
 	imuFrameData.Acceleration_x++;
@@ -466,12 +513,14 @@ void updateImuDataFake()
 	imuFrameData.Quaternion_z++;
 }
 
+
+
 void resetImuDataFake()
 {
-	imuFrameData.Quaternion_x = 0.1;
-	imuFrameData.Quaternion_y = 0.2;
-	imuFrameData.Quaternion_z = 0.3;
-	imuFrameData.Quaternion_w = 0.4;
+	imuFrameData.Quaternion_x = 0x40066666;
+	imuFrameData.Quaternion_y = 0x40066666;
+	imuFrameData.Quaternion_z = 0x40066666;
+	imuFrameData.Quaternion_w = 0x40066666;
 	imuFrameData.Magnetic_x = 1;
 	imuFrameData.Magnetic_y = 2;
 	imuFrameData.Magnetic_z = 3;
@@ -482,7 +531,7 @@ void resetImuDataFake()
 	imuFrameData.Rotation_y = 8;
 	imuFrameData.Rotation_z = 9;
 }
-
+#endif
 //
 /* all packets have the format
  <type(1B)><command id(1B)><payload(size dependant on command type)> 
@@ -505,12 +554,14 @@ void cmd_processPacket(rawPacket_t* packet)
 				//call function here to update the IMU data
 				updateImuData(); 
 			break;
+			#ifdef SUPPORT_DEBUG_COMMANDS
 			case PACKET_COMMAND_ID_RESET_FAKE:
 				resetImuDataFake();	//sent by the Master to reset the data structure for sync
 			break;
 			case PACKET_COMMAND_ID_UPDATE_FAKE:
 				updateImuDataFake();	//increments the count of variables in the structure
 			break;
+			#endif
 			case PACKET_COMMAND_ID_GET_FRAME:
 				//check if the ID matches the one assigned
 				if(packet->payload[2] == settings.sensorId)
@@ -530,6 +581,8 @@ void cmd_processPacket(rawPacket_t* packet)
 				if(memcmp(settings.serialNumber,(packet->payload)+2,16) == 0)
 				{
 					settings.sensorId = packet->payload[18];
+					//save the settings to NVM
+					writeSettings(); 
 					//send the response
 					sendSetImuIdResponse();
 				}				
@@ -580,7 +633,8 @@ void cmd_processPacket(rawPacket_t* packet)
 				// 4 bytes are received in the order of LSB first
 				settings.baud = ((uint32_t)packet->payload[2]) | ((uint32_t)packet->payload[3] << 8) 
 								| ((uint32_t)packet->payload[4] << 16) | ((uint32_t)packet->payload[5] << 24);
-				reConfigure_uart();
+				//this will not work anymore! need to fix it later on. 
+				//reConfigure_uart();
 			break;
 			case PACKET_COMMAND_ID_ENABLE_HPR:
 				/*	don't check for ID, all sensors should work in same config	*/
@@ -600,7 +654,29 @@ void cmd_processPacket(rawPacket_t* packet)
 			settings.accelRate = packet->payload[3];
 			settings.gyroRate = packet->payload[4];
 			resetAndInitialize(&em7180Config);
-
+			break;
+			case PACKET_COMMAND_ID_SET_CONFIG:
+				if(packet->payload[2] == settings.sensorId)
+				{
+					settings.algoControlReg = packet->payload[3]; 					
+					settings.loadWarmupOnBoot = packet->payload[4]; 
+					settings.loadRangesOnBoot = packet->payload[5]; 
+					memcpy(&(settings.sensorRange),&(packet->payload[6]),8);
+					resetAndInitialize(&em7180Config);
+				}
+			break;
+			case PACKET_COMMAND_ID_GET_CONFIG:
+				if(packet->payload[2] == settings.sensorId)
+				{
+					sendConfiguration();
+				}
+			break;
+			case PACKET_COMMAND_ID_SAVE_TO_NVM:
+				if(packet->payload[2] == settings.sensorId)
+				{
+					//write all the configuration parameters to NVM
+					writeSettings();
+				}
 			break;				
 			
 		}

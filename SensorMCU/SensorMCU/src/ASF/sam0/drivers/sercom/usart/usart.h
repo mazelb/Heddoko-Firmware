@@ -289,28 +289,28 @@ extern "C" {
 /** USART hardware control flow. */
 #  define FEATURE_USART_HARDWARE_FLOW_CONTROL
 /** IrDA mode. */
-#  define FEATURE_USART_IRDA
+//#  define FEATURE_USART_IRDA
 /** LIN slave mode. */
-#  define FEATURE_USART_LIN_SLAVE
+//#  define FEATURE_USART_LIN_SLAVE
 /** USART collision detection. */
-#  define FEATURE_USART_COLLISION_DECTION
+//#  define FEATURE_USART_COLLISION_DECTION
 /** USART start frame detection. */
-#  define FEATURE_USART_START_FRAME_DECTION
+//#  define FEATURE_USART_START_FRAME_DECTION
 /** USART start buffer overflow notification. */
 #  define FEATURE_USART_IMMEDIATE_BUFFER_OVERFLOW_NOTIFICATION
 #endif
 
 #if (SAML22) || defined(__DOXYGEN__)
 /** ISO7816 for smart card interfacing. */
-#define FEATURE_USART_ISO7816
+//#define FEATURE_USART_ISO7816
 #endif
 #if (SAMC20) || (SAMC21) || defined(__DOXYGEN__)
 /** LIN master mode. */
-#define FEATURE_USART_LIN_MASTER
+//#define FEATURE_USART_LIN_MASTER
 #endif
 #if (SAML22) || (SAMC20) || (SAMC21) || defined(__DOXYGEN__)
 /** RS485 mode. */
-#  define FEATURE_USART_RS485
+//#  define FEATURE_USART_RS485
 #endif
 /*@}*/
 

@@ -381,28 +381,34 @@ enum status_code usart_init(
 	system_gclk_chan_set_config(gclk_index, &gclk_chan_conf);
 	system_gclk_chan_enable(gclk_index);
 	sercom_set_gclk_generator(config->generator_source, false);
-
-	/* Set character size */
+//
+	///* Set character size */
 	module->character_size = config->character_size;
-
-	/* Set transmitter and receiver status */
-	module->receiver_enabled = config->receiver_enable;
-	module->transmitter_enabled = config->transmitter_enable;
-
-#ifdef FEATURE_USART_LIN_SLAVE
-	module->lin_slave_enabled = config->lin_slave_enable;
-#endif
-#ifdef FEATURE_USART_START_FRAME_DECTION
-	module->start_frame_detection_enabled = config->start_frame_detection_enable;
-#endif
-#ifdef FEATURE_USART_ISO7816
-	module->iso7816_mode_enabled = config->iso7816_config.enabled;
-#endif
-	/* Set configuration according to the config struct */
-	status_code = _usart_set_config(module, config);
-	if(status_code != STATUS_OK) {
-		return status_code;
-	}
+//
+	///* Set transmitter and receiver status */
+	//module->receiver_enabled = config->receiver_enable;
+	//module->transmitter_enabled = config->transmitter_enable;
+	module->receiver_enabled = true;
+	module->transmitter_enabled = true; 
+//
+//#ifdef FEATURE_USART_LIN_SLAVE
+	//module->lin_slave_enabled = config->lin_slave_enable;
+//#endif
+//#ifdef FEATURE_USART_START_FRAME_DECTION
+	//module->start_frame_detection_enabled = config->start_frame_detection_enable;
+//#endif
+//#ifdef FEATURE_USART_ISO7816
+	//module->iso7816_mode_enabled = config->iso7816_config.enabled;
+//#endif
+	///* Set configuration according to the config struct */
+	//status_code = _usart_set_config(module, config);
+	//if(status_code != STATUS_OK) {
+		//return status_code;
+	//}
+//
+	usart_hw->CTRLB.reg =  0x00030000UL;
+	usart_hw->BAUD.reg = 0x0000B15BUL;
+	usart_hw->CTRLA.reg = 0x40310084UL;
 
 	struct system_pinmux_config pin_conf;
 	system_pinmux_get_config_defaults(&pin_conf);
@@ -427,28 +433,28 @@ enum status_code usart_init(
 			system_pinmux_pin_set_config(current_pinmux >> 16, &pin_conf);
 		}
 	}
-
-#if USART_CALLBACK_MODE == true
-	/* Initialize parameters */
-	for (uint32_t i = 0; i < USART_CALLBACK_N; i++) {
-		module->callback[i]            = NULL;
-	}
-
-	module->tx_buffer_ptr              = NULL;
-	module->rx_buffer_ptr              = NULL;
-	module->remaining_tx_buffer_length = 0x0000;
-	module->remaining_rx_buffer_length = 0x0000;
-	module->callback_reg_mask          = 0x00;
-	module->callback_enable_mask       = 0x00;
-	module->rx_status                  = STATUS_OK;
-	module->tx_status                  = STATUS_OK;
-
-	/* Set interrupt handler and register USART software module struct in
-	 * look-up table */
-	uint8_t instance_index = _sercom_get_sercom_inst_index(module->hw);
-	_sercom_set_handler(instance_index, _usart_interrupt_handler);
-	_sercom_instances[instance_index] = module;
-#endif
+//
+//#if USART_CALLBACK_MODE == true
+	///* Initialize parameters */
+	//for (uint32_t i = 0; i < USART_CALLBACK_N; i++) {
+		//module->callback[i]            = NULL;
+	//}
+//
+	//module->tx_buffer_ptr              = NULL;
+	//module->rx_buffer_ptr              = NULL;
+	//module->remaining_tx_buffer_length = 0x0000;
+	//module->remaining_rx_buffer_length = 0x0000;
+	//module->callback_reg_mask          = 0x00;
+	//module->callback_enable_mask       = 0x00;
+	//module->rx_status                  = STATUS_OK;
+	//module->tx_status                  = STATUS_OK;
+//
+	///* Set interrupt handler and register USART software module struct in
+	 //* look-up table */
+	//uint8_t instance_index = _sercom_get_sercom_inst_index(module->hw);
+	//_sercom_set_handler(instance_index, _usart_interrupt_handler);
+	//_sercom_instances[instance_index] = module;
+//#endif
 
 	return status_code;
 }
