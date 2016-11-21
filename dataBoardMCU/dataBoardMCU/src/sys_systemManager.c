@@ -271,6 +271,39 @@ static void processMessage(msg_message_t message)
             settingsChanges = true; 
             memcpy(&(currentSystemSettings.recordingCfg),message.parameters, sizeof(subp_recordingConfig_t));
         break;
+        case MSG_TYPE_STREAM_REQUEST:
+             if(message.data == 1)
+             {            
+                 if(currentState == SYSTEM_STATE_IDLE)
+                 {
+                     if(sysNetworkState == NET_WIFI_STATE_CONNECTED)
+                     {
+                         msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_STREAMING);
+                         currentState = SYSTEM_STATE_STREAMING;
+                         drv_led_set(DRV_LED_PURPLE, DRV_LED_SOLID);
+                         drv_piezo_playPattern(startRecordingTone, (sizeof(startRecordingTone) / sizeof(drv_piezo_noteElement_t)));
+                     }
+                 }
+             }
+             else
+             {
+                 if(currentState == SYSTEM_STATE_STREAMING)
+                 {
+                    msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
+                    currentState = SYSTEM_STATE_IDLE;
+                    if(sysNetworkState == NET_WIFI_STATE_CONNECTED)
+                    {
+                        drv_led_set(DRV_LED_TURQUOISE, DRV_LED_SOLID);
+                    }
+                    else
+                    {
+                        drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID);
+                    }
+                    
+                    drv_piezo_playPattern(stopRecordingTone, (sizeof(stopRecordingTone) / sizeof(drv_piezo_noteElement_t)));                  
+                 }
+             }                                                              
+        break; 
         case MSG_TYPE_WIFI_CONFIG:
             settingsChanges = true;  //set flag to have settings saved
             memcpy(&(currentSystemSettings.defaultWifiConfig),message.parameters, sizeof(net_wirelessConfig_t));

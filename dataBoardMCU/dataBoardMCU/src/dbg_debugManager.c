@@ -343,9 +343,9 @@ static void processEvent(msg_message_t* message)
 			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received Error from Module: %s\r\n", moduleNameString[message->source]);
 		break;		
 		case MSG_TYPE_SUBP_STATUS:
-			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received subp status\r\n");
-			subpReceivedStatus = (subp_status_t*)message->parameters;
-			dbg_printf(DBG_LOG_LEVEL_DEBUG,"bat: %03d mask: %04x\r\n",subpReceivedStatus->chargeLevel,subpReceivedStatus->sensorMask);
+			//dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received subp status\r\n");
+			//subpReceivedStatus = (subp_status_t*)message->parameters;
+			//dbg_printf(DBG_LOG_LEVEL_DEBUG,"bat: %03d mask: %04x\r\n",subpReceivedStatus->chargeLevel,subpReceivedStatus->sensorMask);
 		break;
 	}
 } 

@@ -402,7 +402,8 @@ status_t net_closeSocket(net_socketConfig_t* sock)
 		sock->socketId = -1; 			
         if(sock->clientSocketId > -1)
         {
-            close(sock->clientSocketId);    
+            close(sock->clientSocketId);  
+            sock->clientSocketId = -1;   
         }
         xSemaphoreGive(semaphore_wifiAccess);	            
 	}

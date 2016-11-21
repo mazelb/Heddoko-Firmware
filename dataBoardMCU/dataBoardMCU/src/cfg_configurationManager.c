@@ -34,11 +34,16 @@ static void processProtoPacket( Heddoko__Packet* packet);
 static void sendStatusPacket(net_socketConfig_t* socket);
 static void sendMessageStatus(bool status);
 static void sendProtoPacketToClient(Heddoko__Packet* packet, net_socketConfig_t* socket);
+static status_t processRecordSettings(Heddoko__Packet* packet); 
+static status_t processStartStream(Heddoko__Packet* packet); 
+static status_t processStopStream(Heddoko__Packet* packet);
 /*	Local variables	*/
 
 xQueueHandle msg_queue_cfgManager = NULL;
 cfg_moduleConfig_t* configSettings = NULL; 
 static sys_manager_systemState_t currentState = SYSTEM_STATE_INIT; 
+static subp_recordingConfig_t receivedRecordingConfig; 
+static subp_streamConfig_t receivedStreamConfig; 
 net_socketConfig_t configServer =
 {
     .endpoint.sin_addr = 0, //irrelevant for the server
@@ -218,6 +223,45 @@ static void processProtoPacket( Heddoko__Packet* packet)
             sendStatusPacket(&configServer);            
         }        
         break;
+        case HEDDOKO__PACKET_TYPE__ConfigureRecordingSettings:
+        {
+           if(processRecordSettings(packet) == STATUS_PASS)
+           {
+               //message was processed successfully, send a message status of pass. 
+               sendMessageStatus(true);
+           }
+           else
+           {
+               sendMessageStatus(false);
+           }
+        }        
+        break; 
+        case HEDDOKO__PACKET_TYPE__StartDataStream:
+        {
+            if(processStartStream(packet) == STATUS_PASS)
+            {
+                //message was processed successfully, send a message status of pass.
+                sendMessageStatus(true);
+            }
+            else
+            {
+                sendMessageStatus(false);
+            }
+        }
+        break;
+        case HEDDOKO__PACKET_TYPE__StopDataStream:
+        {
+            if(processStopStream(packet) == STATUS_PASS)
+            {
+                //message was processed successfully, send a message status of pass.
+                sendMessageStatus(true);
+            }
+            else
+            {
+                sendMessageStatus(false);
+            }
+        }
+        break;        
         default:
         {
             // we aren't handling this message, send a failed status response. 
@@ -263,4 +307,79 @@ static void sendProtoPacketToClient(Heddoko__Packet* packet, net_socketConfig_t*
  	pkt_serializeRawPacket(encodedPacket, MAX_ENCODED_PACKET_SIZE, &encodedLength,
  	serializedPacket, packetLength);
  	net_sendPacketToClientSock(socket,encodedPacket, encodedLength, false);   
+}
+
+static status_t processRecordSettings(Heddoko__Packet* packet)
+{
+    status_t status = STATUS_PASS;
+    if(packet->has_recordingrate && (packet->recordingfilename != NULL) && packet->has_sensormask)
+    {
+        receivedRecordingConfig.rate = packet->recordingrate; 
+        receivedRecordingConfig.sensorMask = packet->sensormask; 
+        strncpy(receivedRecordingConfig.filename, packet->recordingfilename,SUBP_RECORDING_FILENAME_MAX_LENGTH); 
+        msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_DEBUG, MSG_TYPE_RECORDING_CONFIG,&receivedRecordingConfig);
+        msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_DEBUG, MSG_TYPE_RECORDING_CONFIG,&receivedRecordingConfig);        
+    }
+    else
+    {
+        //the packet doesn't contain what we need, return fail
+        status = STATUS_FAIL; 
+    }
+    return status; 
+}
+
+
+static status_t processStartStream(Heddoko__Packet* packet)
+{
+    status_t status = STATUS_FAIL;
+    int ip[4] = {0,0,0,0};
+    //to start a stream the brainpack must be in idle state
+    if(currentState != SYSTEM_STATE_IDLE)
+    {
+        return STATUS_FAIL;    
+    }        
+    if(packet->has_recordingrate && (packet->recordingfilename != NULL) && packet->has_sensormask && (packet->endpoint != NULL))
+    {
+        receivedRecordingConfig.rate = packet->recordingrate;
+        receivedRecordingConfig.sensorMask = packet->sensormask;
+        strncpy(receivedRecordingConfig.filename, packet->recordingfilename,SUBP_RECORDING_FILENAME_MAX_LENGTH);
+        if(packet->endpoint->address != NULL)
+        {                
+            //right now the command only accepts IPV4 addresses, in the future we will have to resolve hosts. 
+            int ret = sscanf(packet->endpoint->address, "%d.%d.%d.%d",ip,ip+1,ip+2,ip+3);
+            //the ret value should be 5 if the information was correctly parsed.
+            if(ret == 4)
+            {                    
+                receivedStreamConfig.ipaddress.s_addr = (ip[3] << 24) | (ip[2] << 16) | (ip[1] << 8) | ip[0] ;
+                receivedStreamConfig.streamPort = (uint16_t)packet->endpoint->port; 
+                status = STATUS_PASS;                
+            }                    
+        }
+    }
+    
+    if(status == STATUS_PASS)
+    {
+         //send the recording configuration command
+         msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_CONFIG_MANAGER, MSG_TYPE_RECORDING_CONFIG,&receivedRecordingConfig);
+         msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_CONFIG_MANAGER, MSG_TYPE_RECORDING_CONFIG,&receivedRecordingConfig);         
+         //send the stream configuration command
+         msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_CONFIG_MANAGER, MSG_TYPE_STREAM_CONFIG,&receivedStreamConfig);
+         msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_CONFIG_MANAGER, MSG_TYPE_STREAM_CONFIG,&receivedStreamConfig);          
+         //send start stream request. 
+         msg_sendMessageSimple(MODULE_SYSTEM_MANAGER, MODULE_CONFIG_MANAGER, MSG_TYPE_STREAM_REQUEST,1); //1= start stream      
+    }        
+     
+    return status;
+}
+
+static status_t processStopStream(Heddoko__Packet* packet)
+{
+    status_t status = STATUS_PASS;
+    if(currentState != SYSTEM_STATE_STREAMING)
+    {
+        return STATUS_FAIL;
+    }         
+    //send stop stream request.
+    msg_sendMessageSimple(MODULE_SYSTEM_MANAGER, MODULE_CONFIG_MANAGER, MSG_TYPE_STREAM_REQUEST,0); //0 = stop stream
+    return status;
 }

@@ -16,6 +16,7 @@
 #define MAX_NUMBER_OF_IMU_SENSORS 9
 
 #define DATALOG_MAX_BUFFER_SIZE		8000
+#define SUBP_RECORDING_FILENAME_MAX_LENGTH 100
 //Sub processor messages
 
 #define PACKET_COMMAND_ID_SUBP_GET_STATUS 0x51
@@ -93,7 +94,7 @@ typedef struct
 {
 	uint8_t rate;
 	uint32_t sensorMask; 
-    char filename[100]; 
+    char filename[SUBP_RECORDING_FILENAME_MAX_LENGTH]; 
 }subp_recordingConfig_t;
 
 typedef struct 
