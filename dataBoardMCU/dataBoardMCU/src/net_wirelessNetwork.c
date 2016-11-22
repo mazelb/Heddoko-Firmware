@@ -412,7 +412,7 @@ status_t net_closeSocket(net_socketConfig_t* sock)
 
 static void processEvent(msg_message_t* message)
 {
-	switch(message->type)
+	switch(message->msgType)
 	{
 		case MSG_TYPE_WIFI_STATE:
 			if(message->data == NET_WIFI_STATE_CONNECTED)
@@ -471,7 +471,6 @@ static status_t sendAdvertisingPacket(net_socketConfig_t* advertisingSocket, net
 	uint8_t serializedPacket[255]; 	
 	Heddoko__Packet advertisingProtoPacket; 
 	heddoko__packet__init(&advertisingProtoPacket);
-	//TODO Fill this information with the real stuff that is sent on boot. 
 	advertisingProtoPacket.type = HEDDOKO__PACKET_TYPE__AdvertisingPacket;
 	advertisingProtoPacket.firmwareversion = firmwareVersion; 
 	advertisingProtoPacket.serialnumber = taskConfig->serialNumber;
@@ -688,7 +687,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			if (pstrConnect && pstrConnect->s8Error >= 0) {
 				dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: connect success.\r\n");
 				tcp_connected = 1;
-				recv(tcp_client_socket, receiveBuffer, sizeof(receiveBuffer), 0);
+				//recv(tcp_client_socket, receiveBuffer, sizeof(receiveBuffer), 0);
 			} else {
 				dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: connect error!\r\n");
 				tcp_connected = 0;
@@ -699,7 +698,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		/* Message send. */
 		case SOCKET_MSG_SEND:
 		{
-			recv(tcp_client_socket, receiveBuffer, sizeof(receiveBuffer), 0);
+			//recv(tcp_client_socket, receiveBuffer, sizeof(receiveBuffer), 0);
             
 		}
 		break;

@@ -2,6 +2,8 @@
 # Automatically-generated file. Do not edit or delete the file
 ################################################################################
 
+src\tftp_fileTransferClient.c
+
 src\ASF\common\components\wifi\winc1500\bsp\source\nm_bsp_sam4s.c
 
 src\ASF\common\components\wifi\winc1500\bus_wrapper\source\nm_bus_wrapper_sam4s.c

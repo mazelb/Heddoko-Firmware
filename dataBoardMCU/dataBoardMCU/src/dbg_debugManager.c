@@ -233,9 +233,10 @@ status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cm
     else if(strncmp(command,"setSerial",9) == 0)
     {
         cmdLength = strlen(command+9); 
-        strncpy(newSerialNumber, command+9, cmdLength-2); 
+        strncpy(newSerialNumber, command+9, 7); 
+        snprintf(responseBuffer, MAX_RESPONSE_STRING_SIZE,"Serial Set: %s %d\r\n",newSerialNumber, cmdLength);
         msg_sendMessage(MODULE_SYSTEM_MANAGER,MODULE_DEBUG,MSG_TYPE_SET_SERIAL,newSerialNumber); 
-        snprintf(responseBuffer, MAX_RESPONSE_STRING_SIZE,"Serial Set: %s\r\n",newSerialNumber);
+        
     }
     else if(strncmp(command,"saveConfig",10) == 0)
     {
@@ -313,7 +314,7 @@ status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cm
 static void processEvent(msg_message_t* message)
 {
 	subp_status_t* subpReceivedStatus = NULL; 
-	switch(message->type)
+	switch(message->msgType)
 	{
 		case MSG_TYPE_ENTERING_NEW_STATE:
 			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received Entering New State event\r\n");			

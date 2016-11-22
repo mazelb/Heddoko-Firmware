@@ -50,7 +50,7 @@ void vSdTimeOutTimerCallback( xTimerHandle xTimer )
 static void processEvent(msg_message_t message)
 {
 
-	switch (message.type)
+	switch (message.msgType)
 	{
 		case MSG_TYPE_READY:
 		case MSG_TYPE_ERROR:

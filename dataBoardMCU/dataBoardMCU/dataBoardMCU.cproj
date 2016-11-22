@@ -1136,6 +1136,12 @@
     <Folder Include="src\config\" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="src\tftp_fileTransferClient.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\tftp_fileTransferClient.h">
+      <SubType>compile</SubType>
+    </Compile>
     <None Include="src\ASF\common\components\wifi\winc1500\bsp\include\nm_bsp_internal.h">
       <SubType>compile</SubType>
     </None>

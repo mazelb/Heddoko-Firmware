@@ -201,7 +201,7 @@ void sys_systemManagerTask(void* pvParameters)
 static void processMessage(msg_message_t message)
 {
 	subp_status_t* subpReceivedStatus = NULL; 
-    switch(message.type)
+    switch(message.msgType)
 	{
 		case MSG_TYPE_ENTERING_NEW_STATE:
 		break;
@@ -352,7 +352,7 @@ static void processMessage(msg_message_t message)
 
 static void sendStateChangeMessage(sys_manager_systemState_t state)
 {
-	msg_message_t message = {.source = MODULE_SYSTEM_MANAGER, .data = state, .type = MSG_TYPE_ENTERING_NEW_STATE};
+	msg_message_t message = {.source = MODULE_SYSTEM_MANAGER, .data = state, .msgType = MSG_TYPE_ENTERING_NEW_STATE};
 	msg_sendBroadcastMessage(&message);
 }
 
