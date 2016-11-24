@@ -17,7 +17,7 @@ drv_piezo_config_t* p_PeizoConfig;	// pointer to the external piezo configuratio
 drv_piezo_noteElement_t *vNotePattern;	// local variable to hold note pattern
 uint16_t vPlayedNoteCount;	// count to keep track of number of notes played from note pattern
 uint16_t vTotalNoteCount;
-
+static bool enablePiezo = true; 
 drv_tc_config_t peizoTcConfig =
 {
 	.p_tc = DRV_TC_TC0,					// use Timer 0
@@ -97,7 +97,12 @@ void drv_piezo_stopPlaying()
  ***********************************************************************************************/
 void drv_piezo_playPattern(drv_piezo_noteElement_t *notePattern, uint16_t totalElements)
 {
-	if (totalElements == 0)
+	if(enablePiezo == false)
+    {
+        return; 
+    }
+    
+    if (totalElements == 0)
 	{
 		return;
 	}
@@ -111,6 +116,17 @@ void drv_piezo_playPattern(drv_piezo_noteElement_t *notePattern, uint16_t totalE
 	drv_piezo_playTone(vNotePattern[vPlayedNoteCount].noteFrequency);
 	drv_tc_changeFrequency(&noteLength, changeDelayToFreq(vNotePattern[vPlayedNoteCount].postNoteDelay));
 	vPlayedNoteCount++;
+}
+
+/***********************************************************************************************
+ * drv_piezo_togglePiezo(bool piezoState)
+ * @brief enable and disable the piezo
+ * @param peizoState, = true, will enable the sound, false will disable it. 
+ * @return void
+ ***********************************************************************************************/
+void drv_piezo_togglePiezo(bool piezoState)
+{
+    enablePiezo = piezoState; 
 }
 
 /*	Local functions	*/

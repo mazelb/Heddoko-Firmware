@@ -206,7 +206,8 @@ static void processMessage(msg_message_t message)
 		case MSG_TYPE_ENTERING_NEW_STATE:
 		break;
 		case MSG_TYPE_ERROR:
-     
+            //drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));   
+            //drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));   
 		break;
 		case MSG_TYPE_SDCARD_STATE:
             if(message.data == SD_CARD_MOUNTED)
@@ -405,9 +406,9 @@ static void processButtonEvent(uint32_t data)
 		case GPM_BUTTON_ONE_LONG_PRESS:
 		break;
 		case GPM_BUTTON_TWO_SHORT_PRESS:
-			drv_led_set(DRV_LED_RED, DRV_LED_SOLID);
-			drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
-			drv_piezo_playPattern(&noteElementsArray[2], 1);
+			//drv_led_set(DRV_LED_RED, DRV_LED_SOLID);
+			//drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
+			//drv_piezo_playPattern(&noteElementsArray[2], 1);
 		break;
 		case GPM_BUTTON_TWO_LONG_PRESS:
         //try to connect to the wifi network. 

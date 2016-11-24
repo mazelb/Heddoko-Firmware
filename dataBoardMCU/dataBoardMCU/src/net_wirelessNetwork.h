@@ -75,6 +75,7 @@ status_t net_disconnectFromNetwork();
 
 status_t net_createUdpSocket(net_socketConfig_t* socket, size_t bufferSize);
 status_t net_sendUdpPacket(net_socketConfig_t* socket, uint8_t* packetBuf, uint32_t packetBufLength);
+status_t net_receiveUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength, uint32_t timeoutVal);
 status_t net_createServerSocket(net_socketConfig_t* sock, size_t receiveBufSize);
 status_t net_sendPacketToClientSock(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength, bool semaphoreNeeded);
 status_t net_closeSocket(net_socketConfig_t* socket); 

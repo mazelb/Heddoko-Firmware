@@ -389,7 +389,7 @@ status_t convertFullFrameToProtoBuff(subp_fullImuFrameSet_t* rawFullFrame, Heddo
 			protoPacket->fulldataframe->imudataframe[i]->accel_z = rawFullFrame->frames[i].Acceleration_z;
 			protoPacket->fulldataframe->imudataframe[i]->has_accel_x = true;
 			protoPacket->fulldataframe->imudataframe[i]->has_accel_y = true;
-			protoPacket->fulldataframe->imudataframe[i]->has_accel_z = +true;
+			protoPacket->fulldataframe->imudataframe[i]->has_accel_z = true;
 
 			protoPacket->fulldataframe->imudataframe[i]->quat_x_yaw = rawFullFrame->frames[i].Quaternion_x;
 			protoPacket->fulldataframe->imudataframe[i]->quat_y_pitch = rawFullFrame->frames[i].Quaternion_y;
@@ -442,7 +442,11 @@ static status_t recordingStateEntry()
 	    sendConfigtMessage(&subpUart,recordingConfig.rate,recordingConfig.sensorMask);
 	    //send stream start command to power board. 
 	    sendStreamMessage(&subpUart, 0x01);
-    }    
+    }
+    else
+    {
+        dbg_printString(DBG_LOG_LEVEL_DEBUG, "Failed to start recording\r\n");   
+    }            
 	return status;
 }
 
@@ -480,6 +484,10 @@ static status_t streamingStateEntry()
 	    sendConfigtMessage(&subpUart,recordingConfig.rate,recordingConfig.sensorMask);
 	    //send stream start command to power board.
 	    sendStreamMessage(&subpUart, 0x01);
+    }
+    else
+    {
+        dbg_printString(DBG_LOG_LEVEL_DEBUG, "Failed to start streaming\r\n");
     }    
 	return status;
 }

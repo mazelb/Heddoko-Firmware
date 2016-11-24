@@ -146,7 +146,7 @@ void chrg_task_chargeMonitor(void *pvParameters)
 					chargeLevel = 0; //set the current charge level to zero so we update the LED color below. 				
 				break;
 				case CHRG_CHARGER_STATE_SHUTDOWN_VIN:
-					drv_led_set(DRV_LED_YELLOW,DRV_LED_SOLID); //TODO: maybe change this... since it's not actually charging. 
+					drv_led_set(DRV_LED_BLUE,DRV_LED_SOLID); //TODO: maybe change this... since it's not actually charging. 
 				break;
 				case CHRG_CHARGER_STATE_CHARGING:
 				{					

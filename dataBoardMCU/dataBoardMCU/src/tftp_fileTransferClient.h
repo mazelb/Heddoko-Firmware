@@ -8,8 +8,10 @@
 
 #ifndef TFTP_FILETRANSFERCLIENT_H_
 #define TFTP_FILETRANSFERCLIENT_H_
-
+#include "common.h"
+#include "net_wirelessNetwork.h"
 #define TFTP_FILE_BUFFER_SIZE 1024
+#define TFTP_PACKET_TIMEOUT 5000 //5 seconds for now... TODO update this value
 
 typedef enum 
 {
@@ -41,6 +43,11 @@ typedef struct
     struct sockaddr_in transferEndpoint;    
 }tftp_transferParameters_t;
 
+typedef struct  
+{
+    uint8_t* packet;
+    uint16_t packetLength;
+}tftp_receivedPacket_t;
 
 
 void tftp_FileTransferTask(void *pvParameters);

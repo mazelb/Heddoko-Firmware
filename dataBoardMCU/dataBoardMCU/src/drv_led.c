@@ -164,7 +164,7 @@ status_t drv_led_set(drv_led_color_type_t ledColor, drv_led_state_type_t ledStat
 	
 	set_led_color(ledColor);
 	
-	if ((ledState != DRV_LED_SOLID) & (ledColor != DRV_LED_OFF))
+	if ((ledState != DRV_LED_SOLID) && (ledColor != DRV_LED_OFF))
 	{
 		xTimerChangePeriod(LedTimer, (LED_BLINK_RATE/portTICK_RATE_MS), 0);
 		xTimerReset(LedTimer, 0);
@@ -222,7 +222,7 @@ status_t drv_led_set_alternate_blink(drv_led_color_type_t ledColor1, drv_led_col
 		drv_gpio_setPinState(ledConfig.greenLed, DRV_GPIO_PIN_STATE_HIGH);
 		set_led_color(ledColor1);
 	
-		if ((ledState != DRV_LED_SOLID) & (ledColor1 != DRV_LED_OFF))
+		if ((ledState != DRV_LED_SOLID) && (ledColor1 != DRV_LED_OFF))
 		{
 			xTimerChangePeriod(LedTimer, (LED_BLINK_RATE/portTICK_RATE_MS), 0);
 			xTimerReset(LedTimer, 0);

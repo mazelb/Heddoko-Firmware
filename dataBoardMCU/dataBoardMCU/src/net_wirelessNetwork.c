@@ -298,6 +298,30 @@ status_t net_sendUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_
 	}
 	return status;	
 }
+status_t net_receiveUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength, uint32_t timeoutVal)
+{
+    status_t status = STATUS_FAIL;
+    
+    if(currentWifiState == NET_WIFI_STATE_CONNECTED && sock->socketId > -1)
+    {
+        //TODO: add validation of socket endpoint
+        //don't wait very long for the wifi access, only 5ms for now.
+        if(xSemaphoreTake(semaphore_wifiAccess, 5) == true)
+        {
+            int ret = recvfrom(sock->socketId, packetBuf, packetBufLength, timeoutVal);
+            if (ret == M2M_SUCCESS)
+            {
+                status = STATUS_PASS;
+            }
+            else
+            {
+                dbg_printf(DBG_LOG_LEVEL_ERROR,"Failed to async receive packet! %d\r\n", ret);
+            }
+            xSemaphoreGive(semaphore_wifiAccess);
+        }
+    }
+    return status;
+}
 status_t net_createServerSocket(net_socketConfig_t* sock, size_t receiveBufSize)
 {
 	status_t status = STATUS_PASS;
@@ -708,7 +732,44 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: sendto success!\r\n");
 		}
 		break;
-		/* Message receive. */
+		case SOCKET_MSG_RECVFROM:
+        {
+            tstrSocketRecvMsg *pstrRecv = (tstrSocketRecvMsg *)pvMsg;
+            if (pstrRecv && pstrRecv->s16BufferSize > 0)
+            {
+                if(socketConfig != NULL)
+                {
+                    if(socketConfig->socketDataReceivedCallback != NULL)
+                    {
+                        socketConfig->socketDataReceivedCallback(sock,pstrRecv->pu8Buffer,pstrRecv->s16BufferSize);
+                        //call receive again so we get more data
+                    }                    
+                }                
+            }
+            else
+            {
+                dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: recv error!\r\n");
+                if (sock >= 0)
+                {
+                    dbg_printString(DBG_LOG_LEVEL_DEBUG,"Close client socket to disconnect.\r\n");
+                    close(sock);
+                    if(socketConfig != NULL)
+                    {
+                        socketConfig->socketStatusCallback(sock, NET_SOCKET_STATUS_CLIENT_DISCONNECTED);
+                        socketConfig->clientSocketId = -1;
+                    }
+                    if(sock == tcp_client_socket)
+                    {
+                        tcp_client_socket = -1;
+                    }                    
+                }
+                tcp_connected = 0;
+                break;
+            }
+            
+        }
+        break;
+        /* Message receive. */
 		case SOCKET_MSG_RECV:
 		{
 			tstrSocketRecvMsg *pstrRecv = (tstrSocketRecvMsg *)pvMsg;

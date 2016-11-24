@@ -9,17 +9,7 @@
 #include "string.h"
 
 //the message boxes, one for each module, each queue must be initialized to NULL.
-msg_messageBox_t messageBoxes[] =
-{
-	{MODULE_SYSTEM_MANAGER,NULL,NULL},
-	{MODULE_SDCARD,NULL,NULL},
-	{MODULE_WIFI,NULL,NULL},
-	{MODULE_CONFIG_MANAGER,NULL,NULL},
-	{MODULE_DEBUG,NULL,NULL},
-	{MODULE_SUB_PROCESSOR,NULL,NULL},
-	{MODULE_GPIO_MANAGER, NULL, NULL},
-	{MODULE_BLE,NULL,NULL}
-};
+msg_messageBox_t messageBoxes[MODULE_NUMBER_OF_MODULES] ={0};
 
 status_t msg_registerForMessages(modules_t module, uint32_t messageMask, xQueueHandle messageQueue)
 {

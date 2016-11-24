@@ -9,10 +9,12 @@
 #include "sdc_sdCard.h"
 #include "net_wirelessNetwork.h"
 #include "subp_subProcessor.h"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include "drv_gpio.h"
 #include "drv_uart.h"
+#include "drv_piezo.h"
 #include "msg_messenger.h"
 #include "nvm_nvMemInterface.h"
 
@@ -291,6 +293,10 @@ status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cm
     else if((cmdSize > 10) && strncmp(command, "PwrBrdMsg:",10) == 0)
     {
         strncpy(responseBuffer, command, sizeof(responseBuffer));
+    }
+    else if(strncmp(command, "disablePiezo\r\n",cmdSize)==0)
+    {
+        drv_piezo_togglePiezo(false);
     }    
     responseLength = strlen(responseBuffer);
     if(responseLength > 0)
