@@ -272,11 +272,11 @@ status_t sdc_readFromFile(sdc_file_t* fileObject, void* data, size_t fileOffset,
 	
 	if (fileObject->fileOpen == true)
 	{
-		if (xSemaphoreTake(semaphore_fatFsAccess, 1) == true)
+		if (xSemaphoreTake(semaphore_fatFsAccess, 100) == true)
 		{
-			//assuming the file was already opened by calling sdc_openFile
+			
 			res = f_lseek(&fileObject->fileObj, (DWORD)fileOffset);
-			res = f_read(&fileObject->fileObj, data, length, &numBytesRead);
+			res |= f_read(&fileObject->fileObj, data, length, &numBytesRead);
 			if (res != FR_OK)
 			{
 				status = STATUS_FAIL;
@@ -291,6 +291,32 @@ status_t sdc_readFromFile(sdc_file_t* fileObject, void* data, size_t fileOffset,
 	return status;
 }
 
+status_t sdc_writeDirectToFile(sdc_file_t* fileObject, void* data, size_t fileOffset, size_t length)
+{
+    status_t status = STATUS_PASS;
+    FRESULT res;
+    UINT numBytesWritten = 0;
+    
+    if (fileObject->fileOpen == true)
+    {
+        if (xSemaphoreTake(semaphore_fatFsAccess, 100) == true)
+        {
+            //assuming the file was already opened by calling sdc_openFile
+            res = f_lseek(&fileObject->fileObj, (DWORD)fileOffset);
+            res |= f_write(&fileObject->fileObj,data,length,&numBytesWritten);
+            if (res != FR_OK)
+            {
+                status = STATUS_FAIL;
+            }
+            xSemaphoreGive(semaphore_fatFsAccess);
+        }
+        else
+        {
+            status = STATUS_FAIL;
+        }
+    }
+    return status;
+}
 status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t mode)
 {
 	status_t status = STATUS_PASS;
@@ -299,7 +325,7 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 	char fileIndexLog[SD_CARD_FILENAME_LENGTH] = "0:logIndex.dat";
 	char logFileName[SD_CARD_FILENAME_LENGTH] = {0};
 	char dirName[SD_CARD_FILENAME_LENGTH] = "0:MovementLog";
-	char dirPath[] = "0:MovementLog/";
+	char dirPath[SD_CARD_FILENAME_LENGTH] = "0:MovementLog/";
 	uint8_t data_buffer[100] = {0}, openMode = 0;
 	uint16_t fileIndexNumber = 0, byte_read = 0, bytes_written = 0;
 	DIR dir;
@@ -308,7 +334,8 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 	//check if the SD card has actually been mounted. 
 	if(sdCardStatus != SD_CARD_MOUNTED)
 	{
-		return STATUS_FAIL;
+		dbg_printString(DBG_LOG_LEVEL_ERROR,"SD Card not mounted\r");
+        return STATUS_FAIL;
 	}
 	
 	//return if the file is already open
@@ -361,6 +388,8 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 				{
 					status = STATUS_FAIL;
 					dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed on creating new movement log directory\r");
+                    //give back the semaphore
+                    xSemaphoreGive(semaphore_fatFsAccess);
 					return status;
 				}
 			}
@@ -421,7 +450,8 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 				}
 				else
 				{
-					status = STATUS_FAIL;
+					dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed on openning new movement log\r");
+                    status = STATUS_FAIL;
 				}
 			}
 		}
@@ -431,7 +461,7 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 		{
 			if (mode == SDC_FILE_OPEN_READ_WRITE_NEW)
 			{
-				openMode = FA_CREATE_NEW | FA_WRITE | FA_READ;
+				openMode = FA_CREATE_ALWAYS | FA_WRITE | FA_READ;
 			}
 			else if (mode == SDC_FILE_OPEN_READ_WRITE_APPEND)
 			{
@@ -445,8 +475,12 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 			res = f_open(&fileObject->fileObj, (char const*)logFileName, openMode);
 			if (res == FR_OK)
 			{
-				res = f_lseek(&fileObject->fileObj, fileObject->fileObj.fsize);
+				if(mode != SDC_FILE_OPEN_READ_ONLY)
+                {               
+                    res = f_lseek(&fileObject->fileObj, fileObject->fileObj.fsize);                    
+                }               
 				fileObject->fileOpen = true;
+                
 				status = STATUS_PASS;
 			}
 			else

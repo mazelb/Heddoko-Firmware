@@ -33,7 +33,8 @@ typedef enum
     NET_SOCKET_STATUS_CLIENT_CONNECTED,
     NET_SOCKET_STATUS_CLIENT_DISCONNECTED,
     NET_SOCKET_STATUS_SERVER_OPEN,
-    NET_SOCKET_STATUS_SERVER_OPEN_FAILED    
+    NET_SOCKET_STATUS_SERVER_OPEN_FAILED,
+    NET_SOCKET_STATUS_RECEIVE_FROM_FAILED    
 }net_socketStatus_t;
 
 typedef struct  
@@ -65,6 +66,8 @@ typedef struct
   	SOCKET clientSocketId;
     socketStatusCallback_t socketStatusCallback;
     socketDataReceivedCallback_t socketDataReceivedCallback; 
+    uint8_t socketType; 
+    
 }net_socketConfig_t;
 
 
@@ -76,6 +79,7 @@ status_t net_disconnectFromNetwork();
 status_t net_createUdpSocket(net_socketConfig_t* socket, size_t bufferSize);
 status_t net_sendUdpPacket(net_socketConfig_t* socket, uint8_t* packetBuf, uint32_t packetBufLength);
 status_t net_receiveUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength, uint32_t timeoutVal);
+status_t net_bindUpdSocket(net_socketConfig_t* sock,uint16_t port); 
 status_t net_createServerSocket(net_socketConfig_t* sock, size_t receiveBufSize);
 status_t net_sendPacketToClientSock(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength, bool semaphoreNeeded);
 status_t net_closeSocket(net_socketConfig_t* socket); 

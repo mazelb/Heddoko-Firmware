@@ -14,8 +14,9 @@
 
 
 
+
 #define DRV_GPIO_ID_PIN_JC_EN2		PIO_PA17_IDX /*	Jack 2 Enable	*/
-#define DRV_GPIO_ID_PIN_JC_EN1		PIO_PA18_IDX /*	Jack 1 Enable   */
+#define DRV_GPIO_ID_PIN_JC_EN1		PIO_PA18_IDX /*	Jack Fault*/
 #define DRV_GPIO_ID_PIN_JC1_DET		PIO_PA11_IDX /*	Jack 1 detect	*/
 #define DRV_GPIO_ID_PIN_JC2_DET		PIO_PA1_IDX /*	Jack 2 detect	*/
 #define DRV_GPIO_ID_PIN_PWR_EN		PIO_PA19_IDX /*	Power Enable	*/
@@ -26,9 +27,15 @@
 #define DRV_GPIO_ID_PIN_RS485		PIO_PA6_IDX /*	Extra GPIO	*/
 #define DRV_GPIO_ID_PIN_PWR_BTN		PIO_PA5_IDX /*	Power Button	*/
 #define DRV_GPIO_ID_PIN_USB_DET		PIO_PA0_IDX /*	USB VBUS Detect	*/
+#ifdef OLD_LED
 #define DRV_GPIO_ID_PIN_LED_BLUE	PIO_PB0_IDX /*	Blue LED (active low)*/
 #define DRV_GPIO_ID_PIN_LED_GREEN	PIO_PB1_IDX /*	Green LED	*/
 #define DRV_GPIO_ID_PIN_LED_RED		PIO_PA20_IDX /*	Red LED	*/
+#else
+#define DRV_GPIO_ID_PIN_LED_GREEN	PIO_PB0_IDX /*	Blue LED (active low)*/
+#define DRV_GPIO_ID_PIN_LED_RED	    PIO_PB1_IDX /*	Green LED	*/
+#define DRV_GPIO_ID_PIN_LED_BLUE	PIO_PA20_IDX /*	Red LED	*/
+#endif
 #define DRV_GPIO_ID_PIN_RS485_D_EN	PIO_PA12_IDX /*	RS485 Driver enable	*/
 #define DRV_GPIO_ID_PIN_RS485_R_EN	PIO_PB4_IDX /*	RS485 Receiver enable	*/
 
@@ -106,7 +113,8 @@ bool drv_gpio_check_Int(drv_gpio_pins_t pin);
 bool drv_gpio_clear_Int(drv_gpio_pins_t pin);
 
 #define	DEBOUNCE_PERIOD	5
-
+#define JACK_DISABLED_STATE DRV_GPIO_PIN_STATE_LOW
+#define JACK_ENABLED_STATE DRV_GPIO_PIN_STATE_HIGH
 //status_t drv_uart_isInit(drv_gpio_config_t* gpioConfig);
 
 #endif /* DRV_GPIO_H_ */

@@ -92,8 +92,6 @@ void net_wirelessNetworkTask(void *pvParameters)
 	param.pfAppWifiCb = wifi_cb;
 	ret = m2m_wifi_init(&param);
 	
-	
-	
 	//tstrM2MAPConfig strM2MAPConfig;
 	//memset(&strM2MAPConfig, 0x00, sizeof(tstrM2MAPConfig));
 	//strcpy((char *)&strM2MAPConfig.au8SSID, "Virus");
@@ -254,7 +252,8 @@ status_t net_createUdpSocket(net_socketConfig_t* sock, size_t bufferSize)
 			}
 			else
 			{
-				//set the socket options, we don't want call backs on the UDP streaming socket. 
+				sock->socketType = SOCK_DGRAM; //set the type
+                //set the socket options, we don't want call backs on the UDP streaming socket. 
 				setsockopt(sock->socketId, SOL_SOCKET, SO_SET_UDP_SEND_CALLBACK, &enableCallBacks , 0);
 				//allocate a buffer for the socket. 
 				sock->buffer = malloc(bufferSize); 
@@ -263,6 +262,7 @@ status_t net_createUdpSocket(net_socketConfig_t* sock, size_t bufferSize)
 				{
 					status = STATUS_FAIL;
 				}
+                
 			}
 			if(status == STATUS_FAIL)
 			{
@@ -273,6 +273,23 @@ status_t net_createUdpSocket(net_socketConfig_t* sock, size_t bufferSize)
 		xSemaphoreGive(semaphore_wifiAccess);
 	}
 	return status;
+}
+
+status_t net_bindUpdSocket(net_socketConfig_t* sock,uint16_t port)
+{
+    status_t status = STATUS_PASS;
+    struct sockaddr_in addr; 
+    addr.sin_family = AF_INET;
+    addr.sin_port = _htons(port);
+    addr.sin_addr.s_addr = 0;
+    int ret = 0;
+    ret = bind(sock->socketId, (struct sockaddr *)&(addr), sizeof(struct sockaddr_in));  
+    if(ret != 0)
+    {
+       dbg_printf(DBG_LOG_LEVEL_DEBUG,"Bind Failed. Error code = %d\n",ret); 
+       status = STATUS_FAIL; 
+    } 
+    return status;     
 }
 status_t net_sendUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength)
 {
@@ -346,7 +363,8 @@ status_t net_createServerSocket(net_socketConfig_t* sock, size_t receiveBufSize)
         	}
         	else
         	{
-            	//allocate a buffer for the socket.
+            	sock->socketType = SOCK_STREAM; //set the type
+                //allocate a buffer for the socket.
             	sock->buffer = malloc(receiveBufSize);
             	sock->bufferLength = receiveBufSize;
             	if(sock->buffer == NULL)
@@ -621,7 +639,13 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			if (pstrBind && pstrBind->status == 0) 
 			{
 				dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: bind success.\r\n");                
-				listen(sock, 0);
+				if(socketConfig != NULL)
+                {
+                    if(socketConfig->socketType == SOCK_STREAM)
+                    {
+                        listen(sock, 0);
+                    }    
+                }                
 			} 
 			else 
 			{
@@ -741,27 +765,30 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
                 {
                     if(socketConfig->socketDataReceivedCallback != NULL)
                     {
-                        socketConfig->socketDataReceivedCallback(sock,pstrRecv->pu8Buffer,pstrRecv->s16BufferSize);
-                        //call receive again so we get more data
+                        socketConfig->endpoint.sin_port = pstrRecv->strRemoteAddr.sin_port; 
+                        socketConfig->socketDataReceivedCallback(sock,pstrRecv->pu8Buffer,pstrRecv->s16BufferSize);      
                     }                    
                 }                
             }
             else
             {
-                dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: recv error!\r\n");
+                dbg_printf(DBG_LOG_LEVEL_DEBUG,"socket_cb: recv error %d!\r\n", pstrRecv->s16BufferSize);
                 if (sock >= 0)
                 {
-                    dbg_printString(DBG_LOG_LEVEL_DEBUG,"Close client socket to disconnect.\r\n");
-                    close(sock);
+                    //dbg_printString(DBG_LOG_LEVEL_DEBUG,"Close client socket to disconnect.\r\n");
+                    //close(sock);
                     if(socketConfig != NULL)
                     {
-                        socketConfig->socketStatusCallback(sock, NET_SOCKET_STATUS_CLIENT_DISCONNECTED);
-                        socketConfig->clientSocketId = -1;
+                        if(socketConfig->socketStatusCallback != NULL)
+                        {
+                            socketConfig->socketStatusCallback(sock, NET_SOCKET_STATUS_RECEIVE_FROM_FAILED);    
+                        }
+                        
                     }
-                    if(sock == tcp_client_socket)
-                    {
-                        tcp_client_socket = -1;
-                    }                    
+                    //if(sock == tcp_client_socket)
+                    //{
+                        //tcp_client_socket = -1;
+                    //}                    
                 }
                 tcp_connected = 0;
                 break;

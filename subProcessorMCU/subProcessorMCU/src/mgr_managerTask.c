@@ -104,8 +104,7 @@ void mgr_managerTask(void *pvParameters)
 	drv_led_set(DRV_LED_GREEN, DRV_LED_FLASH);
 	//enable power to the data board
 	drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_HIGH);
-	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
-	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);
+    setJackState(true);
 	currentSystemState = SYS_STATE_POWER_ON;
 	//by default enable fast charging
 	drv_gpio_setPinState(DRV_GPIO_PIN_CHRG_SEL, DRV_GPIO_PIN_STATE_HIGH);	
@@ -269,8 +268,8 @@ static void __attribute__((Optimize("O0"))) enterSleepMode()
 	drv_gpio_pin_state_t chargingDetect = DRV_GPIO_PIN_STATE_HIGH; 
 	uint32_t loopCount = 0;
 	//turn off power to both Jacks
-	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_HIGH);
-	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
+    setJackState(false);
+
 	// disable the UARTs
 	brd_deInitAllUarts();
 	//turn off power to the data board
@@ -343,8 +342,7 @@ static void __attribute__((Optimize("O0"))) enterSleep()
 		//enable power to both Jacks
 		vTaskDelay(100);
 		//TODO add switching auto-enabling to this code.
-		drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
-		drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);
+        setJackState(true);
 		// enable the UARTs
 		brd_initAllUarts();
 		//clear the events
@@ -422,8 +420,7 @@ static void enterPowerDownChargeState()
 	// disable the UARTs
 	brd_deInitAllUarts();
 	//turn off power to both Jacks
-	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_HIGH);
-	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
+    setJackState(false);
 	drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_LOW);
 	
 	currentSystemState = SYS_STATE_POWER_OFF_CHARGING; 
@@ -440,8 +437,7 @@ static void exitPowerDownChargeState()
 	//enable power to both Jacks
 	vTaskDelay(100);
 	//TODO add switching auto-enabling to this code.
-	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
-	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);
+    setJackState(true);
 	currentSystemState = SYS_STATE_POWER_ON; 
 	clearAllEvents();
 }
@@ -467,4 +463,18 @@ void clearAllEvents()
 mgr_systemStates_t mgr_getState()
 {
 	return currentSystemState;
+}
+
+void setJackState(bool enabled)
+{
+    if(enabled)
+    {
+        	//drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
+        	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
+    }
+    else
+    {
+        	//drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
+        	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);
+    }
 }

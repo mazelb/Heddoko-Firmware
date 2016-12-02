@@ -12,6 +12,7 @@
 #include "net_wirelessNetwork.h"
 #define TFTP_FILE_BUFFER_SIZE 1024
 #define TFTP_PACKET_TIMEOUT 5000 //5 seconds for now... TODO update this value
+#define TFTP_BLOCK_SIZE 512
 
 typedef enum 
 {
@@ -35,6 +36,16 @@ typedef enum
     TFTP_TRANSFER_STATE_SENDING = 1,
     TFTP_TRANSFER_STATE_RECEIVING = 2
 }tftp_transferState_t;
+typedef enum
+{
+    TFTP_TRANSFER_RESULT_PASS = 0,
+    TFTP_TRANSFER_RESULT_FAIL = 1,
+    TFTP_TRANSFER_RESULT_FAIL_FILE_NOT_FOUND = 2,    
+    TFTP_TRANSFER_RESULT_FAIL_TIMEOUT = 3,
+    TFTP_TRANSFER_RESULT_FAIL_IN_PROGRESS = 4
+}tftp_transferResult_t;
+
+
 
 typedef struct  
 {

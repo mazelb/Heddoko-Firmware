@@ -9,7 +9,7 @@
 #include "sdc_sdCard.h"
 #include "net_wirelessNetwork.h"
 #include "subp_subProcessor.h"
-
+#include "tftp_fileTransferClient.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include "drv_gpio.h"
@@ -17,6 +17,7 @@
 #include "drv_piezo.h"
 #include "msg_messenger.h"
 #include "nvm_nvMemInterface.h"
+
 
 /* Global Variables */
 xQueueHandle queue_debugManager = NULL;
@@ -39,15 +40,17 @@ sdc_file_t debugLogFile =
 };
 
 const char* moduleNameString[] = {
-"MODULE_SYSTEM_MANAGER",
-"MODULE_SDCARD",
-"MODULE_WIFI",
-"MODULE_COMMAND",
-"MODULE_DEBUG",
-"MODULE_SUB_PROCESSOR",
-"MODULE_DATA_MANAGER",
-"MODULE_BLE",
-"MODULE_NUMBER_OF_MODULES"
+	"MODULE_SYSTEM_MANAGER",
+	"MODULE_SDCARD",
+	"MODULE_WIFI",
+	"MODULE_CONFIG_MANAGER",
+	"MODULE_DEBUG",
+	"MODULE_SUB_PROCESSOR",
+	"MODULE_DATA_MANAGER",
+	"MODULE_BLE",
+	"MODULE_GPIO_MANAGER",
+    "MODULE_TFTP_CLIENT",
+	"MODULE_NUMBER_OF_MODULES"
 };
 
 bool debugMsgOverUsb = false; 
@@ -62,6 +65,8 @@ static void debugSocketReceivedDataCallback(SOCKET socketId, uint8_t* buf, uint1
 static status_t processRecordCfg(char* command);
 static status_t processStreamCfg(char* command);
 static status_t processWifiCfg(char* command);
+static status_t processFileTransferTest(tftp_transferType_t transferType, char* command);
+
 /*	Extern functions	*/
 /*	Extern variables	*/
 extern nvmSettings_t currentSystemSettings;
@@ -150,7 +155,7 @@ void dbg_printf(dbg_debugLogLevel_t msgLogLevel, char *fmt, ...)
 		va_start (va, fmt);
 		vsnprintf(buffer,sizeof(buffer), fmt, va);
 		va_end (va);
-		printString(buffer); 
+		//printString(buffer); 
 	}
 }
 
@@ -162,7 +167,7 @@ void dbg_printString(dbg_debugLogLevel_t msgLogLevel, char* string)
 	if(msgLogLevel <= debugLogLevel)
 	{
 		strncpy(buffer,string, strlen(string)); 
-        printString(buffer); 	
+        //printString(buffer); 	
 	}
 	
 }
@@ -177,11 +182,13 @@ void dbg_printString(dbg_debugLogLevel_t msgLogLevel, char* string)
 #define MAX_RESPONSE_STRING_SIZE 255
 char newSerialNumber[10] = {0}; 
 char responseBuffer[MAX_RESPONSE_STRING_SIZE] = {0}; 
+
 status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cmdSize)
 {
 	status_t status = STATUS_PASS; 
 	size_t responseLength = 0;
     int cmdLength = 0;
+    
 	if(strncmp(command, "Record\r\n",cmdSize) == 0)
 	{		
 		msg_sendBroadcastMessageSimple(MODULE_DEBUG, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_RECORDING);
@@ -294,6 +301,30 @@ status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cm
     {
         strncpy(responseBuffer, command, sizeof(responseBuffer));
     }
+    else if((cmdSize > 10) && strncmp(command, "sendFile",8) == 0)
+    {
+        
+        if(processFileTransferTest(TFTP_TRANSFER_TYPE_SEND_FILE,command+8) == STATUS_PASS)
+        {
+            strncpy(responseBuffer,"ACK\r\n", MAX_RESPONSE_STRING_SIZE);
+        }
+        else
+        {
+            strncpy(responseBuffer,"NACK\r\n", MAX_RESPONSE_STRING_SIZE);
+        }
+    }    
+    else if((cmdSize > 10) && strncmp(command, "getFile",7) == 0)
+    {
+        
+        if(processFileTransferTest(TFTP_TRANSFER_TYPE_GET_FILE,command+7) == STATUS_PASS)
+        {
+            strncpy(responseBuffer,"ACK\r\n", MAX_RESPONSE_STRING_SIZE);
+        }
+        else
+        {
+            strncpy(responseBuffer,"NACK\r\n", MAX_RESPONSE_STRING_SIZE);
+        }
+    }  
     else if(strncmp(command, "disablePiezo\r\n",cmdSize)==0)
     {
         drv_piezo_togglePiezo(false);
@@ -467,8 +498,7 @@ static status_t processStreamCfg(char* command)
     int ret = sscanf(command, ",%d,%d.%d.%d.%d\r\n",&(newStreamCfg.streamPort), ip,ip+1,ip+2,ip+3); 
     //the ret value should be 5 if the information was correctly parsed. 
     if(ret == 5)
-    {
-        
+    {        
         newStreamCfg.ipaddress.s_addr = (ip[3] << 24) | (ip[2] << 16) | (ip[1] << 8) | ip[0] ; 
         //send to both modules, TODO in the future use the broadcast method when all the module have their masks configured. 
         msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_DEBUG, MSG_TYPE_STREAM_CONFIG,&newStreamCfg);
@@ -480,6 +510,8 @@ static status_t processStreamCfg(char* command)
         return STATUS_FAIL;
     }
 }
+
+
 
 static status_t processWifiCfg(char* command)
 {
@@ -503,4 +535,34 @@ static status_t processWifiCfg(char* command)
     {
         return STATUS_FAIL;
     }    
+}
+tftp_transferParameters_t transferParameters = {.filename = "TestFile.txt", .transferType = TFTP_TRANSFER_TYPE_SEND_FILE};
+static status_t processFileTransferTest(tftp_transferType_t transferType, char* command)
+{
+    int ip[4] = {0,0,0,0};
+    uint16_t port;
+    //the format of the streamCfg command is, "streamCfg,<Port>,<IP Address xxx.xxx.xxx.xxx>\r\n"
+    int ret = sscanf(command, ",%d,%d.%d.%d.%d\r\n",&port, ip,ip+1,ip+2,ip+3);
+    transferParameters.transferEndpoint.sin_port = _htons(port);
+    transferParameters.transferType = transferType;
+    if(transferType == TFTP_TRANSFER_TYPE_GET_FILE)
+    {
+        strcpy(transferParameters.filename,"firmware.bin");
+    }
+    else
+    {
+        strcpy(transferParameters.filename,"testFile.txt");
+    }
+    //the ret value should be 5 if the information was correctly parsed.
+    if(ret == 5)
+    {
+        transferParameters.transferEndpoint.sin_addr.s_addr = (ip[3] << 24) | (ip[2] << 16) | (ip[1] << 8) | ip[0] ;
+        //send to both modules, TODO in the future use the broadcast method when all the module have their masks configured.
+        msg_sendMessage(MODULE_TFTP_CLIENT, MODULE_DEBUG, MSG_TYPE_TFTP_INITIATE_TRANSFER,&transferParameters);
+        return STATUS_PASS;
+    }
+    else
+    {
+        return STATUS_FAIL;
+    }
 }

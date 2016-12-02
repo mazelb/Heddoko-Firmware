@@ -27,6 +27,7 @@
 #include "gpm_gpioManager.h"
 #include "nvm_nvMemInterface.h"
 #include "cfg_configurationManager.h"
+#include "tftp_fileTransferClient.h"
 
 /* Global Variables */
 xQueueHandle queue_systemManager = NULL;
@@ -144,7 +145,7 @@ void sys_systemManagerTask(void* pvParameters)
 	
 	drv_piezo_init(&piezoConfig);
 	//drv_piezo_playPattern(noteElementsArray, (sizeof(noteElementsArray) / sizeof(drv_piezo_noteElement_t)));
-	
+	//drv_piezo_togglePiezo(false);
 	drv_haptic_init(&hapticConfig);
 	drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
 	
@@ -183,7 +184,11 @@ void sys_systemManagerTask(void* pvParameters)
 	{
     	dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create cfg task\r\n");
 	}
-	vTaskDelay(200); 
+	if(xTaskCreate(tftp_FileTransferTask, "tftp", (4000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+1, NULL) != pdPASS)
+	{
+    	dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create cfg task\r\n");
+	}
+    vTaskDelay(200); 
 	sendStateChangeMessage(SYSTEM_STATE_INIT); 	
     
     
@@ -206,8 +211,27 @@ static void processMessage(msg_message_t message)
 		case MSG_TYPE_ENTERING_NEW_STATE:
 		break;
 		case MSG_TYPE_ERROR:
-            //drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));   
-            //drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));   
+            drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));
+            drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));
+            if(currentState == SYSTEM_STATE_RECORDING || currentState == SYSTEM_STATE_STREAMING)
+            {
+                //go back to idle if the error is from the subprocessor. 
+                if(message.source == MODULE_SUB_PROCESSOR)
+                {
+                     msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
+                     currentState = SYSTEM_STATE_IDLE;
+                     if(sysNetworkState == NET_WIFI_STATE_CONNECTED)
+                     {
+                         drv_led_set(DRV_LED_TURQUOISE, DRV_LED_SOLID);
+                     }
+                     else
+                     {
+                         drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID);
+                     }
+                     
+                     drv_piezo_playPattern(stopRecordingTone, (sizeof(stopRecordingTone) / sizeof(drv_piezo_noteElement_t)));                   
+                }   
+            }                
 		break;
 		case MSG_TYPE_SDCARD_STATE:
             if(message.data == SD_CARD_MOUNTED)
