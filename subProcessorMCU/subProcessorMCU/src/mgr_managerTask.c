@@ -68,7 +68,7 @@ void mgr_managerTask(void *pvParameters)
 	//initialize the board
 	
 	brd_board_init(); 
-	printf("startApplication!\r\n");	// TODO: replace with print to memory function
+	//printf("startApplication!\r\n");	// TODO: replace with print to memory function
 	//initialize power button listener. 	
 	drv_gpio_config_interrupt_handler(DRV_GPIO_PIN_PWR_BTN, DRV_GPIO_INTERRUPT_LOW_EDGE,powerButtonHandler_LowEdge);
 	mgr_eventQueue = xQueueCreate( 10, sizeof(mgr_eventMessage_t));
@@ -274,7 +274,10 @@ static void __attribute__((Optimize("O0"))) enterSleepMode()
 	brd_deInitAllUarts();
 	//turn off power to the data board
 	drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_LOW);
-	
+	#ifndef CHARGER_TEST_MODE
+	//disable the power supply on the data board using this pin.
+	drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_LOW);
+	#endif
 	//wait for the button to go high
 	drv_gpio_getPinState(DRV_GPIO_PIN_PWR_BTN, &pwSwState);	//poll the power switch
 	loopCount = 0;
@@ -334,6 +337,11 @@ static void __attribute__((Optimize("O0"))) enterSleep()
 	{
 		//enable power to the data board
 		drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_HIGH);
+        #ifndef CHARGER_TEST_MODE
+        //enable the power supply on the data board using this pin. 
+        drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_HIGH);
+        #endif
+        
 		//invalidate the current charger state so that it is re-evaluated
 		chrg_currentChargerState = CHRG_CHARGER_STATE_INVALID_CODE;
 		//send the date time command to the brain MCU.
@@ -422,7 +430,10 @@ static void enterPowerDownChargeState()
 	//turn off power to both Jacks
     setJackState(false);
 	drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_LOW);
-	
+	#ifndef CHARGER_TEST_MODE
+	//disable the power supply on the data board using this pin.
+	drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_LOW);
+	#endif
 	currentSystemState = SYS_STATE_POWER_OFF_CHARGING; 
 		
 }
@@ -430,6 +441,10 @@ static void exitPowerDownChargeState()
 {
 	//enable power to the data board
 	drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_HIGH);
+    #ifndef CHARGER_TEST_MODE
+    //enable the power supply on the data board using this pin.
+    drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_HIGH);
+    #endif
 	// enable the UARTs
 	brd_initAllUarts();
 	//invalidate the current charger state so that it is re-evaluated
@@ -471,10 +486,15 @@ void setJackState(bool enabled)
     {
         	//drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
         	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
+            drv_gpio_setPinState(DRV_GPIO_PIN_RS485_D_EN,  DRV_GPIO_PIN_STATE_HIGH);
+            drv_gpio_setPinState(DRV_GPIO_PIN_RS485_R_EN,  DRV_GPIO_PIN_STATE_HIGH);
     }
     else
     {
         	//drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
         	drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);
+            //disable the RS_485 Driver, so we don't leak current through the ESD diodes
+            drv_gpio_setPinState(DRV_GPIO_PIN_RS485_D_EN,  DRV_GPIO_PIN_STATE_LOW);
+            drv_gpio_setPinState(DRV_GPIO_PIN_RS485_R_EN,  DRV_GPIO_PIN_STATE_HIGH);
     }
 }

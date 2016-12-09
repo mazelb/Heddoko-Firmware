@@ -12,7 +12,7 @@
 #define COMMON_H_
 
 #define VERSION "0.0.0.1"
-
+//#define CHARGER_TEST_MODE 
 #define ALL_INTERRUPT_MASK  0xffffffff
 #define TRUE 1
 #define FALSE 0
@@ -25,11 +25,6 @@
 #define CONF_PARITY     UART_MR_PAR_NO
 /** Stopbit setting  : No extra stopbit, i.e., use 1 (don't care for UART) */
 #define CONF_STOPBITS   US_MR_NBSTOP_1_BIT
-
-#define USE_ALL_QUINTICS
-//#define USE_Q1_Q2
-#define CREATE_DUMMY_PACKETS 
-
 
 
 

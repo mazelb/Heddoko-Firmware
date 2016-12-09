@@ -200,6 +200,26 @@ void cmd_task_commandProcesor(void *pvParameters)
 					drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_LOW);
 					forwardCommand = false; 	
 				}
+                else if (strncmp(packet.packetData,"gpioEn1",7)==0)
+                {
+                    sprintf(tempString,"gpio set high\r\n");
+                    if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+                    {
+                        dat_sendStringToUsb(tempString);
+                    }
+                    drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_HIGH);
+                    forwardCommand = false;
+                }
+                else if (strncmp(packet.packetData,"gpioEn0",7)==0)
+                {
+                    sprintf(tempString,"gpio set low\r\n");
+                    if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+                    {
+                        dat_sendStringToUsb(tempString);
+                    }
+                    drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_LOW);
+                    forwardCommand = false;
+                }                
 				else if (strncmp(packet.packetData,"jacksEn0",8)==0)
 				{
 					dat_sendDebugMsgToDataBoard("PwrBrdMsg:Jacks Enabled\r\n");

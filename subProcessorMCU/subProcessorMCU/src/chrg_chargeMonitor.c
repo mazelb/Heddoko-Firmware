@@ -43,9 +43,13 @@ extern slave_twi_config_t ltc2941Config;
 chrg_chargerState_t getChargerState(chrg_chargeMonitorConfig_t* chargerConfig);  
 uint32_t powerButtonLowCount = 0;	
 
+void openSwitch();
+void closeSwitch();
 #define BATTERY_PERCENT_LOW 15
 #define BATTERY_PERCENT_CRITICAL 8
 #define BATTERY_PERCENT_FAULT 5
+
+
 
 /***********************************************************************************************
  * chrg_chargeMonitor(void *pvParameters)
@@ -64,11 +68,38 @@ void chrg_task_chargeMonitor(void *pvParameters)
 		 newUsbConnectedState = DRV_GPIO_PIN_STATE_LOW; 
 	drv_gpio_pin_state_t pwrButtonState = DRV_GPIO_PIN_STATE_PULLED_HIGH,
 		 newPwrButtonState = DRV_GPIO_PIN_STATE_LOW; 
-	
-	char tempString[100] = {0}; 	 
+	#ifdef CHARGER_TEST_MODE    
+    int cycleCount = 0;
+    int charging = 0;
+    uint16_t rawChargeLevel = 0;
+    #endif
+	char tempString[100] = {0}; 
+        drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_HIGH);
+        while(1)
+        {
+            
+            
+            
+            vTaskDelay(1000);
+            openSwitch();
+            vTaskDelay(1000);
+            closeSwitch();
+        }
+        drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_LOW);
+        
 	while(1)
 	{
-		newChargerState = getChargerState(chargeMonitorConfig); 	
+
+        newChargerState = getChargerState(chargeMonitorConfig); 	
+        #ifdef CHARGER_TEST_MODE
+        cycleCount++;
+        if(cycleCount == 25)
+        {
+            cycleCount = 0;
+            ltc2941GetCharge(&ltc2941Config, &rawChargeLevel); 
+            printf("%d,%d,%d\r\n",newChargerState,usbConnectedState,rawChargeLevel);
+        }
+        #endif	
 		status = getCalculatedPercentage(&ltc2941Config, &newChargeLevel);
 		if (status == STATUS_FAIL)
 		{
@@ -135,7 +166,7 @@ void chrg_task_chargeMonitor(void *pvParameters)
 				}
 			}
 		}
-				
+	
 		//check if the state is new
 		if(newChargerState != chrg_currentChargerState)
 		{
@@ -160,6 +191,12 @@ void chrg_task_chargeMonitor(void *pvParameters)
 					dat_sendDebugMsgToDataBoard(tempString);
 					ltc2941SetChargeComplete(&ltc2941Config);									
 					drv_led_set(DRV_LED_GREEN,DRV_LED_SOLID);
+                    #ifdef CHARGER_TEST_MODE 
+                    //drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_LOW);
+                    openSwitch();  
+                    ltc2941GetCharge(&ltc2941Config, &rawChargeLevel); 
+                    printf("%d,%d,%d\r\n",newChargerState,usbConnectedState,rawChargeLevel);
+                    #endif
 				}
 				break;
 				case CHRG_CHARGER_STATE_LOW_BATTERY:
@@ -171,10 +208,18 @@ void chrg_task_chargeMonitor(void *pvParameters)
                         sprintf(tempString,"PwrBrdMsg:Receive Low Battery indication at ??%d level\r\n", batteryCharge);
 						dat_sendDebugMsgToDataBoard(tempString);
 						ltc2941SetCharge(&ltc2941Config, CHARGE_EMPTY_VALUE); //set the gas gauge to zero. 						
-						if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
+						#ifdef CHARGER_TEST_MODE 
+                        //start the charging
+                        //drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_HIGH);
+                        ltc2941GetCharge(&ltc2941Config, &rawChargeLevel); 
+                        closeSwitch();  
+                        printf("%d,%d,%d\r\n",newChargerState,1,rawChargeLevel);
+                        #else
+                        if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
 						{
 							//this is an error, we should log it.
-						}				
+						}	
+                        #endif			
 					}
 					drv_led_set(DRV_LED_RED,DRV_LED_SOLID);
 				}
@@ -271,6 +316,44 @@ chrg_batteryState_t chrg_getChargeState(void)
 }
 
 //static functions
+void openSwitch()
+{
+    int i =0,j=0;
+    for(i=0; i < 250; i++)
+    {
+        for(j=0;j<20;j++)
+        {
+            if(j<3)
+            {
+                drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_HIGH);
+            }
+            else
+            {
+                drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_LOW);
+            }
+            vTaskDelay(1);
+        }
+    }
+}
+void closeSwitch()
+{
+    int i =0,j=0;
+    for(i=0; i < 250; i++)
+    {
+        for(j=0;j<20;j++)
+        {
+            if(j<1)
+            {
+                drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_HIGH);
+            }
+            else
+            {
+                drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_LOW);
+            }
+            vTaskDelay(1);
+        }
+    }
+}
 
 //get charge status
 chrg_chargerState_t getChargerState(chrg_chargeMonitorConfig_t* chargerConfig)

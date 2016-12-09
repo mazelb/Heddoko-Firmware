@@ -1,5 +1,5 @@
 -- Project:   HeddokoBLE
--- Generated: 09/15/2016 10:19:53
+-- Generated: 12/07/2016 13:48:08
 -- PSoC Creator  3.3 CP3
 
 ENTITY HeddokoBLE IS
@@ -458,7 +458,7 @@ BEGIN
 
     Adv_led:logicalport
         GENERIC MAP(
-            drive_mode => "100",
+            drive_mode => "110",
             ibuf_enabled => "1",
             id => "bf10fafd-0b2b-433f-95d5-24cc426b237d",
             init_dr_st => "1",
@@ -548,7 +548,7 @@ BEGIN
 
     Conn_Led:logicalport
         GENERIC MAP(
-            drive_mode => "100",
+            drive_mode => "110",
             ibuf_enabled => "1",
             id => "3899b5dc-effb-43d8-8853-66d82e684bc9",
             init_dr_st => "1",

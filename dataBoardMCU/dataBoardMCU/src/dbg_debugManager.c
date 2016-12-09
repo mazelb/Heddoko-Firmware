@@ -155,7 +155,7 @@ void dbg_printf(dbg_debugLogLevel_t msgLogLevel, char *fmt, ...)
 		va_start (va, fmt);
 		vsnprintf(buffer,sizeof(buffer), fmt, va);
 		va_end (va);
-		//printString(buffer); 
+		printString(buffer); 
 	}
 }
 
@@ -167,7 +167,7 @@ void dbg_printString(dbg_debugLogLevel_t msgLogLevel, char* string)
 	if(msgLogLevel <= debugLogLevel)
 	{
 		strncpy(buffer,string, strlen(string)); 
-        //printString(buffer); 	
+        printString(buffer); 	
 	}
 	
 }

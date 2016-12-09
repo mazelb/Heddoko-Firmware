@@ -81,14 +81,18 @@ drv_piezo_noteElement_t btnPress[] =
 drv_haptic_config_t hapticConfig =
 {
 	.hapticGpio = DRV_GPIO_PIN_HAPTIC_OUT,
-	.onState = DRV_GPIO_PIN_STATE_LOW,
-	.offState = DRV_GPIO_PIN_STATE_HIGH
+	.onState = DRV_GPIO_PIN_STATE_HIGH,
+	.offState = DRV_GPIO_PIN_STATE_LOW
 };
 drv_haptic_patternElement_t hapticPatternArray[] =
 {
 	{100, 1}
 };
 
+drv_haptic_patternElement_t buttonPress[] =
+{
+    {100, 100},{50, 50},{100, 100}
+};
 net_wirelessConfig_t wirelessConfiguration =
 {
     .securityType = M2M_WIFI_SEC_WPA_PSK,
@@ -276,7 +280,8 @@ static void processMessage(msg_message_t message)
 		break;
 		case MSG_TYPE_GPM_BUTTON_EVENT:
 		{
-			processButtonEvent(message.data);			
+			drv_haptic_playPattern(buttonPress, (sizeof(buttonPress) / sizeof(drv_haptic_patternElement_t)));
+            processButtonEvent(message.data);			
 		}
 		break;
 		case MSG_TYPE_SUBP_POWER_DOWN_REQ:
