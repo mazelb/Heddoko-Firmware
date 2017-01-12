@@ -46,6 +46,7 @@ volatile imuFrame_t imuFrameData =
 	.Rotation_z = 9
 };
 volatile uint32_t configParameterValues[4] = {0xDEADBEEF,0xDEADBEEF,0xDEADBEEF,0xDEADBEEF};
+volatile uint8_t configTest[5] = {0xE8,0x03,0x08,0x00,0xCA};//{0x00,0x08,0x03,0xE8,0xCA};//{0xE8,0x03,0x08,0x00,0xCA};
 extern uint32_t warmUpParameterValues[35]; 	
 
 //set range parameters
@@ -54,7 +55,7 @@ void setWarmUpParameters(uint32_t* warmUpParameters);
 
 
 
-int resetAndInitialize(slave_twi_config_t* slave_config)
+__attribute__((optimize("O0"))) int resetAndInitialize(slave_twi_config_t* slave_config)
 {
 	int status, readData[20] = {0};
 	//Power up / reset request
@@ -65,7 +66,7 @@ int resetAndInitialize(slave_twi_config_t* slave_config)
 	}	
 	//Read interupt pin from Sentral over and over again until it is high, then the device is ready to go. 
 	//TODO remove this delay	
-	delay_ms(1000);	//wait for the device to complete EEPROM upload
+	delay_ms(2000);	//wait for the device to complete EEPROM upload
 	
 	status = drv_i2c_read(slave_config, EM_SENTRAL_STATUS_REGISTER, &readData[0], 1);
 	if (status != STATUS_PASS)
@@ -91,6 +92,8 @@ int resetAndInitialize(slave_twi_config_t* slave_config)
 			return STATUS_FAIL;
 		}
 	}
+	
+
 	
 	//#ifdef HPR
 	if(settings.enableHPR == 1)
@@ -129,26 +132,22 @@ int resetAndInitialize(slave_twi_config_t* slave_config)
 	if (status != STATUS_PASS)
 	{
 		return STATUS_FAIL;
-	}
-	
+	}	
 	//run request
 	status = drv_i2c_write(slave_config, EM_RUN_REQUEST_REGISTER, EM_RUN_REQUEST_FLAG);
 	if (status != STATUS_PASS)
 	{
 		return STATUS_FAIL;
 	}
-	
+		
 	if(settings.warmUpValid && settings.loadWarmupOnBoot)
 	{
-		setWarmUpParameters(warmUpParameterValues); 
+		setWarmUpParameters(warmUpParameterValues);
 	}
-	if(settings.loadRangesOnBoot)
+	if(settings.loadRangesOnBoot == 1)
 	{
-		setRangeParameters(settings.sensorRange); 
+		setRangeParameters(settings.sensorRange);
 	}
-	
-	
-	
 	return STATUS_PASS;
 }
 
@@ -188,7 +187,7 @@ void sendConfiguration()
 	outputDataBuffer[3] = settings.algoControlReg;
 	outputDataBuffer[4] = settings.loadWarmupOnBoot;
 	outputDataBuffer[5] = settings.loadRangesOnBoot;	
-	memcpy(outputDataBuffer+6,&(settings.sensorRange),8);
+	memcpy(outputDataBuffer+6,settings.sensorRange,8);
 	pkt_SendRawPacket(outputDataBuffer, 14);
 }
 
@@ -224,54 +223,73 @@ void sendGetStatusResponse()
 	//delay_us(100);
 	pkt_SendRawPacket(outputDataBuffer, 27);	
 }
+uint32_t swapByteOrder(uint32_t num)
+{
+	return ((num>>24)&0xff) | // move byte 3 to byte 0
+	((num<<8)&0xff0000) | // move byte 1 to byte 2
+	((num>>8)&0xff00) | // move byte 2 to byte 1
+	((num<<24)&0xff000000); // byte 0 to byte 3
+}
 
 __attribute__((optimize("O0"))) status_t readParameter(uint8_t parameterNumber, bool firstRead, uint32_t* parameterValue)
 {
 	status_t status = STATUS_FAIL; 
 	sen_requestParam_t returnedParameter = {0,0}; 
 	int32_t maxReadAttempts = 20; 	
+
 	//set the parameter request register to the value we want to read
-	drv_i2c_write(&em7180Config, EM_PARAM_REQUEST, parameterNumber);
+	drv_i2c_write(&em7180Config, EM_PARAM_REQUEST, parameterNumber);		
+	delay_us(30000); //delay to give the sentral time to process
 	//if this is the first read, then set the algorithm control value to 0x80 (parameter transfer bit)
 	if(firstRead == true)
 	{
-		drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, settings.algoControlReg | 0x80); 
+		drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, 0x80); //settings.algoControlReg | 
 	}
+	delay_us(30000); //delay to give the sentral time to process
 	while(maxReadAttempts-- > 0) 
 	{
 		//read the packet acknowledge over and over until we know that the value is valid
-		if(drv_i2c_read(&em7180Config,EM_PARAM_ACKNOWLEDGE,&returnedParameter, 5) == STATUS_PASS)
+		if(drv_i2c_read(&em7180Config,EM_PARAM_ACKNOWLEDGE,&returnedParameter, 1) == STATUS_PASS)
 		{
 			if(returnedParameter.paramNumber == parameterNumber)
 			{
 				//yay the value is valid, set status to pass and return the parameter
-				status = STATUS_PASS;
-				*parameterValue = returnedParameter.parameter; 
-				break;				
+				status = STATUS_PASS;				
+				if(drv_i2c_read(&em7180Config,EM_READ_PARAM_BYTE_0,parameterValue, 4) == STATUS_PASS)
+				{
+					break;	
+				}								
 			}
-		}
+		}		
 	}	
 	return status; 	
 }
 
+
 __attribute__((optimize("O0"))) status_t writeParameter(uint8_t parameterNumber, bool firstWrite, uint32_t parameterValue)
 {
 	status_t status = STATUS_FAIL;
-	sen_loadParam_t loadParameter = {parameterValue,parameterNumber | 0x80}; //set the first bit, to make sure it's a write
+	sen_loadParam_t loadParameter = {parameterValue,parameterNumber | 0x80}; //set the first bit, to make sure it's a write 
 	int32_t maxReadAttempts = 10;
 	uint8_t paramAck = 0;
+	uint8_t buffer[5] = {0};
+	int i = 0;
+	memcpy(buffer,&loadParameter, sizeof(sen_loadParam_t));
+
 	
-	//write all the parameter bytes including the parameter number. 
-	drv_i2c_write_bytes(&em7180Config, EM_LOAD_PARAM_BYTE_0, &loadParameter,5);
+	//write all the parameter bytes including the parameter number.
+	drv_i2c_write_bytes(&em7180Config, EM_LOAD_PARAM_BYTE_0, buffer,5);		
+	delay_us(30000); //delay to give the sentral time to process
 	//if this is the first write, then set the algorithm control value to 0x80 (parameter transfer bit)
 	if(firstWrite == true)
 	{
-		drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER,settings.algoControlReg | 0x80);
+		drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, 0x80); 
 	}
+	delay_us(30000); //delay to give the sentral time to process
 	while(maxReadAttempts-- > 0)
 	{
 		//read the packet acknowledge over and over until we know that the value is valid
-		if(drv_i2c_read(&em7180Config,EM_PARAM_ACKNOWLEDGE,&paramAck, 5) == STATUS_PASS)
+		if(drv_i2c_read(&em7180Config,EM_PARAM_ACKNOWLEDGE,&paramAck, 1) == STATUS_PASS)
 		{
 			if(paramAck == (parameterNumber | 0x80))
 			{
@@ -280,6 +298,7 @@ __attribute__((optimize("O0"))) status_t writeParameter(uint8_t parameterNumber,
 				break;
 			}
 		}
+		delay_us(500); //delay to give the sentral time to process
 	}
 	return status;
 }
@@ -303,13 +322,13 @@ void updateAllConfigParameters()
 	}
 	if(status == STATUS_PASS)
 	{
-		memcpy(&(settings.sensorRange),configParameterValues,8); //copy the ranges to the settings structure. 	
+		memcpy(settings.sensorRange,configParameterValues,8); //copy the ranges to the settings structure. 	
 	}
-	
+	//reset the parameter request register
+	drv_i2c_write(&em7180Config, EM_PARAM_REQUEST, 0x00);	
 	//reset the algorithm control register
 	drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, settings.algoControlReg); //send the configured algo control register.  
-	//reset the parameter request register
-	drv_i2c_write(&em7180Config, EM_PARAM_REQUEST, 0x00);
+
 	
 }
 void sendConfigurationParameters()
@@ -335,11 +354,13 @@ void setRangeParameters(uint32_t* rangeParameters)
 			firstValue = false;
 		}
 		parameterNumber++;
+		delay_us(1000);
 	}
-	//reset the algorithm control register
-	drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, settings.algoControlReg);
 	//reset the parameter request register
 	drv_i2c_write(&em7180Config, EM_PARAM_REQUEST, 0x00);	
+	//reset the algorithm control register
+	drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, settings.algoControlReg);
+
 }
 
 void setWarmUpParameters(uint32_t* warmUpParameters)
@@ -356,11 +377,13 @@ void setWarmUpParameters(uint32_t* warmUpParameters)
 			firstValue = false;
 		}
 		parameterNumber++;
+		delay_us(1000);
 	}
-	//reset the algorithm control register
-	drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, settings.algoControlReg);
 	//reset the parameter request register
 	drv_i2c_write(&em7180Config, EM_PARAM_REQUEST, 0x00);	
+	//reset the algorithm control register
+	drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, settings.algoControlReg);
+
 }
 status_t updateWarmStartUpValues()
 {
@@ -431,29 +454,46 @@ __attribute__((optimize("O0"))) void updateImuData()
 		{
 			if(drv_i2c_read(&em7180Config, 0x00, &imuFrameData.Quaternion_x, 16) != STATUS_PASS)
 			{
-				debugStructure.quatReadErrorCount++;	
+				status |= STATUS_FAIL;
+				//debugStructure.quatReadErrorCount++;	
 			}	
 			if(drv_i2c_read(&em7180Config, 0x12, &imuFrameData.Magnetic_x, 12) != STATUS_PASS)
 			{
-				debugStructure.magReadErrorCount++;
+				status |= STATUS_FAIL;
+				//debugStructure.magReadErrorCount++;
 			}
 			if(drv_i2c_read(&em7180Config, 0x1A, &imuFrameData.Acceleration_x, 12) != STATUS_PASS)
 			{
-				debugStructure.accelReadErrorCount++;
+				status |= STATUS_FAIL;
+				//debugStructure.accelReadErrorCount++;
 			}
 			if(drv_i2c_read(&em7180Config, 0x22, &imuFrameData.Rotation_x, 12) != STATUS_PASS)
 			{
-				debugStructure.gyroReadErrorCount++;
+				status |= STATUS_FAIL;
+				//debugStructure.gyroReadErrorCount++;
 			}	
 		}
 	}
 	//read the algorithm status and update the LEDs accordingly. 
-	status = drv_i2c_read(&em7180Config, 0x38, &algoStatus, 1);
+	status |= drv_i2c_read(&em7180Config, 0x38, &algoStatus, 1);
+	if(status != STATUS_PASS)
+	{
+		algoStatus |= 1<<7; //set the bad frame flag
+	}
+	
 	//check if the frame status has changed since the last time is was read...
 	if(imuFrameData.frameStatus != algoStatus)
 	{	
+		//check for comms error
+		if((algoStatus & (1<<7)) > 0)
+		{
+			//there was a failure reading the sensor data. 
+			port_pin_set_output_level(LED_RED_PIN,LED_ACTIVE);
+			port_pin_set_output_level(LED_GREEN_PIN,LED_ACTIVE);
+			port_pin_set_output_level(LED_BLUE_PIN,LED_INACTIVE);			
+		}
 		//check the calibration stable bit
-		if((algoStatus & (1<<3)) > 0)
+		else if((algoStatus & (1<<3)) > 0)
 		{
 			//check the magnetic transient bit
 			if((algoStatus & (1<<4)) > 0)
@@ -661,7 +701,7 @@ void cmd_processPacket(rawPacket_t* packet)
 					settings.algoControlReg = packet->payload[3]; 					
 					settings.loadWarmupOnBoot = packet->payload[4]; 
 					settings.loadRangesOnBoot = packet->payload[5]; 
-					memcpy(&(settings.sensorRange),&(packet->payload[6]),8);
+					memcpy(settings.sensorRange,&(packet->payload[6]),8);
 					resetAndInitialize(&em7180Config);
 				}
 			break;

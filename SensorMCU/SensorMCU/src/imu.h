@@ -111,15 +111,14 @@ typedef struct
 	uint8_t paramNumber;	//parameter number for the ack read back. 
 	uint32_t parameter;		//4 bytes of the parameter
 }sen_requestParam_t;
+#pragma	pack(pop)
 
+#pragma pack(push, 1) //make sure the byte alignment is 1
 typedef struct
 {
 	uint32_t parameter;		//4 bytes of the parameter
 	uint8_t paramNumber;	//parameter number (for load first bit must be set)
 }sen_loadParam_t;
-
-
-
-
 #pragma	pack(pop)
+
 #endif /* IMU_H_ */

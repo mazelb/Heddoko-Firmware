@@ -39,7 +39,7 @@ typedef struct
 	uint8_t accelRate;
 	uint8_t gyroRate;
 	uint8_t algoControlReg; //default settings for the algorithm controller. 
-	uint32_t sensorRange[2]; //Sensor range for mag and acceleration = byte[0], gyro = byte[1]
+	uint32_t sensorRange[2]; //Sensor range for mag and acceleration = sensorRange[0], gyro = sensorRange[1]
 	uint8_t warmUpValid; 
 	uint8_t loadWarmupOnBoot; //load the warmup parameters from NVM memory on boot. 
 	uint8_t loadRangesOnBoot; //
