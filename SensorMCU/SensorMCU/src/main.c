@@ -117,6 +117,12 @@ slave_twi_config_t em7180Config=
 	.drv_twi_options = &twiConfig
 };
 
+slave_twi_config_t eepromConfig=
+{
+	.emId = 0,
+	.address = 0x50, //address for the eeprom	
+	.drv_twi_options = &twiConfig
+};
 void enableRs485Transmit()
 {
 	port_pin_set_output_level(GPIO_RS485_DATA_DIRECTION_RE, GPIO_RS485_DATA_TRANSMIT);
@@ -358,6 +364,12 @@ int main(void)
 	
 	sendGetStatusResponse();
 	//port_pin_set_output_level(LED_GREEN_PIN,LED_INACTIVE);
+	
+	//togglePassthrough(0x01);
+	//delay_ms(1000);
+	//getEepromPacket(0x0000);
+	//delay_ms(1000);
+	//togglePassthrough(0x00);
 	while (true) 
 	{
 		uart_status = usart_read_wait(&cmd_uart_module, &buff);

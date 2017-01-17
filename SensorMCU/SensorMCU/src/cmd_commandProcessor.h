@@ -42,6 +42,11 @@
 #define PACKET_COMMAND_ID_GET_CONFIG_RESP		0x29
 #define PACKET_COMMAND_ID_SAVE_TO_NVM			0x2A
 
+#define PACKET_COMMAND_ID_TOGGLE_PASSTHROUGH    0x2B
+#define PACKET_COMMAND_ID_READ_EEPROM_PACKET    0x2C
+#define PACKET_COMMAND_ID_EEPROM_PACKET			0x2D
+#define PACKET_COMMAND_ID_WRITE_EEPROM_PACKET   0x2E
+#define PACKET_COMMAND_ID_WRITE_EEPROM_RESP		0x2F
 
 
 typedef struct  
@@ -57,6 +62,8 @@ typedef struct
 int resetAndInitialize(slave_twi_config_t* slave_config);
 void sendButtonPressEvent();
 void sendGetStatusResponse();
+void togglePassthrough(uint8_t enable);
+void getEepromPacket(uint16_t address);
 void cmd_processPacket(rawPacket_t* packet);
 
 

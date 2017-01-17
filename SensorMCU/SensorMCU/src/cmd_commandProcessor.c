@@ -16,6 +16,7 @@
 extern sensorSettings_t settings;
 extern drv_twi_config_t twiConfig;
 extern slave_twi_config_t em7180Config;
+extern slave_twi_config_t eepromConfig;
 extern void reConfigure_uart();
 
 volatile cmd_debugStructure_t debugStructure = 
@@ -66,7 +67,7 @@ __attribute__((optimize("O0"))) int resetAndInitialize(slave_twi_config_t* slave
 	}	
 	//Read interupt pin from Sentral over and over again until it is high, then the device is ready to go. 
 	//TODO remove this delay	
-	delay_ms(2000);	//wait for the device to complete EEPROM upload
+	delay_ms(1000);	//wait for the device to complete EEPROM upload
 	
 	status = drv_i2c_read(slave_config, EM_SENTRAL_STATUS_REGISTER, &readData[0], 1);
 	if (status != STATUS_PASS)
@@ -360,7 +361,6 @@ void setRangeParameters(uint32_t* rangeParameters)
 	drv_i2c_write(&em7180Config, EM_PARAM_REQUEST, 0x00);	
 	//reset the algorithm control register
 	drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, settings.algoControlReg);
-
 }
 
 void setWarmUpParameters(uint32_t* warmUpParameters)
@@ -487,7 +487,7 @@ __attribute__((optimize("O0"))) void updateImuData()
 		//check for comms error
 		if((algoStatus & (1<<7)) > 0)
 		{
-			//there was a failure reading the sensor data. 
+			//there was a failure reading the sensor data set LED to Yellow. 
 			port_pin_set_output_level(LED_RED_PIN,LED_ACTIVE);
 			port_pin_set_output_level(LED_GREEN_PIN,LED_ACTIVE);
 			port_pin_set_output_level(LED_BLUE_PIN,LED_INACTIVE);			
@@ -534,6 +534,71 @@ __attribute__((optimize("O0"))) void updateImuData()
 	}
 	
 }
+volatile uint8_t passThroughEnabled = FALSE; 
+void togglePassthrough(uint8_t enable)
+{
+	uint8_t regResult = 0x00; 
+	status_t status = STATUS_PASS; 
+	if(enable == 1)
+	{
+		status |= drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, 0x01); //enable stand by
+		delay_us(30000); 
+		status |= drv_i2c_read(&em7180Config, 0x38, &regResult, 1); 
+		//if(regResult & 0x01)
+		//{
+			//
+		//}
+		status |= drv_i2c_write(&em7180Config,0xA0, 0x01); //enable passthrough
+		status |= drv_i2c_read(&em7180Config, 0x9E, &regResult, 1);
+		if(regResult & 0x01)
+		{
+			passThroughEnabled = TRUE; 
+		} 
+	}
+	else
+	{
+		drv_i2c_write(&em7180Config,0xA0, 0x00); //disable the passthrough
+		resetAndInitialize(&em7180Config); //reset the sentral
+		passThroughEnabled = FALSE; 
+	}
+} 
+
+void getEepromPacket(uint16_t address)
+{	
+	outputDataBuffer[0] = PACKET_TYPE_IMU_SENSOR; 
+	outputDataBuffer[1] = PACKET_COMMAND_ID_EEPROM_PACKET; 	
+	outputDataBuffer[2] = (address & 0xFF);
+	outputDataBuffer[3] = (address >> 8);
+	if(drv_i2c_read_16bit(&eepromConfig, address, &outputDataBuffer[4],64) == STATUS_PASS)
+	{
+		//send out the packet
+		pkt_SendRawPacket(outputDataBuffer, 68);	
+	}	
+} 
+
+void writeEepromPacket(uint8_t* data)
+{
+	outputDataBuffer[0] = PACKET_TYPE_IMU_SENSOR; 
+	//this function expects that the first 2 bytes are the address of where the packet should go. 
+	outputDataBuffer[1] = PACKET_COMMAND_ID_WRITE_EEPROM_RESP;
+	//write the address to the front of the response packet	
+	outputDataBuffer[2] = data[0]; //LSB
+	outputDataBuffer[3] = data[1]; //MSB
+	//reverse the byte order for the EEPROM
+	uint8_t swapByte = data[0];
+	data[0] = data[1];
+	data[1] = swapByte;  
+	if(drv_i2c_write_bytes_raw(&eepromConfig,data, 66) == STATUS_PASS) //the packet should be 2 address bytes + 64 bytes of data. 
+	{
+		outputDataBuffer[4] = 0x01; //set the flag to 1 to indicate that the write was successful
+	} 
+	else
+	{
+		outputDataBuffer[4] = 0x00; //set the flag to 0 to indicate that the write FAILED
+	}
+	delay_us(10000);
+	pkt_SendRawPacket(outputDataBuffer, 5);	
+}
 
 #ifdef SUPPORT_DEBUG_COMMANDS
 void updateImuDataFake()
@@ -578,6 +643,7 @@ void resetImuDataFake()
 */
 void cmd_processPacket(rawPacket_t* packet)
 {
+	static uint16_t address = 0;
 	//make sure the packet has enough bytes in it
 	if(packet->payloadSize < 2)
 	{
@@ -717,8 +783,28 @@ void cmd_processPacket(rawPacket_t* packet)
 					//write all the configuration parameters to NVM
 					writeSettings();
 				}
-			break;				
-			
+			break;
+			case PACKET_COMMAND_ID_TOGGLE_PASSTHROUGH:
+			if(packet->payload[2] == settings.sensorId)
+			{
+				togglePassthrough(packet->payload[3]);
+			}
+			break;	
+			case PACKET_COMMAND_ID_READ_EEPROM_PACKET:
+			if(packet->payload[2] == settings.sensorId)
+			{
+				address = packet->payload[4];
+				address = address<<8;
+				address += packet->payload[3];
+				getEepromPacket(address); 
+			}
+			break;
+			case PACKET_COMMAND_ID_WRITE_EEPROM_PACKET:
+			if(packet->payload[2] == settings.sensorId)
+			{
+				writeEepromPacket(&(packet->payload[3])); 
+			}
+			break;			
 		}
 	}
 }
