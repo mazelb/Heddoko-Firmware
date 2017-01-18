@@ -74,18 +74,18 @@ void chrg_task_chargeMonitor(void *pvParameters)
     uint16_t rawChargeLevel = 0;
     #endif
 	char tempString[100] = {0}; 
-        drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_HIGH);
-        while(1)
-        {
-            
-            
-            
-            vTaskDelay(1000);
-            openSwitch();
-            vTaskDelay(1000);
-            closeSwitch();
-        }
-        drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_LOW);
+        //drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_HIGH);
+        //while(1)
+        //{
+            //
+            //
+            //
+            //vTaskDelay(1000);
+            //openSwitch();
+            //vTaskDelay(1000);
+            //closeSwitch();
+        //}
+        //drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_LOW);
         
 	while(1)
 	{
