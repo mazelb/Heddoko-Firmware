@@ -169,7 +169,9 @@ int main()
     UART_Start();   
     pkt_packetParserInit(&packetParserConfig);
     bleApiResult = CyBle_Start(AppCallBack); 
-    
+    Adv_led_SetDriveMode(CY_SYS_PINS_DM_STRONG);
+    Conn_Led_SetDriveMode(CY_SYS_PINS_DM_STRONG);
+
     if(bleApiResult == CYBLE_ERROR_OK)
     {
         #ifdef PRINT_MESSAGE_LOG

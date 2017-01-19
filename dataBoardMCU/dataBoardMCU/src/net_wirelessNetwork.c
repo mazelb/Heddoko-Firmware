@@ -92,8 +92,6 @@ void net_wirelessNetworkTask(void *pvParameters)
 	param.pfAppWifiCb = wifi_cb;
 	ret = m2m_wifi_init(&param);
 	
-	
-	
 	//tstrM2MAPConfig strM2MAPConfig;
 	//memset(&strM2MAPConfig, 0x00, sizeof(tstrM2MAPConfig));
 	//strcpy((char *)&strM2MAPConfig.au8SSID, "Virus");
@@ -254,7 +252,8 @@ status_t net_createUdpSocket(net_socketConfig_t* sock, size_t bufferSize)
 			}
 			else
 			{
-				//set the socket options, we don't want call backs on the UDP streaming socket. 
+				sock->socketType = SOCK_DGRAM; //set the type
+                //set the socket options, we don't want call backs on the UDP streaming socket. 
 				setsockopt(sock->socketId, SOL_SOCKET, SO_SET_UDP_SEND_CALLBACK, &enableCallBacks , 0);
 				//allocate a buffer for the socket. 
 				sock->buffer = malloc(bufferSize); 
@@ -263,6 +262,7 @@ status_t net_createUdpSocket(net_socketConfig_t* sock, size_t bufferSize)
 				{
 					status = STATUS_FAIL;
 				}
+                
 			}
 			if(status == STATUS_FAIL)
 			{
@@ -273,6 +273,23 @@ status_t net_createUdpSocket(net_socketConfig_t* sock, size_t bufferSize)
 		xSemaphoreGive(semaphore_wifiAccess);
 	}
 	return status;
+}
+
+status_t net_bindUpdSocket(net_socketConfig_t* sock,uint16_t port)
+{
+    status_t status = STATUS_PASS;
+    struct sockaddr_in addr; 
+    addr.sin_family = AF_INET;
+    addr.sin_port = _htons(port);
+    addr.sin_addr.s_addr = 0;
+    int ret = 0;
+    ret = bind(sock->socketId, (struct sockaddr *)&(addr), sizeof(struct sockaddr_in));  
+    if(ret != 0)
+    {
+       dbg_printf(DBG_LOG_LEVEL_DEBUG,"Bind Failed. Error code = %d\n",ret); 
+       status = STATUS_FAIL; 
+    } 
+    return status;     
 }
 status_t net_sendUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength)
 {
@@ -298,6 +315,30 @@ status_t net_sendUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_
 	}
 	return status;	
 }
+status_t net_receiveUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength, uint32_t timeoutVal)
+{
+    status_t status = STATUS_FAIL;
+    
+    if(currentWifiState == NET_WIFI_STATE_CONNECTED && sock->socketId > -1)
+    {
+        //TODO: add validation of socket endpoint
+        //don't wait very long for the wifi access, only 5ms for now.
+        if(xSemaphoreTake(semaphore_wifiAccess, 5) == true)
+        {
+            int ret = recvfrom(sock->socketId, packetBuf, packetBufLength, timeoutVal);
+            if (ret == M2M_SUCCESS)
+            {
+                status = STATUS_PASS;
+            }
+            else
+            {
+                dbg_printf(DBG_LOG_LEVEL_ERROR,"Failed to async receive packet! %d\r\n", ret);
+            }
+            xSemaphoreGive(semaphore_wifiAccess);
+        }
+    }
+    return status;
+}
 status_t net_createServerSocket(net_socketConfig_t* sock, size_t receiveBufSize)
 {
 	status_t status = STATUS_PASS;
@@ -322,7 +363,8 @@ status_t net_createServerSocket(net_socketConfig_t* sock, size_t receiveBufSize)
         	}
         	else
         	{
-            	//allocate a buffer for the socket.
+            	sock->socketType = SOCK_STREAM; //set the type
+                //allocate a buffer for the socket.
             	sock->buffer = malloc(receiveBufSize);
             	sock->bufferLength = receiveBufSize;
             	if(sock->buffer == NULL)
@@ -412,7 +454,7 @@ status_t net_closeSocket(net_socketConfig_t* sock)
 
 static void processEvent(msg_message_t* message)
 {
-	switch(message->type)
+	switch(message->msgType)
 	{
 		case MSG_TYPE_WIFI_STATE:
 			if(message->data == NET_WIFI_STATE_CONNECTED)
@@ -471,7 +513,6 @@ static status_t sendAdvertisingPacket(net_socketConfig_t* advertisingSocket, net
 	uint8_t serializedPacket[255]; 	
 	Heddoko__Packet advertisingProtoPacket; 
 	heddoko__packet__init(&advertisingProtoPacket);
-	//TODO Fill this information with the real stuff that is sent on boot. 
 	advertisingProtoPacket.type = HEDDOKO__PACKET_TYPE__AdvertisingPacket;
 	advertisingProtoPacket.firmwareversion = firmwareVersion; 
 	advertisingProtoPacket.serialnumber = taskConfig->serialNumber;
@@ -598,7 +639,13 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			if (pstrBind && pstrBind->status == 0) 
 			{
 				dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: bind success.\r\n");                
-				listen(sock, 0);
+				if(socketConfig != NULL)
+                {
+                    if(socketConfig->socketType == SOCK_STREAM)
+                    {
+                        listen(sock, 0);
+                    }    
+                }                
 			} 
 			else 
 			{
@@ -688,7 +735,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			if (pstrConnect && pstrConnect->s8Error >= 0) {
 				dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: connect success.\r\n");
 				tcp_connected = 1;
-				recv(tcp_client_socket, receiveBuffer, sizeof(receiveBuffer), 0);
+				//recv(tcp_client_socket, receiveBuffer, sizeof(receiveBuffer), 0);
 			} else {
 				dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: connect error!\r\n");
 				tcp_connected = 0;
@@ -699,7 +746,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		/* Message send. */
 		case SOCKET_MSG_SEND:
 		{
-			recv(tcp_client_socket, receiveBuffer, sizeof(receiveBuffer), 0);
+			//recv(tcp_client_socket, receiveBuffer, sizeof(receiveBuffer), 0);
             
 		}
 		break;
@@ -709,7 +756,47 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: sendto success!\r\n");
 		}
 		break;
-		/* Message receive. */
+		case SOCKET_MSG_RECVFROM:
+        {
+            tstrSocketRecvMsg *pstrRecv = (tstrSocketRecvMsg *)pvMsg;
+            if (pstrRecv && pstrRecv->s16BufferSize > 0)
+            {
+                if(socketConfig != NULL)
+                {
+                    if(socketConfig->socketDataReceivedCallback != NULL)
+                    {
+                        socketConfig->endpoint.sin_port = pstrRecv->strRemoteAddr.sin_port; 
+                        socketConfig->socketDataReceivedCallback(sock,pstrRecv->pu8Buffer,pstrRecv->s16BufferSize);      
+                    }                    
+                }                
+            }
+            else
+            {
+                dbg_printf(DBG_LOG_LEVEL_DEBUG,"socket_cb: recv error %d!\r\n", pstrRecv->s16BufferSize);
+                if (sock >= 0)
+                {
+                    //dbg_printString(DBG_LOG_LEVEL_DEBUG,"Close client socket to disconnect.\r\n");
+                    //close(sock);
+                    if(socketConfig != NULL)
+                    {
+                        if(socketConfig->socketStatusCallback != NULL)
+                        {
+                            socketConfig->socketStatusCallback(sock, NET_SOCKET_STATUS_RECEIVE_FROM_FAILED);    
+                        }
+                        
+                    }
+                    //if(sock == tcp_client_socket)
+                    //{
+                        //tcp_client_socket = -1;
+                    //}                    
+                }
+                tcp_connected = 0;
+                break;
+            }
+            
+        }
+        break;
+        /* Message receive. */
 		case SOCKET_MSG_RECV:
 		{
 			tstrSocketRecvMsg *pstrRecv = (tstrSocketRecvMsg *)pvMsg;

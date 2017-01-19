@@ -1,6 +1,6 @@
 // ======================================================================
 // HeddokoBLE.v generated from TopDesign.cysch
-// 09/15/2016 at 10:19
+// 12/07/2016 at 13:48
 // This file is auto generated. ANY EDITS YOU MAKE MAY BE LOST WHEN THIS FILE IS REGENERATED!!!
 // ======================================================================
 
@@ -698,7 +698,7 @@ module top ;
 
 	cy_psoc3_pins_v1_10
 		#(.id("bf10fafd-0b2b-433f-95d5-24cc426b237d"),
-		  .drive_mode(3'b100),
+		  .drive_mode(3'b110),
 		  .ibuf_enabled(1'b1),
 		  .init_dr_st(1'b1),
 		  .input_clk_en(0),
@@ -803,7 +803,7 @@ module top ;
 
 	cy_psoc3_pins_v1_10
 		#(.id("3899b5dc-effb-43d8-8853-66d82e684bc9"),
-		  .drive_mode(3'b100),
+		  .drive_mode(3'b110),
 		  .ibuf_enabled(1'b1),
 		  .init_dr_st(1'b1),
 		  .input_clk_en(0),

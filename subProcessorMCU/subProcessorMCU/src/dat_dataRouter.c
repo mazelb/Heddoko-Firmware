@@ -120,7 +120,10 @@ status_t dat_sendDebugMsgToDataBoard(char* debugString)
 	outputBuf[0] = PACKET_TYPE_SUB_PROCESSOR;
 	outputBuf[1] = PACKET_COMMAND_ID_SUBP_OUTPUT_DATA;
 	memcpy(&outputBuf[2], debugString, length);
-	pkt_sendRawPacket(dataRouterConfig->dataBoardUart, outputBuf, length + 2);	// 2 bytes for the header
+    #ifndef CHARGER_TEST_MODE 
+    pkt_sendRawPacket(dataRouterConfig->dataBoardUart, outputBuf, length + 2);	// 2 bytes for the header
+    #endif
+	
 	return STATUS_PASS;
 }
 

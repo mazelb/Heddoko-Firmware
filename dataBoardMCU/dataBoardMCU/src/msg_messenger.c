@@ -9,18 +9,7 @@
 #include "string.h"
 
 //the message boxes, one for each module, each queue must be initialized to NULL.
-msg_messageBox_t messageBoxes[] =
-{
-	{MODULE_SYSTEM_MANAGER,NULL,NULL},
-	{MODULE_SDCARD,NULL,NULL},
-	{MODULE_WIFI,NULL,NULL},
-	{MODULE_CONFIG_MANAGER,NULL,NULL},
-	{MODULE_DEBUG,NULL,NULL},
-	{MODULE_SUB_PROCESSOR,NULL,NULL},
-	{MODULE_DATA_MANAGER,NULL,NULL},
-	{MODULE_GPIO_MANAGER, NULL, NULL},
-	{MODULE_BLE,NULL,NULL}
-};
+msg_messageBox_t messageBoxes[MODULE_NUMBER_OF_MODULES] ={0};
 
 status_t msg_registerForMessages(modules_t module, uint32_t messageMask, xQueueHandle messageQueue)
 {
@@ -36,7 +25,7 @@ status_t msg_sendBroadcastMessage(msg_message_t* message)
 	for(i=0;i<MODULE_NUMBER_OF_MODULES;i++)
 	{
 		//Check the mask for the module to see if the module accepts the message
-		if((messageBoxes[i].messageMask & (1<<message->type)) > 0)
+		if((messageBoxes[i].messageMask & (1<<message->msgType)) > 0)
 		{
 			if(messageBoxes[i].queue != NULL)
 			{
@@ -56,7 +45,7 @@ status_t msg_sendMessage(modules_t destModule, modules_t sourceModule, msg_messa
 	
 	message.parameters = data;
 	message.source = sourceModule;
-	message.type = type;	
+	message.msgType = type;	
 	message.data = NULL;
 	if(messageBoxes[destModule].queue != NULL)
 	{
@@ -79,7 +68,7 @@ status_t msg_sendMessageSimple(modules_t destModule, modules_t sourceModule, msg
 	
 	message.parameters = NULL;
 	message.source = sourceModule;
-	message.type = type;
+	message.msgType = type;
 	message.data = data;
 	if(messageBoxes[destModule].queue != NULL)
 	{
@@ -103,13 +92,13 @@ status_t msg_sendBroadcastMessageSimple(modules_t sourceModule, msg_messageType_
 	
 	message.parameters = NULL;
 	message.source = sourceModule;
-	message.type = type;
+	message.msgType = type;
 	message.data = data;
 	int i =0;
 	for(i=0;i<MODULE_NUMBER_OF_MODULES;i++)
 	{
 		//Check the mask for the module to see if the module accepts the message
-		if((messageBoxes[i].messageMask & (1<<message.type)) > 0)
+		if((messageBoxes[i].messageMask & (1<<message.msgType)) > 0)
 		{
 			if(messageBoxes[i].queue != NULL)
 			{

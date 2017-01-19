@@ -85,6 +85,7 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
  * @return void
  ***********************************************************************************************/
 status_t sdc_writeToFile(sdc_file_t* fileObject, void* data, size_t size);
+status_t sdc_writeDirectToFile(sdc_file_t* fileObject, void* data, size_t fileOffset, size_t length);
 status_t sdc_readFromFile(sdc_file_t* fileObject, void* data, size_t fileOffset, size_t length);
 /***********************************************************************************************
  * sdc_closeFile(sdc_file_t* fileObject)

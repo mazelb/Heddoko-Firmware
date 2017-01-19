@@ -98,7 +98,9 @@ void brd_dataBoardManager(void *pvParameters)
 			getSystemStatus(&systemStatus);
 			if (xSemaphoreTake(semaphore_dataBoardUart, 1000) == pdTRUE)	// wait for one second to make sure we send out status every time
 			{
-				sendStatus(systemStatus);
+				#ifndef CHARGER_TEST_MODE 
+                sendStatus(systemStatus);
+                #endif
 				xSemaphoreGive(semaphore_dataBoardUart);
 			}
 		}
@@ -138,7 +140,8 @@ void processPacket(pkt_rawPacket_t *packet)
 				getSystemStatus(&systemStatus);
 				if (xSemaphoreTake(semaphore_dataBoardUart, 100) == pdTRUE)
 				{
-					sendStatus(systemStatus);
+					
+                    sendStatus(systemStatus);
 					xSemaphoreGive(semaphore_dataBoardUart);
 				}
 			break;

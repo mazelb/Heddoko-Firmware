@@ -1,3 +1,3 @@
-# Component constraints for D:\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\TopDesign\TopDesign.cysch
-# Project: D:\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\HeddokoBLE.cyprj
-# Date: Thu, 15 Sep 2016 14:19:52 GMT
+# Component constraints for C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\TopDesign\TopDesign.cysch
+# Project: C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\HeddokoBLE.cyprj
+# Date: Wed, 07 Dec 2016 18:48:07 GMT

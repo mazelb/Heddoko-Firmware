@@ -140,12 +140,12 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 			break;
 		}
 	}
-	dbg_printString(DBG_LOG_LEVEL_DEBUG,"Received a packet!!!!");
+	dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received a packet!!!!");
 }
 
 static void processMessage(msg_message_t message)
 {
-	switch(message.type)
+	switch(message.msgType)
 	{
 		case MSG_TYPE_ENTERING_NEW_STATE:
 		{

@@ -29,5 +29,5 @@ void drv_piezo_init(drv_piezo_config_t* peizoConfig);
 void drv_piezo_playTone(uint16_t noteFrequency);
 void drv_piezo_stopPlaying();
 void drv_piezo_playPattern(drv_piezo_noteElement_t *notePattern, uint16_t totalElements);
-
+void drv_piezo_togglePiezo(bool piezoState);
 #endif /* DRV_PIEZO_H_ */

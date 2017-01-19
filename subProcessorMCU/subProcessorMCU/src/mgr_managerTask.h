@@ -38,5 +38,5 @@ typedef struct
 
 void mgr_managerTask(void *pvParameters);
 mgr_systemStates_t mgr_getState();
-
+void setJackState(bool enabled);
 #endif /* MGR_MANAGERTASK_H_ */

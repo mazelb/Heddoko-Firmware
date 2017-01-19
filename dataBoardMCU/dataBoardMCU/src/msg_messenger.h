@@ -21,7 +21,7 @@ typedef enum
 	MSG_TYPE_STATE,					 //sent when the actual change takes place. 
 	MSG_TYPE_ERROR,
 	MSG_TYPE_SDCARD_STATE,
-	MSG_TYPE_WIFI_STATE,	//sent from the net manager when the wifi connection state changes
+	MSG_TYPE_WIFI_STATE,	//sent from the net manager when the wifi connection state changes 
 	MSG_TYPE_USB_CONNECTED,
 	MSG_TYPE_CHARGER_EVENT,
 	MSG_TYPE_COMMAND_PACKET_RECEIVED,			//TODO: should we have a separate type for the commands to the power board
@@ -34,12 +34,17 @@ typedef enum
     MSG_TYPE_WIFI_CONFIG,
     MSG_TYPE_SET_SERIAL,
     MSG_TYPE_SAVE_SETTINGS,
-    MSG_TYPE_STREAM_REQUEST
+    MSG_TYPE_STREAM_REQUEST,
+    MSG_TYPE_TFTP_INITIATE_TRANSFER,
+    MSG_TYPE_TFTP_PACKET_RECEIVED,
+    MSG_TYPE_TFTP_TRANSFER_RESULT,
+    MSG_TYPE_TFTP_PACKET_TIMEOUT
+    
 }msg_messageType_t;
 
 typedef struct 
 {
-	msg_messageType_t type;
+	msg_messageType_t msgType;
 	modules_t source;
 	void* parameters;
 	uint32_t data;	

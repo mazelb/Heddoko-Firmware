@@ -9,6 +9,7 @@
 #include <assert.h>
 #include "cmd_commandProc.h"
 #include "dat_dataRouter.h"
+#include "mgr_managerTask.h"
 #include "common.h"
 #include "LTC2941-1.h"
 #include "drv_gpio.h"
@@ -168,8 +169,14 @@ void cmd_task_commandProcesor(void *pvParameters)
 				else if (strncmp(packet.packetData,"jacksEn1",8)==0)
 				{
 					dat_sendDebugMsgToDataBoard("PwrBrdMsg:Jacks Enabled\r\n");
-					drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
-					drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);
+                    setJackState(true);
+                    sprintf(tempString,"jacks set high\r\n");
+                    if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+                    {
+                        dat_sendStringToUsb(tempString);
+                    }
+					//drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_LOW);
+					//drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_LOW);
 					forwardCommand = false; 	
 				}
 				else if (strncmp(packet.packetData,"pwrEn1",6)==0)
@@ -193,11 +200,37 @@ void cmd_task_commandProcesor(void *pvParameters)
 					drv_gpio_setPinState(DRV_GPIO_PIN_PWR_EN, DRV_GPIO_PIN_STATE_LOW);
 					forwardCommand = false; 	
 				}
+                else if (strncmp(packet.packetData,"gpioEn1",7)==0)
+                {
+                    sprintf(tempString,"gpio set high\r\n");
+                    if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+                    {
+                        dat_sendStringToUsb(tempString);
+                    }
+                    drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_HIGH);
+                    forwardCommand = false;
+                }
+                else if (strncmp(packet.packetData,"gpioEn0",7)==0)
+                {
+                    sprintf(tempString,"gpio set low\r\n");
+                    if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+                    {
+                        dat_sendStringToUsb(tempString);
+                    }
+                    drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_LOW);
+                    forwardCommand = false;
+                }                
 				else if (strncmp(packet.packetData,"jacksEn0",8)==0)
 				{
 					dat_sendDebugMsgToDataBoard("PwrBrdMsg:Jacks Enabled\r\n");
-					drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_HIGH);
-					drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
+					setJackState(false);
+                    sprintf(tempString,"jacks set low\r\n");
+                    if(packet.packetSource == CMD_COMMAND_SOURCE_USB)
+                    {
+                        dat_sendStringToUsb(tempString);
+                    }
+                    //drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN1, DRV_GPIO_PIN_STATE_HIGH);
+					//drv_gpio_setPinState(DRV_GPIO_PIN_JC_EN2, DRV_GPIO_PIN_STATE_HIGH);
 					forwardCommand = false;
 				}								
 				else if (strncmp(packet.packetData,"crashSystem",11)==0)

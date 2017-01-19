@@ -11,7 +11,7 @@
 #include "common.h"
 #include "drv_uart.h"
 #include "pkt_packetCommandsList.h"
-#define RAW_PACKET_MAX_SIZE 512 //TODO will have to allocate this memory dynamically.
+#define RAW_PACKET_MAX_SIZE 1024 //TODO will have to allocate this memory dynamically.
 #define RAW_PACKET_START_BYTE 0xDE
 #define RAW_PACKET_ESCAPE_BYTE 0xDF
 #define RAW_PACKET_ESCAPE_OFFSET 0x10
