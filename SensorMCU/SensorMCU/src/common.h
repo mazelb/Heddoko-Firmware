@@ -12,19 +12,10 @@
 #define COMMON_H_
 
 #define VERSION "V0.1b"
-
+#define SENSOR_ID_DEFAULT 0
 #define ALL_INTERRUPT_MASK  0xffffffff
 #define TRUE 1
 #define FALSE 0
-
-/** Baudrate setting for all : 115200 */
-#define CONF_BAUDRATE   115200
-/** Char setting     : 8-bit character length (don't care for UART) */
-#define CONF_CHARLENGTH US_MR_CHRL_8_BIT
-/** Parity setting   : No parity check */
-#define CONF_PARITY     UART_MR_PAR_NO
-/** Stopbit setting  : No extra stopbit, i.e., use 1 (don't care for UART) */
-#define CONF_STOPBITS   US_MR_NBSTOP_1_BIT
 
 //#define ENABLE_DEBUG_DATA	//enable free running counter instead of actual imu Data.
 
@@ -34,39 +25,33 @@ typedef enum
 	STATUS_FAIL = 1,
 	STATUS_EOF = 2 //end of file, used in getChar	
 }status_t;
-
+#define SETTINGS_NVM_PAGE 0x3F00
+#define SETTINGS_MASTER_KEY 0xb01dfaca
 typedef struct
 {
-	uint8_t sensorId;
-	uint8_t serialNumber[16];
-	bool setupModeEnabled;
-	bool enableHPR;
-	uint32_t baud;
+	uint32_t settingsKey; //key that validates if the settings have been loaded.  
+	uint8_t sensorId;	
+	uint8_t serialNumber[16]; //serialnumber of the processor
+	uint8_t setupModeEnabled; //send button press messages when this is set to 1
+	uint8_t enableHPR; //Heading pitch roll enabled = 1, quaternion = 0
+	uint32_t baud;		//does nothing for now... baud rate changing is disabled. 
 	uint8_t magRate;
 	uint8_t accelRate;
 	uint8_t gyroRate;
-	
+	uint8_t algoControlReg; //default settings for the algorithm controller. 
+	uint32_t sensorRange[2]; //Sensor range for mag and acceleration = sensorRange[0], gyro = sensorRange[1]
+	uint8_t warmUpValid; 
+	uint8_t loadWarmupOnBoot; //load the warmup parameters from NVM memory on boot. 
+	uint8_t loadRangesOnBoot; //
 }sensorSettings_t;
 
-/* Board Init configuration */
-#define WDT_PERIOD                        10000
 
-
-/*	task_dataProcessor.c	*/
-#define PACKET_WAIT_TIMEOUT						22
-#define PACKET_LOSS_COUNT_FOR_RECONNECT			20
-#define PACKET_LOSS_COUNT_FOR_ERROR				500
-
-#define WAKEUP_DELAY							(1 * SECONDS)
-#define FORCED_SYSTEM_RESET_TIMEOUT				(10 * SECONDS)
-#define SLEEP_ENTRY_WAIT_TIME					(4 * SECONDS)
-#define MAX_IDLE_TIMEOUT						(5 * MINS)	
-#define SD_INSERT_WAIT_TIMEOUT					(5 * SECONDS)	
 
 //Time conversions defines
 #define SECONDS									1000	//converts seconds to milli-seconds
 #define MINS									60 * 1000	//converts minutes to milli-seconds
 
-int itoa(int value, char* sp, int radix);
+void writeSettings();
+status_t loadSettings();
 
 #endif /* COMMON_H_ */

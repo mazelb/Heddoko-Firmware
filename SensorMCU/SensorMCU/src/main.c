@@ -36,9 +36,11 @@
 #include "cmd_commandProcessor.h"
 #include "drv_i2c.h"
 #include "imu.h"
+#include "nvm.h"
 
-#define SENSOR_ID_DEFAULT 0
 
+extern sensorSettings_t settings;
+extern uint32_t warmUpParameterValues[35]; 	
 /** Handler for the device SysTick module, called when the SysTick counter
  *  reaches the set period.
  *
@@ -72,21 +74,7 @@ static void config_gpio(void)
 	//Setup the EM_INT pin as an 	
 	port_pin_set_config(GPIO_EM_MICRO_INT_PIN, &pin_conf);
 }
-sensorSettings_t settings = 
-{
-	.sensorId = SENSOR_ID_DEFAULT,
-	.serialNumber = {0,0,0,0,0,0,0,0,0,0,0,0},
-	.setupModeEnabled = false,
-	#ifdef HPR
-	.enableHPR = 1,
-	#else
-	.enableHPR = 0,
-	#endif
-	.baud = 921600,
-	.magRate = EM_MAG_OUPUT_DATA_RATE,
-	.accelRate = EM_ACCEL_OUPUT_DATA_RATE,
-	.gyroRate = EM_GYRO_OUPUT_DATA_RATE
-};
+
 
 /*	I2C structures declarations	*/
 drv_twi_config_t twiConfig = 
@@ -129,6 +117,12 @@ slave_twi_config_t em7180Config=
 	.drv_twi_options = &twiConfig
 };
 
+slave_twi_config_t eepromConfig=
+{
+	.emId = 0,
+	.address = 0x50, //address for the eeprom	
+	.drv_twi_options = &twiConfig
+};
 void enableRs485Transmit()
 {
 	port_pin_set_output_level(GPIO_RS485_DATA_DIRECTION_RE, GPIO_RS485_DATA_TRANSMIT);
@@ -147,11 +141,7 @@ pkt_packetParserConfiguration_t packetParserConfig =
 	.packetReceivedCallback = cmd_processPacket,
 	.uartModule = &cmd_uart_module	
 };
-void readUniqueId()
-{
-	uint8_t* localSerialNumber = 0x0080A00C; //this is the memory address where the serial number lives. 
-	memcpy(settings.serialNumber,localSerialNumber,16);
-}
+
 /** Callback function for the EXTINT driver, called when an external interrupt
  *  detection occurs.
  */
@@ -168,16 +158,16 @@ static void extint_callback(void)
  */
 static void configure_eic_callback(void)
 {
-	extint_register_callback(extint_callback,
-			SW1_EIC_LINE,
-			EXTINT_CALLBACK_TYPE_DETECT);
-	extint_chan_enable_callback(SW1_EIC_LINE,
-			EXTINT_CALLBACK_TYPE_DETECT);
 	//extint_register_callback(extint_callback,
-			//SW2_EIC_LINE,
-			//EXTINT_CALLBACK_TYPE_DETECT);
-	//extint_chan_enable_callback(SW2_EIC_LINE,
-			//EXTINT_CALLBACK_TYPE_DETECT);			
+	//SW1_EIC_LINE,
+	//EXTINT_CALLBACK_TYPE_DETECT);
+	//extint_chan_enable_callback(SW1_EIC_LINE,
+	//EXTINT_CALLBACK_TYPE_DETECT);
+	extint_register_callback(extint_callback,
+	SW2_EIC_LINE,
+	EXTINT_CALLBACK_TYPE_DETECT);
+	extint_chan_enable_callback(SW2_EIC_LINE,
+	EXTINT_CALLBACK_TYPE_DETECT);
 }
 
 /** Configures the External Interrupt Controller to detect changes in the board
@@ -187,22 +177,22 @@ static void configure_extint(void)
 {
 	struct extint_chan_conf eint_chan_conf;
 	extint_chan_get_config_defaults(&eint_chan_conf);
-	eint_chan_conf.gpio_pin           = SW1_PIN;
+	//eint_chan_conf.gpio_pin           = SW1_PIN;
 	eint_chan_conf.gpio_pin_pull = SYSTEM_PINMUX_PIN_PULL_UP;
-	eint_chan_conf.gpio_pin_mux       = SW1_EIC_MUX;
+	//eint_chan_conf.gpio_pin_mux       = SW1_EIC_MUX;
 	eint_chan_conf.detection_criteria = EXTINT_DETECT_FALLING;
 	eint_chan_conf.filter_input_signal = true;
-	extint_chan_set_config(SW1_EIC_LINE, &eint_chan_conf);	
-	//eint_chan_conf.gpio_pin           = SW2_PIN;
-	//eint_chan_conf.gpio_pin_mux       = SW2_EIC_MUX;
-	//extint_chan_set_config(SW2_EIC_LINE, &eint_chan_conf);	
+	//extint_chan_set_config(SW1_EIC_LINE, &eint_chan_conf);	
+	eint_chan_conf.gpio_pin           = SW2_PIN;
+	eint_chan_conf.gpio_pin_mux       = SW2_EIC_MUX;
+	extint_chan_set_config(SW2_EIC_LINE, &eint_chan_conf);	
 }
 
 __attribute__((optimize("O0"))) static void configure_uart(void)
 {
 	struct usart_config usart_conf;
 	//load up the default usart settings.
-	usart_get_config_defaults(&usart_conf);
+	//usart_get_config_defaults(&usart_conf);
 	usart_conf.mux_setting = CMD_UART_MUX_SETTING;
 	usart_conf.pinmux_pad0 = CMD_UART_PINMUX_PAD0;
 	usart_conf.pinmux_pad1 = CMD_UART_PINMUX_PAD1;
@@ -211,7 +201,16 @@ __attribute__((optimize("O0"))) static void configure_uart(void)
 	usart_conf.baudrate    = settings.baud;
 	usart_conf.sample_rate = USART_SAMPLE_RATE_16X_ARITHMETIC;
 	status_code_genare_t status = STATUS_NO_CHANGE;
+	Sercom* serComPtr = CMD_UART_MODULE;  
+	SercomUsart *const usart_hw = &(serComPtr->USART); 
+
+	
 	status = usart_init(&cmd_uart_module, CMD_UART_MODULE, &usart_conf);
+	//usart_hw->BAUD.reg =  0x00030000UL;
+	//usart_hw->CTRLB.reg = 0x0000B15BUL;
+	//usart_hw->CTRLA.reg = 0x40310084UL;
+
+	//usart_hw->INTFLAG.reg = 0x00000001UL;
 	usart_enable(&cmd_uart_module);	
 }
 
@@ -232,7 +231,57 @@ void receiveCallback(const struct usart_module *const usart_module)
 }
 
 
-__attribute__((optimize("O0"))) int main(void)
+__attribute__((optimize("O0"))) void configure_eeprom(void)
+{
+	 ///* Setup EEPROM emulator service */
+
+	enum status_code error_code = STATUS_OK;
+	struct nvm_config config;
+	struct nvm_parameters parameters;
+
+	/* Retrieve the NVM controller configuration - enable manual page writing
+	 * mode so that the emulator has exclusive control over page writes to
+	 * allow for caching */
+	nvm_get_config_defaults(&config);
+	config.manual_page_write = true;
+
+	/* Apply new NVM configuration */
+	do {
+		error_code = nvm_set_config(&config);
+	} while (error_code == STATUS_BUSY);
+
+	/* Get the NVM controller configuration parameters */
+	nvm_get_parameters(&parameters);
+	
+	uint8_t dataTest[64] = {0};
+	do {
+		error_code = nvm_erase_row(
+		(uint32_t)(0x3F00));
+	} while (error_code == STATUS_BUSY);
+	
+	do {
+		error_code = nvm_write_buffer(
+		(uint32_t)(0x3F00),
+		dataTest,
+		NVMCTRL_PAGE_SIZE);
+	} while (error_code == STATUS_BUSY);
+	do {
+		error_code = nvm_execute_command(
+		NVM_COMMAND_WRITE_PAGE,
+		(uint32_t)(0x3F00), 0);
+	} while (error_code == STATUS_BUSY);
+	//
+	do {
+		error_code = nvm_read_buffer(
+		(uint32_t)(0x3F00),
+		dataTest,
+		NVMCTRL_PAGE_SIZE);
+	} while (error_code == STATUS_BUSY);	
+	
+ 
+}
+
+int main(void)
 {
 	system_init();
 	configure_uart();
@@ -241,6 +290,16 @@ __attribute__((optimize("O0"))) int main(void)
 	config_gpio();
 	configure_extint();
 	configure_eic_callback();
+	//initialize the warm up parameters
+	memset(warmUpParameterValues,0xA5,140);
+
+	if(loadSettings() != STATUS_PASS)
+	{
+		//load the default settings into memory. 
+		writeSettings();
+	}
+	
+	//configure_eeprom();
 	status_code_genare_t uart_status = STATUS_ERR_NOT_INITIALIZED;
 	/*	Initialize I2C drivers	*/
 	status_t status = drv_i2c_init(&twiConfig);
@@ -254,32 +313,23 @@ __attribute__((optimize("O0"))) int main(void)
 	system_interrupt_enable_global();	
 	
 
-	//read the unique ID for the microcontroller
-	readUniqueId(); 	
+
 	int i = 0, size = 0;
 	volatile uint16_t buff = 0x00; 
-	//uint8_t receivedByte = 0x00; 
 	status = STATUS_FAIL;
-	//while(status == STATUS_FAIL)
-	//{
-		status = resetAndInitialize(&em7180Config);
-	//}
+
+	status = resetAndInitialize(&em7180Config);
+
 	pkt_packetParserInit(&packetParserConfig);	
-	//usart_register_callback(&cmd_uart_module,receiveCallback,USART_CALLBACK_BUFFER_RECEIVED);
-	//usart_enable_callback(&cmd_uart_module, USART_CALLBACK_BUFFER_RECEIVED);
-	//usart_read_job(&cmd_uart_module,&receivedByte);
+
 	
 	//turn on the LED
 	port_pin_set_output_level(LED_BLUE_PIN,LED_ACTIVE);
-	//delay_ms(5000); 
-	//port_pin_set_output_level(LED_BLUE_PIN,LED_INACTIVE);	
-	//port_pin_set_output_level(LED_GREEN_PIN,LED_ACTIVE);
-	//delay_ms(5000); 
-	//port_pin_set_output_level(LED_GREEN_PIN,LED_INACTIVE);
-	//port_pin_set_output_level(LED_RED_PIN,LED_ACTIVE);
+
 	
-	sendButtonPressEvent();
-	//port_pin_set_output_level(LED_GREEN_PIN,LED_INACTIVE);
+	sendGetStatusResponse();
+
+
 	while (true) 
 	{
 		uart_status = usart_read_wait(&cmd_uart_module, &buff);

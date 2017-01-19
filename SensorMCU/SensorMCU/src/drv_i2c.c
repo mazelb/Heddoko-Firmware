@@ -106,6 +106,23 @@ int drv_i2c_write_bytes(slave_twi_config_t* slave_twi_config, uint8_t reg, uint8
 	return STATUS_PASS;
 }
 
+int drv_i2c_write_bytes_raw(slave_twi_config_t* slave_twi_config, uint8_t* data, uint8_t length)
+{
+	int status = STATUS_FAIL;
+	//Write one byte to desired register
+	struct i2c_master_packet packet;
+	packet.data = data;
+	packet.data_length = length;
+	packet.address = (uint32_t) slave_twi_config->address;
+	packet.ten_bit_address = false;
+	packet.high_speed = false;
+	status = i2c_master_write_packet_wait(&slave_twi_config->drv_twi_options->module, &packet);
+	if (status != STATUS_OK)
+	{
+		return STATUS_FAIL;
+	}
+	return STATUS_PASS;
+}
 
 int drv_i2c_read(slave_twi_config_t* slave_twi_config, uint8_t reg, uint8_t* data, uint8_t length)
 {
@@ -120,6 +137,37 @@ int drv_i2c_read(slave_twi_config_t* slave_twi_config, uint8_t reg, uint8_t* dat
 	packet.ten_bit_address = false;
 	packet.high_speed = false;
 	
+	status = i2c_master_write_packet_wait(&slave_twi_config->drv_twi_options->module, &packet);
+	if (status != STATUS_OK)
+	{
+		return STATUS_FAIL;
+	}
+	
+	//initialize the read sequence
+	packet.data = data;
+	packet.data_length = length;
+	status = i2c_master_read_packet_wait(&slave_twi_config->drv_twi_options->module, &packet);
+	if (status != STATUS_OK)
+	{
+		return STATUS_FAIL;
+	}
+	
+	return STATUS_PASS;
+}
+
+int drv_i2c_read_16bit(slave_twi_config_t* slave_twi_config, uint16_t reg, uint8_t* data, uint8_t length)
+{
+	int status = STATUS_FAIL;
+	//Write the address of register to read from
+	uint8_t dataPacket[3] = {0};
+	struct i2c_master_packet packet;
+	dataPacket[0] = reg >> 8; //MSB of register/address
+	dataPacket[1] = reg & 0xFF; //LSB of register/address
+	packet.data = &dataPacket[0];
+	packet.data_length = 2;
+	packet.address = (uint32_t) slave_twi_config->address;
+	packet.ten_bit_address = false;
+	packet.high_speed = false;	
 	status = i2c_master_write_packet_wait(&slave_twi_config->drv_twi_options->module, &packet);
 	if (status != STATUS_OK)
 	{
