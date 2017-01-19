@@ -65,7 +65,7 @@ __attribute__((optimize("O0"))) int resetAndInitialize(slave_twi_config_t* slave
 	{
 		return STATUS_FAIL;
 	}	
-	//Read interupt pin from Sentral over and over again until it is high, then the device is ready to go. 
+	//Read interrupt pin from Sentral over and over again until it is high, then the device is ready to go. 
 	//TODO remove this delay	
 	delay_ms(1000);	//wait for the device to complete EEPROM upload
 	
@@ -129,7 +129,7 @@ __attribute__((optimize("O0"))) int resetAndInitialize(slave_twi_config_t* slave
 	}
 	
 	//enable events
-	status = drv_i2c_write(slave_config, EM_INTERRUPT_CONFIG_REGISTER, EM_RESET_INT_FLAG);
+	status = drv_i2c_write(slave_config, EM_INTERRUPT_CONFIG_REGISTER, EM_RESET_INT_FLAG | EM_ERROR_INT_FLAG);
 	if (status != STATUS_PASS)
 	{
 		return STATUS_FAIL;
@@ -179,13 +179,14 @@ void sendButtonPressEvent()
 
 void sendConfiguration()
 {
+	uint8_t algoControl = 0;
 	//create the return packet
 	outputDataBuffer[0] = PACKET_TYPE_IMU_SENSOR;
 	outputDataBuffer[1] = PACKET_COMMAND_ID_GET_CONFIG_RESP;
 	outputDataBuffer[2] = settings.sensorId;
 	//read the control register before sending it. 
-	drv_i2c_read(&em7180Config, EM_ALGORITHM_CONTROL_REGISTER, &(settings.algoControlReg), 1);
-	outputDataBuffer[3] = settings.algoControlReg;
+	drv_i2c_read(&em7180Config, EM_ALGORITHM_CONTROL_REGISTER, &algoControl, 1);
+	outputDataBuffer[3] = algoControl;
 	outputDataBuffer[4] = settings.loadWarmupOnBoot;
 	outputDataBuffer[5] = settings.loadRangesOnBoot;	
 	memcpy(outputDataBuffer+6,settings.sensorRange,8);
@@ -210,26 +211,15 @@ void sendGetStatusResponse()
 	{
 		debugStructure.gyroReadErrorCount = data;
 	}
-	//read the algorithm status and update the status parameter.	
-	if(drv_i2c_read(&em7180Config, 0x38, &data, 1) == STATUS_PASS)
+	//read the sentral status registers and update the status parameter.	
+	if(drv_i2c_read(&em7180Config, 0x35, &debugStructure.statusMask, 4) != STATUS_PASS)
 	{
-		debugStructure.statusMask = data; 
+		debugStructure.statusMask = 0xDEADBEEF; 
 	}
-	//read the event status register to report it aswell
-	if(drv_i2c_read(&em7180Config, 0x35, &data, 1) == STATUS_PASS)
-	{
-		debugStructure.statusMask |= (data<<8); 
-	}
+
 	memcpy(outputDataBuffer+3,&debugStructure,24);
 	//delay_us(100);
 	pkt_SendRawPacket(outputDataBuffer, 27);	
-}
-uint32_t swapByteOrder(uint32_t num)
-{
-	return ((num>>24)&0xff) | // move byte 3 to byte 0
-	((num<<8)&0xff0000) | // move byte 1 to byte 2
-	((num>>8)&0xff00) | // move byte 2 to byte 1
-	((num<<24)&0xff000000); // byte 0 to byte 3
 }
 
 __attribute__((optimize("O0"))) status_t readParameter(uint8_t parameterNumber, bool firstRead, uint32_t* parameterValue)
@@ -328,9 +318,7 @@ void updateAllConfigParameters()
 	//reset the parameter request register
 	drv_i2c_write(&em7180Config, EM_PARAM_REQUEST, 0x00);	
 	//reset the algorithm control register
-	drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, settings.algoControlReg); //send the configured algo control register.  
-
-	
+	drv_i2c_write(&em7180Config,EM_ALGORITHM_CONTROL_REGISTER, settings.algoControlReg); //send the configured algo control register.  	
 }
 void sendConfigurationParameters()
 {
@@ -436,16 +424,18 @@ void sendWarmStartUpValues()
 }
 
 
-__attribute__((optimize("O0"))) void updateImuData()
+void updateImuData()
 {
 	uint8_t statusRegister = 0x00; 
 	uint8_t algoStatus = 0x00; 
 	
-	status_t status = drv_i2c_read(&em7180Config, 0x35, &statusRegister, 1);
+	status_t status = STATUS_PASS;
+	status = drv_i2c_read(&em7180Config, 0x35, &statusRegister, 1);
+	status |= drv_i2c_read(&em7180Config, 0x34, &algoStatus, 1);
 	if(status == STATUS_PASS)
 	{	
 		//check the IMU status to confirm it's operational
-		if ((statusRegister & 0x01 > 0) || (statusRegister & 0x02 > 0) )
+		if ((statusRegister & 0x01 > 0) || (statusRegister & 0x02 > 0) || algoStatus != 0x01 ) // 
 		{
 			//reset the IMU, and skip this 
 			resetAndInitialize(&em7180Config); 		
@@ -576,19 +566,31 @@ void getEepromPacket(uint16_t address)
 	}	
 } 
 
-void writeEepromPacket(uint8_t* data)
+void writeEepromPacket(uint8_t* data, uint16_t length)
 {
+	status_t status = STATUS_PASS; 
 	outputDataBuffer[0] = PACKET_TYPE_IMU_SENSOR; 
 	//this function expects that the first 2 bytes are the address of where the packet should go. 
 	outputDataBuffer[1] = PACKET_COMMAND_ID_WRITE_EEPROM_RESP;
 	//write the address to the front of the response packet	
 	outputDataBuffer[2] = data[0]; //LSB
 	outputDataBuffer[3] = data[1]; //MSB
-	//reverse the byte order for the EEPROM
-	uint8_t swapByte = data[0];
-	data[0] = data[1];
-	data[1] = swapByte;  
-	if(drv_i2c_write_bytes_raw(&eepromConfig,data, 66) == STATUS_PASS) //the packet should be 2 address bytes + 64 bytes of data. 
+	//check the size of the packet, make sure it's not a corrupt packet that somehow crept through. 
+	if(length != 66)
+	{
+		status = STATUS_FAIL; 
+	} 
+	
+	if(status == STATUS_PASS)
+	{
+		//reverse the byte order for the EEPROM
+		uint8_t swapByte = data[0];
+		data[0] = data[1];
+		data[1] = swapByte;
+		status = drv_i2c_write_bytes_raw(&eepromConfig,data, 66);
+	}	
+	
+	if(status == STATUS_PASS) //the packet should be 2 address bytes + 64 bytes of data. 
 	{
 		outputDataBuffer[4] = 0x01; //set the flag to 1 to indicate that the write was successful
 	} 
@@ -802,7 +804,7 @@ void cmd_processPacket(rawPacket_t* packet)
 			case PACKET_COMMAND_ID_WRITE_EEPROM_PACKET:
 			if(packet->payload[2] == settings.sensorId)
 			{
-				writeEepromPacket(&(packet->payload[3])); 
+				writeEepromPacket(&packet->payload[3], packet->payloadSize - 3); 					
 			}
 			break;			
 		}

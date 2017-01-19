@@ -234,24 +234,10 @@ void receiveCallback(const struct usart_module *const usart_module)
 __attribute__((optimize("O0"))) void configure_eeprom(void)
 {
 	 ///* Setup EEPROM emulator service */
-	 //enum status_code error_code = eeprom_emulator_init();
-	 //if (error_code == STATUS_ERR_NO_MEMORY) 
-	 //{
-		 //while (true) 
-		 //{
-		 ///* No EEPROM section has been set in the device's fuses */
-		 //}
-	 //}
-	 //else if (error_code != STATUS_OK) 
-	 //{
-		 ///* Erase the emulated EEPROM memory (assume it is unformatted or
-		 //* irrecoverably corrupt) */
-		 //eeprom_emulator_erase_memory();
-		 //eeprom_emulator_init();
-	 //}
-	 	enum status_code error_code = STATUS_OK;
-	 	struct nvm_config config;
-	 	struct nvm_parameters parameters;
+
+	enum status_code error_code = STATUS_OK;
+	struct nvm_config config;
+	struct nvm_parameters parameters;
 
 	/* Retrieve the NVM controller configuration - enable manual page writing
 	 * mode so that the emulator has exclusive control over page writes to
@@ -266,16 +252,8 @@ __attribute__((optimize("O0"))) void configure_eeprom(void)
 
 	/* Get the NVM controller configuration parameters */
 	nvm_get_parameters(&parameters);
-
-	///* Ensure the device fuses are configured for at least one master page row,
-	 //* one user EEPROM data row and one spare row */
-	//if (parameters.eeprom_number_of_pages < (3 * NVMCTRL_ROW_PAGES)) 
-	//{
-		//return STATUS_ERR_NO_MEMORY;
-	//} 
 	
 	uint8_t dataTest[64] = {0};
-	//memset(dataTest,0xA5,64);
 	do {
 		error_code = nvm_erase_row(
 		(uint32_t)(0x3F00));
@@ -287,8 +265,6 @@ __attribute__((optimize("O0"))) void configure_eeprom(void)
 		dataTest,
 		NVMCTRL_PAGE_SIZE);
 	} while (error_code == STATUS_BUSY);
-	//memset(dataTest,0x00,64);
-	//
 	do {
 		error_code = nvm_execute_command(
 		NVM_COMMAND_WRITE_PAGE,
@@ -340,36 +316,20 @@ int main(void)
 
 	int i = 0, size = 0;
 	volatile uint16_t buff = 0x00; 
-	//uint8_t receivedByte = 0x00; 
 	status = STATUS_FAIL;
-	//while(status == STATUS_FAIL)
-	//{
-		status = resetAndInitialize(&em7180Config);
-	//}
+
+	status = resetAndInitialize(&em7180Config);
+
 	pkt_packetParserInit(&packetParserConfig);	
-	//usart_register_callback(&cmd_uart_module,receiveCallback,USART_CALLBACK_BUFFER_RECEIVED);
-	//usart_enable_callback(&cmd_uart_module, USART_CALLBACK_BUFFER_RECEIVED);
-	//usart_read_job(&cmd_uart_module,&receivedByte);
+
 	
 	//turn on the LED
 	port_pin_set_output_level(LED_BLUE_PIN,LED_ACTIVE);
-	//delay_ms(5000); 
-	//port_pin_set_output_level(LED_BLUE_PIN,LED_INACTIVE);	
-	//port_pin_set_output_level(LED_GREEN_PIN,LED_ACTIVE);
-	//delay_ms(5000); 
-	//port_pin_set_output_level(LED_GREEN_PIN,LED_INACTIVE);
-	//port_pin_set_output_level(LED_RED_PIN,LED_ACTIVE);
-	
-	//sendButtonPressEvent();
+
 	
 	sendGetStatusResponse();
-	//port_pin_set_output_level(LED_GREEN_PIN,LED_INACTIVE);
-	
-	//togglePassthrough(0x01);
-	//delay_ms(1000);
-	//getEepromPacket(0x0000);
-	//delay_ms(1000);
-	//togglePassthrough(0x00);
+
+
 	while (true) 
 	{
 		uart_status = usart_read_wait(&cmd_uart_module, &buff);

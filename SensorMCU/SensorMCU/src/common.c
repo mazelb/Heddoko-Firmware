@@ -32,42 +32,7 @@ sensorSettings_t settings =
 	.algoControlReg = 0x00 //all options disabled on algorithm by default. 	
 };
 volatile uint32_t warmUpParameterValues[35] = {0}; 	
-int itoa(int value, char* sp, int radix)
-{
-	 char tmp[16];		// be careful with the length of the buffer
-	 char *tp = tmp;
-	 int i;
-	 unsigned v;
 
-	 int sign = (radix == 10 && value < 0);
-	 if (sign)
-		 v = -value;
-	 else
-		v = (unsigned)value;
-
-	 while (v || tp == tmp)
-	 {
-		 i = v % radix;
-		 v /= radix;	// v/=radix uses less CPU clocks than v=v/radix does
-		 if (i < 10)
-			*tp++ = i+'0';
-		 else
-			*tp++ = i + 'a' - 10;
-	 }
-
-	 int len = tp - tmp;
-
-	 if (sign)
-	 {
-		 *sp++ = '-';
-		 len++;
-	 }
-
-	 while (tp > tmp)
-	 *sp++ = *--tp;
-
-	 return len;
-}
 void readUniqueId()
 {
 	uint8_t* localSerialNumber = 0x0080A00C; //this is the memory address where the serial number lives.
@@ -107,37 +72,7 @@ void writeSettings()
 			eepromArray[i],NVMCTRL_PAGE_SIZE);
 		} while (error_code == STATUS_BUSY);
 		
-			//do
-			//{
-				//error_code = nvm_execute_command(
-				//NVM_COMMAND_WRITE_PAGE,
-				//(uint32_t)(SETTINGS_NVM_PAGE), 0);
-			//} while (error_code == STATUS_BUSY);
 	}
-	
-	
-	//do {
-		//error_code = nvm_write_buffer(
-		//(uint32_t)(SETTINGS_NVM_PAGE),
-		//&settings,
-		//sizeof(sensorSettings_t));
-	//} while (error_code == STATUS_BUSY);
-	
-	//write the data to the buffer 
-	//do
-	//{
-		//error_code = nvm_update_buffer(SETTINGS_NVM_PAGE, &settings,
-		//0, sizeof(sensorSettings_t));
-	//} while (error_code == STATUS_BUSY);	
-	
-	//commit the buffer to a page. 
-	//do 
-	//{
-		//error_code = nvm_execute_command(
-		//NVM_COMMAND_WRITE_PAGE,
-		//(uint32_t)(SETTINGS_NVM_PAGE), 0);
-	//} while (error_code == STATUS_BUSY);
-	//
 }
 //TODO: This is pretty ugly, when there's time come back and refactor!
 __attribute__((optimize("O0"))) status_t loadSettings()
@@ -169,8 +104,7 @@ __attribute__((optimize("O0"))) status_t loadSettings()
 	{
 		if(tempSettings.settingsKey == SETTINGS_MASTER_KEY)
 		{
-			memcpy(&settings,&tempSettings,sizeof(sensorSettings_t)); 
-			 
+			memcpy(&settings,&tempSettings,sizeof(sensorSettings_t)); 			 
 		}
 		else
 		{

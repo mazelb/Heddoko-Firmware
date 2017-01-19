@@ -51,7 +51,6 @@ typedef struct
 #define SECONDS									1000	//converts seconds to milli-seconds
 #define MINS									60 * 1000	//converts minutes to milli-seconds
 
-int itoa(int value, char* sp, int radix);
 void writeSettings();
 status_t loadSettings();
 
