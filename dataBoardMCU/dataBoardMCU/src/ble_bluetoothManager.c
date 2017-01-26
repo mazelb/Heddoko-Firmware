@@ -12,25 +12,31 @@
 #include "dbg_debugManager.h"
 #include "pkt_packetCommandsList.h"
 #include "subp_subProcessor.h"
+#include "nvm_nvMemInterface.h"
 
 /*	Local defines	*/
-#define BLE_BP_STATUS_DATA_SIZE	5
+#define BLE_BP_STATUS_DATA_SIZE	9 
 #define BLE_MAX_RAW_DATA_SIZE	20
 #define SSID_DATA_SIZE			32
 #define PASSPHRASE_DATA_SIZE	64
 #define BLE_WIFI_DATA_SIZE		(SSID_DATA_SIZE + PASSPHRASE_DATA_SIZE + 1)	// one byte for security type enum
 #define PACKET_HEADER_SIZE		2
+#define BLE_INIT_PACKET_SIZE    BLE_WIFI_DATA_SIZE + 50
 
 /*	Static function forward declarations	*/
 static void processMessage(msg_message_t message);
 static void processRawPacket(pkt_rawPacket_t* packet);
 static void sendBpStatusData();
+static void sendInitialParameters(ble_moduleConfig_t* moduleCfg);
 
 /*	Local variables	*/
 xQueueHandle queue_ble = NULL;
 bool newBpStateDataAvailble = false;
 subp_status_t *subProcessorStatusData;
 uint8_t vRawData[BLE_MAX_RAW_DATA_SIZE];
+ble_moduleConfig_t* moduleConfiguration; 
+net_wirelessConfig_t receivedWifiConfig; 
+
 drv_uart_config_t usart1Config =
 {
 	.p_usart = USART1,
@@ -51,6 +57,7 @@ struct bpStatus_t
 	uint8_t currentState;
 	uint8_t wiFiConnectionState;
 	uint8_t sdCardState;
+    uint32_t sensorMask; 
 }bpStatus;	// status to be passed to BLE module.
 
 struct wifi_data_t
@@ -59,6 +66,17 @@ struct wifi_data_t
     uint8_t passphrase[PASSPHRASE_DATA_SIZE];
     uint8_t securityType;
 }wifi_data;	// local config to store wifi data for BLE module.
+
+typedef struct
+{
+    uint8_t ssid[SSID_DATA_SIZE];
+    uint8_t passphrase[PASSPHRASE_DATA_SIZE];
+    uint8_t securityType;   
+    uint8_t serialNumber[NVM_MAX_SUIT_NAME_SIZE];
+    uint8_t fwVersion[10]; //update this to define
+    uint8_t hwRevision[10];
+    uint8_t modelString[20]; //the model of the brainpack     
+}ble_pkt_initialData_t;
 
 
 /*		Function definitions	*/
@@ -82,9 +100,13 @@ void ble_bluetoothManagerTask(void *pvParameters)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"failed to open USART1 for ble\r\n");
 	}
-	drv_gpio_setPinState(DRV_GPIO_PIN_BLE_RST, DRV_GPIO_PIN_STATE_HIGH);
+	drv_gpio_setPinState(DRV_GPIO_PIN_BLE_RST, DRV_GPIO_PIN_STATE_HIGH);	
 	
-	//send the get time command to the power board
+    //load the settings
+    moduleConfiguration = (ble_moduleConfig_t*)pvParameters;
+    vTaskDelay(5000); 
+    //send the initial configuration to the BLE module
+    sendInitialParameters(moduleConfiguration);    
 	
 	//start the main thread where we listen for packets and messages
 	while (1)
@@ -125,9 +147,13 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 			break;
 			
 			case PACKET_COMMAND_ID_ALL_WIFI_DATA_RESP:
-				memcpy(wifi_data.ssid, (uint8_t *) &packet->payload[2], SSID_DATA_SIZE);    
-				memcpy(wifi_data.passphrase, (uint8_t *) &packet->payload[34], PASSPHRASE_DATA_SIZE);
-				wifi_data.securityType = packet->payload[98];
+                strncpy(receivedWifiConfig.ssid,&packet->payload[2],SSID_DATA_SIZE);
+				//memcpy(wifi_data.ssid, (uint8_t *) &packet->payload[2], SSID_DATA_SIZE);    
+				strncpy(receivedWifiConfig.passphrase,&packet->payload[34],PASSPHRASE_DATA_SIZE);
+                //memcpy(wifi_data.passphrase, (uint8_t *) &packet->payload[34], PASSPHRASE_DATA_SIZE);
+				receivedWifiConfig.securityType = packet->payload[98];
+                msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_DEBUG, MSG_TYPE_WIFI_CONFIG,&receivedWifiConfig);  
+                //maybe some sort of toggle to turn on and off the wifi here.   
 			break;
 			
 			case PACKET_COMMAND_ID_SEND_RAW_DATA_TO_MASTER:	// received as notification every time new data is written
@@ -135,6 +161,10 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 			
 			case PACKET_COMMAND_ID_GET_RAW_DATA_RESP:	// received when the master polls for data
 			break;
+            
+            case PACKET_COMMAND_ID_BLE_RECORDING_REQUEST:
+                msg_sendMessageSimple(MODULE_SYSTEM_MANAGER, MODULE_BLE, MSG_TYPE_TOGGLE_RECORDING, packet->payload[2]); 
+            break;
 			
 			default:
 			break;
@@ -154,6 +184,7 @@ static void processMessage(msg_message_t message)
 				bpStatus.currentState = message.data;
 				newBpStateDataAvailble = true;
 			}
+            
 		}
 		break;
 		case MSG_TYPE_ERROR:
@@ -184,14 +215,42 @@ static void processMessage(msg_message_t message)
 			{
 				bpStatus.batteryLevel =	subProcessorStatusData->chargeLevel;
 				bpStatus.chargeState = subProcessorStatusData->chargerState;
+                bpStatus.sensorMask = subProcessorStatusData->sensorMask;
 				newBpStateDataAvailble = true;
 			}
 		}
 		break;
+        case MSG_TYPE_DEBUG_BLE:
+            sendInitialParameters(moduleConfiguration);   
+        break;
 		default:
 		break;
 		
 	}
+}
+
+static void sendInitialParameters(ble_moduleConfig_t* moduleCfg)
+{
+    uint8_t outputData[BLE_INIT_PACKET_SIZE + PACKET_HEADER_SIZE] = {0};	//create buffer for message
+    ble_pkt_initialData_t initialDataPacket; 
+    //clear the structure to all nulls
+    memset(&initialDataPacket,0,sizeof(ble_pkt_initialData_t));
+    //load the structure for the initial settings packet
+    //TODO: use strncpy instead to make safer
+    strcpy(initialDataPacket.ssid,moduleCfg->wirelessConfig->ssid);
+    strcpy(initialDataPacket.passphrase,moduleCfg->wirelessConfig->passphrase);
+    initialDataPacket.securityType = moduleCfg->wirelessConfig->securityType;
+    strcpy(initialDataPacket.serialNumber,moduleCfg->serialNumber);
+    strcpy(initialDataPacket.fwVersion,moduleCfg->fwVersion);
+    strcpy(initialDataPacket.hwRevision,moduleCfg->hwRevision);
+    strcpy(initialDataPacket.modelString,moduleCfg->modelString);
+    //populate the header packet
+    outputData[0] = PACKET_TYPE_MASTER_CONTROL;
+    outputData[1] = PACKET_COMMAND_ID_BLE_INITIAL_PARAMETERS;
+    //copy over the data to the output buffer
+    memcpy(&outputData[2], &initialDataPacket, sizeof(ble_pkt_initialData_t));
+    //send the packet
+    pkt_sendRawPacket(&usart1Config, outputData, (BLE_INIT_PACKET_SIZE + PACKET_HEADER_SIZE));
 }
 
 static void sendBpStatusData()
@@ -200,8 +259,7 @@ static void sendBpStatusData()
 		
 	outputData[0] = PACKET_TYPE_MASTER_CONTROL;
 	outputData[1] = PACKET_COMMAND_ID_BP_STATUS;
-	memcpy(&outputData[2], &bpStatus, BLE_BP_STATUS_DATA_SIZE);
-		
+	memcpy(&outputData[2], &bpStatus, BLE_BP_STATUS_DATA_SIZE);		
 	pkt_sendRawPacket(&usart1Config, outputData, (BLE_BP_STATUS_DATA_SIZE + PACKET_HEADER_SIZE));
 }
 
@@ -216,7 +274,7 @@ void ble_sendWiFiConfig(net_wirelessConfig_t *wiFiConfig)
 	uint8_t outputData[BLE_WIFI_DATA_SIZE + PACKET_HEADER_SIZE] = {0};	// frame has a two byte header
 	
 	outputData[0] = PACKET_TYPE_MASTER_CONTROL;
-	outputData[1] = PACKET_COMMAND_ID_DEFAULT_WIFI_DATA;
+	outputData[1] = PACKET_COMMAND_ID_BLE_INITIAL_PARAMETERS;
 	
 	memset(&wifi_data.ssid, NULL, SSID_DATA_SIZE);
 	strncpy(&wifi_data.ssid, &wiFiConfig->ssid, SSID_DATA_SIZE);

@@ -188,6 +188,11 @@ void HandleUartRxTraffic(CYBLE_GATTS_WRITE_REQ_PARAM_T * uartRxDataWrReq)
         makeSendPacket(PACKET_COMMAND_ID_SEND_RAW_DATA_TO_MASTER, uartRxDataWrReq->handleValPair.value.val,\
                         (uint16_t) uartRxDataWrReq->handleValPair.value.len);
     }
+    else if(uartRxDataWrReq->handleValPair.attrHandle == CYBLE_HEDDOKO_RECORDING_CONTROL_RECORDING_REQUEST_CHAR_HANDLE)
+    {
+        makeSendPacket(PACKET_COMMAND_ID_BLE_RECORDING_REQUEST, uartRxDataWrReq->handleValPair.value.val,\
+                        (uint16_t) uartRxDataWrReq->handleValPair.value.len);           
+    }
 }
 
 /*****************************************************************************************

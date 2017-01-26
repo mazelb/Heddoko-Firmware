@@ -14,6 +14,8 @@
 #include "arm_math.h"
 
 #define VERSION "0.0.0.1"
+#define MODEL "Version 1.5"
+#define HARDWARE_REV "Proto B"
 /*
 * Changes from previous version:
 * @brief: see VersionNotes.txt for details
@@ -35,10 +37,6 @@
 #define MAX_DEBUG_STRING_LENGTH	200
 
 #define SD_INSERT_WAIT_TIMEOUT	(5 * SECONDS)	
-
-
-
-
 
 
 typedef enum 

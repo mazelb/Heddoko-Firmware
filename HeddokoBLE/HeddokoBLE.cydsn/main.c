@@ -26,15 +26,27 @@ void saveReceivedBpStatusData(uint8 *data, uint16_t length);
 #define PASSPHRASE_DATA_SIZE 64
 #define SECURITY_TYPE_DATA_SIZE 1
 #define BP_STATUS_DATA_SIZE 5
-
+#define SENSOR_MASK_SIZE 4
 uint8 rawData[RAW_DATA_SIZE] = {0};
-uint8 bpStatusData[BP_STATUS_DATA_SIZE] = {0};
+uint8 bpStatusData[BP_STATUS_DATA_SIZE + SENSOR_MASK_SIZE] = {0};
 struct 
 {
     uint8 ssid[SSID_DATA_SIZE];
     uint8 passphrase[PASSPHRASE_DATA_SIZE];
     uint8 securityType;
 }wifi_data;
+
+typedef struct
+{
+    uint8_t ssid[SSID_DATA_SIZE];
+    uint8_t passphrase[PASSPHRASE_DATA_SIZE];
+    uint8_t securityType;   
+    uint8_t serialNumber[10];
+    uint8_t fwVersion[10]; //update this to define
+    uint8_t hwRevision[10];
+    uint8_t modelString[20]; //the model of the brainpack     
+}ble_pkt_initialData_t;
+
 bool newRawDataAvailable = true;
 bool newBpStatusDataAvailable = false;
 bool newWifiDataAvailable = false;
@@ -97,7 +109,7 @@ void cmd_processPacket(rawPacket_t* packet)
 //                getSendAttrData(CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_CHAR_HANDLE, PACKET_COMMAND_ID_SECURITY_TYPE_DATA_RESP, 1);
 //            break;
             
-            case PACKET_COMMAND_ID_DEFAULT_WIFI_DATA:    // default WIFI data received from data board on boot-up
+            case PACKET_COMMAND_ID_BLE_INITIAL_PARAMETERS:    // default WIFI data received from data board on boot-up
                 #ifdef PRINT_MESSAGE_LOG
                 UART_UartPutString("Received default WIFI config\r\n");
                 #endif
@@ -323,33 +335,59 @@ void getSendWiFiDataAll(void)
 
 void saveWifiDefaultConfig(rawPacket_t* packet)
 {
+    ble_pkt_initialData_t* initialData = (ble_pkt_initialData_t*)&(packet->payload[2]); 
+    
+    
     CYBLE_GATT_HANDLE_VALUE_PAIR_T handlePair = {{0, SSID_DATA_SIZE, SSID_DATA_SIZE}, CYBLE_HEDDOKO_WIFI_SSID_CHAR_HANDLE};
     
-    memset(&wifi_data, 0, sizeof(wifi_data));
-    memcpy(wifi_data.ssid, (uint8 *) &packet->payload[2], SSID_DATA_SIZE);    
-    memcpy(wifi_data.passphrase, (uint8 *) &packet->payload[34], PASSPHRASE_DATA_SIZE);
-    wifi_data.securityType = packet->payload[98];
-        
+    //memset(&wifi_data, 0, sizeof(wifi_data));
+    //memcpy(wifi_data.ssid, (uint8 *) &packet->payload[2], SSID_DATA_SIZE);    
+    //memcpy(wifi_data.passphrase, (uint8 *) &packet->payload[34], PASSPHRASE_DATA_SIZE);
+    //wifi_data.securityType = packet->payload[98];
+    uint16 stringLength = 0;     
     // save SSID data
-    handlePair.value.val = (uint8 *) wifi_data.ssid;
-    CyBle_GattsWriteAttributeValue(&handlePair, 0, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
+    handlePair.attrHandle = CYBLE_HEDDOKO_WIFI_SSID_CHAR_HANDLE;
+    stringLength = strnlen((const char*)initialData->ssid,SSID_DATA_SIZE);  
+    handlePair.value.len = stringLength;
+    handlePair.value.actualLen = stringLength;
+    handlePair.value.val = initialData->ssid;
     
+    CyBle_GattsWriteAttributeValue(&handlePair, 0, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
+    CyBle_ProcessEvents();
     // save passphrase data
     handlePair.attrHandle = CYBLE_HEDDOKO_WIFI_PASSPHRASE_CHAR_HANDLE;
-    handlePair.value.len = PASSPHRASE_DATA_SIZE;
-    handlePair.value.actualLen = PASSPHRASE_DATA_SIZE;
-    handlePair.value.val = (uint8 *) wifi_data.passphrase;
+    stringLength = strnlen((const char*)initialData->passphrase,PASSPHRASE_DATA_SIZE);  
+    handlePair.value.len = stringLength;
+    handlePair.value.actualLen = stringLength;
+    handlePair.value.val = initialData->passphrase;
     CyBle_GattsWriteAttributeValue(&handlePair, 0, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
-    
+    CyBle_ProcessEvents();
     // save security type data
     handlePair.attrHandle = CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_CHAR_HANDLE;
     handlePair.value.len = SECURITY_TYPE_DATA_SIZE;
     handlePair.value.actualLen = SECURITY_TYPE_DATA_SIZE;
-    handlePair.value.val = (uint8 *) &wifi_data.securityType;
+    handlePair.value.val = &initialData->securityType;
     CyBle_GattsWriteAttributeValue(&handlePair, 0, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
     
+
+    //save the model number
+    stringLength = strnlen((const char*)initialData->modelString,20);  
+    CyBle_DissSetCharacteristicValue(CYBLE_DIS_MODEL_NUMBER, stringLength,initialData->modelString);    
+    CyBle_ProcessEvents();
+    // save the serial number
+    stringLength = strnlen((const char*)initialData->serialNumber,10);  
+    CyBle_DissSetCharacteristicValue(CYBLE_DIS_SERIAL_NUMBER, stringLength,initialData->serialNumber);
+    CyBle_ProcessEvents();
+    //save the fw number
+    stringLength = strnlen((const char*)initialData->fwVersion,10);  
+    CyBle_DissSetCharacteristicValue(CYBLE_DIS_FIRMWARE_REV, stringLength,initialData->fwVersion);  
+    CyBle_ProcessEvents();
+    //save the hw number
+    stringLength = strnlen((const char*)initialData->hwRevision,10);  
+    CyBle_DissSetCharacteristicValue(CYBLE_DIS_HARDWARE_REV, stringLength,initialData->hwRevision);    
+    CyBle_ProcessEvents();
     // set the flag to indicate the presence of new data
-    newWifiDataAvailable = true;
+    //newWifiDataAvailable = true;
 }
 
 /*  OBSOLETE: WiFi should not send out notifications
@@ -455,14 +493,27 @@ void saveReceivedBpStatusData(uint8 *data, uint16_t length)
 {
     CYBLE_GATT_HANDLE_VALUE_PAIR_T handlePair = {{0, BP_STATUS_DATA_SIZE, BP_STATUS_DATA_SIZE}, CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CHAR_HANDLE};
     
-    if((length != 0) && (length <= BP_STATUS_DATA_SIZE))
+    if((length != 0) && (length <= (BP_STATUS_DATA_SIZE + SENSOR_MASK_SIZE)))
     {
-        memset(bpStatusData, 0, BP_STATUS_DATA_SIZE);
+        memset(bpStatusData, 0, BP_STATUS_DATA_SIZE + SENSOR_MASK_SIZE);
         memcpy(bpStatusData, data, length);
-        newBpStatusDataAvailable = true;
-        
+        newBpStatusDataAvailable = true;        
         handlePair.value.val = (uint8 *) bpStatusData;
         CyBle_GattsWriteAttributeValue(&handlePair, 0, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
+        CyBle_ProcessEvents();
+        handlePair.attrHandle = CYBLE_HEDDOKO_BRAINPACK_STATUS_SENSOR_MASK_CHAR_HANDLE;
+        handlePair.value.len = 4;
+        handlePair.value.actualLen = 4;
+        handlePair.value.val = (bpStatusData + 5); //pointer to the start of the mask data.  
+        CyBle_GattsWriteAttributeValue(&handlePair, 0, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
+        CyBle_ProcessEvents();
+        handlePair.attrHandle = CYBLE_HEDDOKO_RECORDING_CONTROL_RECORDING_STATE_CHAR_HANDLE;
+        handlePair.value.len = 1;
+        handlePair.value.actualLen = 1;
+        handlePair.value.val = (bpStatusData + 2); //pointer to the current state.  
+        CyBle_GattsWriteAttributeValue(&handlePair, 0, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);       
+        CyBle_ProcessEvents();
+        CyBle_BassSetCharacteristicValue(0, 0,1, &bpStatusData[0]);        
     }
 }
 
@@ -474,8 +525,7 @@ void saveReceivedRawData(uint8 *data, uint16_t length)
     {
         memset(rawData, 0, RAW_DATA_SIZE);
         memcpy(rawData, data, length);
-        newRawDataAvailable = true;
-        
+        newRawDataAvailable = true;        
         handlePair.value.val = (uint8 *) rawData;
         CyBle_GattsWriteAttributeValue(&handlePair, 0, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
     }

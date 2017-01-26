@@ -104,6 +104,10 @@
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\BLE_eventHandler.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\BLE_custom.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\BLE_custom.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\BLE_bas.h</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\BLE_bas.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\BLE_dis.c</File>
+          <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\BLE_dis.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\UART_SCBCLK.c</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\UART_SCBCLK.h</File>
           <File BuildType="BUILD" Toolchain="">.\Generated_Source\PSoC4\UART_tx.c</File>

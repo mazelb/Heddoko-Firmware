@@ -81,33 +81,43 @@ CYBLE_STATE_T cyBle_state;
             0x00u, 0x00u, 
             0x00u, 0x00u, 
             0x00u, 0x00u, 
-            0x00u, 0x00u, 
+            0x01u, 0x00u, 
+            0x01u, 0x00u, 
+            0x01u, 0x00u, 
         },
         {
             0x00u, 0x00u, 
             0x00u, 0x00u, 
             0x00u, 0x00u, 
-            0x00u, 0x00u, 
+            0x01u, 0x00u, 
+            0x01u, 0x00u, 
+            0x01u, 0x00u, 
         },
         {
             0x00u, 0x00u, 
             0x00u, 0x00u, 
             0x00u, 0x00u, 
-            0x00u, 0x00u, 
+            0x01u, 0x00u, 
+            0x01u, 0x00u, 
+            0x01u, 0x00u, 
         },
         {
             0x00u, 0x00u, 
             0x00u, 0x00u, 
             0x00u, 0x00u, 
-            0x00u, 0x00u, 
+            0x01u, 0x00u, 
+            0x01u, 0x00u, 
+            0x01u, 0x00u, 
         },
         {
             0x00u, 0x00u, 
             0x00u, 0x00u, 
             0x00u, 0x00u, 
-            0x00u, 0x00u, 
+            0x01u, 0x00u, 
+            0x01u, 0x00u, 
+            0x01u, 0x00u, 
         }}, 
-        0x08u, /* CYBLE_GATT_DB_CCCD_COUNT */ 
+        0x0Cu, /* CYBLE_GATT_DB_CCCD_COUNT */ 
         0x05u, /* CYBLE_GAP_MAX_BONDED_DEVICE */ 
     };
 #endif /* (CYBLE_MODE_PROFILE) */
@@ -123,7 +133,7 @@ CYBLE_STATE_T cyBle_state;
     0x000Bu,    /* Handle of the Client Characteristic Configuration descriptor */
 };
     
-    static uint8 cyBle_attValues[0x01D9u] = {
+    static uint8 cyBle_attValues[0x02CCu] = {
     /* Device Name */
     (uint8)'H', (uint8)'e', (uint8)'d', (uint8)'d', (uint8)'o', (uint8)'k', (uint8)'o', 
 
@@ -157,6 +167,9 @@ CYBLE_STATE_T cyBle_state;
     /* Characteristic User Description */
     (uint8)'3', (uint8)'2', (uint8)' ', (uint8)'b', (uint8)'i', (uint8)'t', (uint8)' ', (uint8)'G', (uint8)'P', (uint8)'S',
 (uint8)' ', (uint8)'d', (uint8)'a', (uint8)'t', (uint8)'a', 
+
+    /* Location and Speed */
+    0x04u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 
 
     /* SSID */
     0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u,
@@ -211,6 +224,76 @@ CYBLE_STATE_T cyBle_state;
     (uint8)'B', (uint8)'r', (uint8)'a', (uint8)'i', (uint8)'n', (uint8)' ', (uint8)'P', (uint8)'a', (uint8)'c', (uint8)'k',
 (uint8)' ', (uint8)'S', (uint8)'t', (uint8)'a', (uint8)'t', (uint8)'u', (uint8)'s', 
 
+    /* Sensor Mask */
+    0x00u, 0x00u, 0x00u, 0x00u, 
+
+    /* Characteristic User Description */
+    (uint8)'3', (uint8)'2', (uint8)' ', (uint8)'b', (uint8)'i', (uint8)'t', (uint8)' ', (uint8)'m', (uint8)'a', (uint8)'s',
+(uint8)'k', (uint8)' ', (uint8)'r', (uint8)'e', (uint8)'p', (uint8)'r', (uint8)'e', (uint8)'s', (uint8)'e', (uint8)'n',
+(uint8)'t', (uint8)'i', (uint8)'n', (uint8)'g', (uint8)' ', (uint8)'c', (uint8)'o', (uint8)'n', (uint8)'n', (uint8)'e',
+(uint8)'c', (uint8)'t', (uint8)'e', (uint8)'d', (uint8)' ', (uint8)'s', (uint8)'e', (uint8)'n', (uint8)'s', (uint8)'o',
+(uint8)'r', (uint8)'s', (uint8)'.', (uint8)' ', 
+
+    /* Battery Level */
+    0x00u, 
+
+    /* Characteristic Presentation Format */
+    0x00u, 0x00u, 0x33u, 0x27u, 0x01u, 0x00u, 0x00u, 
+
+    /* Manufacturer Name String */
+    (uint8)'H', (uint8)'e', (uint8)'d', (uint8)'d', (uint8)'o', (uint8)'k', (uint8)'o', 
+
+    /* Model Number String */
+    (uint8)'V', (uint8)'e', (uint8)'r', (uint8)'s', (uint8)'i', (uint8)'o', (uint8)'n', (uint8)' ', (uint8)'1', (uint8)'.',
+(uint8)'5', 
+
+    /* Serial Number String */
+    (uint8)'B', (uint8)'P', (uint8)'0', (uint8)'0', (uint8)'0', (uint8)'1', (uint8)'\0', (uint8)'\0', (uint8)'\0',
+(uint8)'\0', 
+
+    /* Hardware Revision String */
+    (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0',
+(uint8)'\0', 
+
+    /* Firmware Revision String */
+    (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0',
+(uint8)'\0', 
+
+    /* Software Revision String */
+    (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0', (uint8)'\0',
+(uint8)'\0', 
+
+    /* System ID */
+    0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 
+
+    /* IEEE 11073-20601 Regulatory Certification Data List */
+    0x00u, 
+
+    /* PnP ID */
+    0x01u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 
+
+    /* Recording State */
+    0x00u, 
+
+    /* Characteristic User Description */
+    (uint8)'S', (uint8)'t', (uint8)'a', (uint8)'t', (uint8)'e', (uint8)' ', (uint8)'o', (uint8)'f', (uint8)' ', (uint8)'B',
+(uint8)'r', (uint8)'a', (uint8)'i', (uint8)'n', (uint8)'p', (uint8)'a', (uint8)'c', (uint8)'k', (uint8)' ', (uint8)'R',
+(uint8)'e', (uint8)'c', (uint8)'o', (uint8)'r', (uint8)'d', (uint8)'i', (uint8)'n', (uint8)'g', 
+
+    /* Recording Request */
+    0x00u, 
+
+    /* Recording Request */
+    0x00u, 0xFBu, 0x34u, 0x9Bu, 0x5Fu, 0x80u, 0x00u, 0x00u, 0x80u, 0x00u, 0x10u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 
+
+    /* Characteristic User Description */
+    (uint8)'R', (uint8)'e', (uint8)'q', (uint8)'u', (uint8)'e', (uint8)'s', (uint8)'t', (uint8)' ', (uint8)'t', (uint8)'o',
+(uint8)' ', (uint8)'s', (uint8)'t', (uint8)'a', (uint8)'r', (uint8)'t', (uint8)' ', (uint8)'o', (uint8)'r', (uint8)' ',
+(uint8)'s', (uint8)'t', (uint8)'o', (uint8)'p', (uint8)' ', (uint8)'a', (uint8)' ', (uint8)'r', (uint8)'e', (uint8)'c',
+(uint8)'o', (uint8)'r', (uint8)'d', (uint8)'i', (uint8)'n', (uint8)'g', (uint8)' ', (uint8)'S', (uint8)'t', (uint8)'a',
+(uint8)'r', (uint8)'t', (uint8)' ', (uint8)'=', (uint8)' ', (uint8)'1', (uint8)',', (uint8)' ', (uint8)'S', (uint8)'t',
+(uint8)'o', (uint8)'p', (uint8)' ', (uint8)'=', (uint8)' ', (uint8)'2', 
+
 };
 #if(CYBLE_GATT_DB_CCCD_COUNT != 0u)
 uint8 cyBle_attValuesCCCD[CYBLE_GATT_DB_CCCD_COUNT];
@@ -245,6 +328,14 @@ const uint8 cyBle_attUuid128[][16u] = {
     { 0x3Bu, 0x01u, 0x9Bu, 0x5Fu, 0x80u, 0x00u, 0x00u, 0x80u, 0x00u, 0x10u, 0x00u, 0x00u, 0x10u, 0xCEu, 0x03u, 0x00u },
     /* BP-Status */
     { 0x3Bu, 0x01u, 0x9Bu, 0x5Fu, 0x80u, 0x00u, 0x00u, 0x80u, 0x00u, 0x10u, 0x00u, 0x00u, 0x11u, 0xCEu, 0x03u, 0x00u },
+    /* Sensor Mask */
+    { 0xFBu, 0x34u, 0x9Bu, 0x5Fu, 0x80u, 0x00u, 0x00u, 0x80u, 0x00u, 0x10u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u },
+    /* Heddoko: Recording Control */
+    { 0xFBu, 0x34u, 0x9Bu, 0x5Fu, 0x80u, 0x00u, 0x00u, 0x80u, 0x00u, 0x10u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u },
+    /* Recording State */
+    { 0xFBu, 0x34u, 0x9Bu, 0x5Fu, 0x80u, 0x00u, 0x00u, 0x80u, 0x00u, 0x10u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u },
+    /* Recording Request */
+    { 0xFBu, 0x34u, 0x9Bu, 0x5Fu, 0x80u, 0x00u, 0x00u, 0x80u, 0x00u, 0x10u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u },
 };
 
 CYBLE_GATTS_ATT_GEN_VAL_LEN_T cyBle_attValuesLen[CYBLE_GATT_DB_ATT_VAL_COUNT] = {
@@ -263,33 +354,58 @@ CYBLE_GATTS_ATT_GEN_VAL_LEN_T cyBle_attValuesLen[CYBLE_GATT_DB_ATT_VAL_COUNT] = 
     { 0x0010u, (void *)&cyBle_attUuid128[4] }, /* GPS data UUID */
     { 0x0020u, (void *)&cyBle_attValues[169] }, /* GPS data */
     { 0x000Fu, (void *)&cyBle_attValues[201] }, /* Characteristic User Description */
+    { 0x000Au, (void *)&cyBle_attValues[216] }, /* Location and Speed */
     { 0x0010u, (void *)&cyBle_attUuid128[5] }, /* Heddoko: WiFi UUID */
     { 0x0010u, (void *)&cyBle_attUuid128[6] }, /* SSID UUID */
-    { 0x0020u, (void *)&cyBle_attValues[216] }, /* SSID */
-    { 0x0013u, (void *)&cyBle_attValues[248] }, /* Characteristic User Description */
+    { 0x0020u, (void *)&cyBle_attValues[226] }, /* SSID */
+    { 0x0013u, (void *)&cyBle_attValues[258] }, /* Characteristic User Description */
     { 0x0010u, (void *)&cyBle_attUuid128[7] }, /* PassPhrase UUID */
-    { 0x0040u, (void *)&cyBle_attValues[267] }, /* PassPhrase */
-    { 0x0019u, (void *)&cyBle_attValues[331] }, /* Characteristic User Description */
+    { 0x0040u, (void *)&cyBle_attValues[277] }, /* PassPhrase */
+    { 0x0019u, (void *)&cyBle_attValues[341] }, /* Characteristic User Description */
     { 0x0010u, (void *)&cyBle_attUuid128[8] }, /* Security type UUID */
-    { 0x0001u, (void *)&cyBle_attValues[356] }, /* Security type */
-    { 0x0002u, (void *)&cyBle_attValues[357] }, /* Valid Range */
-    { 0x0024u, (void *)&cyBle_attValues[359] }, /* Characteristic User Description */
+    { 0x0001u, (void *)&cyBle_attValues[366] }, /* Security type */
+    { 0x0002u, (void *)&cyBle_attValues[367] }, /* Valid Range */
+    { 0x0024u, (void *)&cyBle_attValues[369] }, /* Characteristic User Description */
     { 0x0010u, (void *)&cyBle_attUuid128[9] }, /* Wifi enable UUID */
-    { 0x0001u, (void *)&cyBle_attValues[395] }, /* Wifi enable */
-    { 0x000Eu, (void *)&cyBle_attValues[396] }, /* Characteristic User Description */
+    { 0x0001u, (void *)&cyBle_attValues[405] }, /* Wifi enable */
+    { 0x000Eu, (void *)&cyBle_attValues[406] }, /* Characteristic User Description */
     { 0x0010u, (void *)&cyBle_attUuid128[10] }, /* Heddoko: Raw data UUID */
     { 0x0010u, (void *)&cyBle_attUuid128[11] }, /* Raw data UUID */
-    { 0x0017u, (void *)&cyBle_attValues[410] }, /* Raw data */
-    { 0x0012u, (void *)&cyBle_attValues[433] }, /* Characteristic User Description */
+    { 0x0017u, (void *)&cyBle_attValues[420] }, /* Raw data */
+    { 0x0012u, (void *)&cyBle_attValues[443] }, /* Characteristic User Description */
     { 0x0002u, (void *)&cyBle_attValuesCCCD[4] }, /* Client Characteristic Configuration */
     { 0x0010u, (void *)&cyBle_attUuid128[12] }, /* Heddoko: BrainPack Status UUID */
     { 0x0010u, (void *)&cyBle_attUuid128[13] }, /* BP-Status UUID */
-    { 0x0005u, (void *)&cyBle_attValues[451] }, /* BP-Status */
+    { 0x0005u, (void *)&cyBle_attValues[461] }, /* BP-Status */
     { 0x0002u, (void *)&cyBle_attValuesCCCD[6] }, /* Client Characteristic Configuration */
-    { 0x0011u, (void *)&cyBle_attValues[456] }, /* Characteristic User Description */
+    { 0x0011u, (void *)&cyBle_attValues[466] }, /* Characteristic User Description */
+    { 0x0010u, (void *)&cyBle_attUuid128[14] }, /* Sensor Mask UUID */
+    { 0x0004u, (void *)&cyBle_attValues[483] }, /* Sensor Mask */
+    { 0x002Cu, (void *)&cyBle_attValues[487] }, /* Characteristic User Description */
+    { 0x0001u, (void *)&cyBle_attValues[531] }, /* Battery Level */
+    { 0x0007u, (void *)&cyBle_attValues[532] }, /* Characteristic Presentation Format */
+    { 0x0002u, (void *)&cyBle_attValuesCCCD[8] }, /* Client Characteristic Configuration */
+    { 0x0007u, (void *)&cyBle_attValues[539] }, /* Manufacturer Name String */
+    { 0x000Bu, (void *)&cyBle_attValues[546] }, /* Model Number String */
+    { 0x000Au, (void *)&cyBle_attValues[557] }, /* Serial Number String */
+    { 0x000Au, (void *)&cyBle_attValues[567] }, /* Hardware Revision String */
+    { 0x000Au, (void *)&cyBle_attValues[577] }, /* Firmware Revision String */
+    { 0x000Au, (void *)&cyBle_attValues[587] }, /* Software Revision String */
+    { 0x0008u, (void *)&cyBle_attValues[597] }, /* System ID */
+    { 0x0001u, (void *)&cyBle_attValues[605] }, /* IEEE 11073-20601 Regulatory Certification Data List */
+    { 0x0007u, (void *)&cyBle_attValues[606] }, /* PnP ID */
+    { 0x0010u, (void *)&cyBle_attUuid128[15] }, /* Heddoko: Recording Control UUID */
+    { 0x0010u, (void *)&cyBle_attUuid128[16] }, /* Recording State UUID */
+    { 0x0001u, (void *)&cyBle_attValues[613] }, /* Recording State */
+    { 0x001Cu, (void *)&cyBle_attValues[614] }, /* Characteristic User Description */
+    { 0x0002u, (void *)&cyBle_attValuesCCCD[10] }, /* Client Characteristic Configuration */
+    { 0x0010u, (void *)&cyBle_attUuid128[17] }, /* Recording Request UUID */
+    { 0x0001u, (void *)&cyBle_attValues[642] }, /* Recording Request */
+    { 0x0001u, (void *)&cyBle_attValues[643] }, /* Recording Request */
+    { 0x0038u, (void *)&cyBle_attValues[660] }, /* Characteristic User Description */
 };
 
-const CYBLE_GATTS_DB_T cyBle_gattDB[0x2Du] = {
+const CYBLE_GATTS_DB_T cyBle_gattDB[0x53u] = {
     { 0x0001u, 0x2800u /* Primary service                     */, 0x00000001u /*            */, 0x0007u, {{0x1800u, NULL}}                           },
     { 0x0002u, 0x2803u /* Characteristic                      */, 0x00000201u /* rd         */, 0x0003u, {{0x2A00u, NULL}}                           },
     { 0x0003u, 0x2A00u /* Device Name                         */, 0x00000201u /* rd         */, 0x0003u, {{0x0007u, (void *)&cyBle_attValuesLen[0]}} },
@@ -307,34 +423,72 @@ const CYBLE_GATTS_DB_T cyBle_gattDB[0x2Du] = {
     { 0x000Fu, 0x2902u /* Client Characteristic Configuration */, 0x00010A04u /* rd,wr      */, 0x000Fu, {{0x0002u, (void *)&cyBle_attValuesLen[8]}} },
     { 0x0010u, 0x2803u /* Characteristic                      */, 0x00000401u /* wwr        */, 0x0011u, {{0x0010u, (void *)&cyBle_attValuesLen[9]}} },
     { 0x0011u, 0xCDD2u /* Server_UART_Rx_data                 */, 0x00090402u /* wwr        */, 0x0011u, {{0x0080u, (void *)&cyBle_attValuesLen[10]}} },
-    { 0x0012u, 0x2800u /* Primary service                     */, 0x00080001u /*            */, 0x0015u, {{0x0010u, (void *)&cyBle_attValuesLen[11]}} },
+    { 0x0012u, 0x2800u /* Primary service                     */, 0x00080001u /*            */, 0x0017u, {{0x0010u, (void *)&cyBle_attValuesLen[11]}} },
     { 0x0013u, 0x2803u /* Characteristic                      */, 0x00000401u /* wwr        */, 0x0015u, {{0x0010u, (void *)&cyBle_attValuesLen[12]}} },
     { 0x0014u, 0xCDE1u /* GPS data                            */, 0x00090402u /* wwr        */, 0x0015u, {{0x0020u, (void *)&cyBle_attValuesLen[13]}} },
     { 0x0015u, 0x2901u /* Characteristic User Description     */, 0x00010201u /* rd         */, 0x0015u, {{0x000Fu, (void *)&cyBle_attValuesLen[14]}} },
-    { 0x0016u, 0x2800u /* Primary service                     */, 0x00080001u /*            */, 0x0023u, {{0x0010u, (void *)&cyBle_attValuesLen[15]}} },
-    { 0x0017u, 0x2803u /* Characteristic                      */, 0x00000601u /* rd,wwr     */, 0x0019u, {{0x0010u, (void *)&cyBle_attValuesLen[16]}} },
-    { 0x0018u, 0xCDF1u /* SSID                                */, 0x00090604u /* rd,wwr     */, 0x0019u, {{0x0020u, (void *)&cyBle_attValuesLen[17]}} },
-    { 0x0019u, 0x2901u /* Characteristic User Description     */, 0x00010201u /* rd         */, 0x0019u, {{0x0013u, (void *)&cyBle_attValuesLen[18]}} },
-    { 0x001Au, 0x2803u /* Characteristic                      */, 0x00000401u /* wwr        */, 0x001Cu, {{0x0010u, (void *)&cyBle_attValuesLen[19]}} },
-    { 0x001Bu, 0xCDF2u /* PassPhrase                          */, 0x00090402u /* wwr        */, 0x001Cu, {{0x0040u, (void *)&cyBle_attValuesLen[20]}} },
-    { 0x001Cu, 0x2901u /* Characteristic User Description     */, 0x00010201u /* rd         */, 0x001Cu, {{0x0019u, (void *)&cyBle_attValuesLen[21]}} },
-    { 0x001Du, 0x2803u /* Characteristic                      */, 0x00000601u /* rd,wwr     */, 0x0020u, {{0x0010u, (void *)&cyBle_attValuesLen[22]}} },
-    { 0x001Eu, 0xCDF3u /* Security type                       */, 0x00090604u /* rd,wwr     */, 0x0020u, {{0x0001u, (void *)&cyBle_attValuesLen[23]}} },
-    { 0x001Fu, 0x2906u /* Valid Range                         */, 0x00010201u /* rd         */, 0x001Fu, {{0x0002u, (void *)&cyBle_attValuesLen[24]}} },
-    { 0x0020u, 0x2901u /* Characteristic User Description     */, 0x00010201u /* rd         */, 0x0020u, {{0x0024u, (void *)&cyBle_attValuesLen[25]}} },
-    { 0x0021u, 0x2803u /* Characteristic                      */, 0x00000401u /* wwr        */, 0x0023u, {{0x0010u, (void *)&cyBle_attValuesLen[26]}} },
-    { 0x0022u, 0xCDF4u /* Wifi enable                         */, 0x00090402u /* wwr        */, 0x0023u, {{0x0001u, (void *)&cyBle_attValuesLen[27]}} },
-    { 0x0023u, 0x2901u /* Characteristic User Description     */, 0x00010201u /* rd         */, 0x0023u, {{0x000Eu, (void *)&cyBle_attValuesLen[28]}} },
-    { 0x0024u, 0x2800u /* Primary service                     */, 0x00080001u /*            */, 0x0028u, {{0x0010u, (void *)&cyBle_attValuesLen[29]}} },
-    { 0x0025u, 0x2803u /* Characteristic                      */, 0x00001601u /* rd,wwr,ntf */, 0x0028u, {{0x0010u, (void *)&cyBle_attValuesLen[30]}} },
-    { 0x0026u, 0xCE01u /* Raw data                            */, 0x00091604u /* rd,wwr,ntf */, 0x0028u, {{0x0017u, (void *)&cyBle_attValuesLen[31]}} },
-    { 0x0027u, 0x2901u /* Characteristic User Description     */, 0x00010201u /* rd         */, 0x0027u, {{0x0012u, (void *)&cyBle_attValuesLen[32]}} },
-    { 0x0028u, 0x2903u /* Client Characteristic Configuration */, 0x00010A04u /* rd,wr      */, 0x0028u, {{0x0002u, (void *)&cyBle_attValuesLen[33]}} },
-    { 0x0029u, 0x2800u /* Primary service                     */, 0x00080001u /*            */, 0x002Du, {{0x0010u, (void *)&cyBle_attValuesLen[34]}} },
-    { 0x002Au, 0x2803u /* Characteristic                      */, 0x00001201u /* rd,ntf     */, 0x002Du, {{0x0010u, (void *)&cyBle_attValuesLen[35]}} },
-    { 0x002Bu, 0xCE11u /* BP-Status                           */, 0x00091201u /* rd,ntf     */, 0x002Du, {{0x0005u, (void *)&cyBle_attValuesLen[36]}} },
-    { 0x002Cu, 0x2903u /* Client Characteristic Configuration */, 0x00010A04u /* rd,wr      */, 0x002Cu, {{0x0002u, (void *)&cyBle_attValuesLen[37]}} },
-    { 0x002Du, 0x2901u /* Characteristic User Description     */, 0x00010201u /* rd         */, 0x002Du, {{0x0011u, (void *)&cyBle_attValuesLen[38]}} },
+    { 0x0016u, 0x2803u /* Characteristic                      */, 0x00000A01u /* rd,wr      */, 0x0017u, {{0x2A67u, NULL}}                           },
+    { 0x0017u, 0x2A67u /* Location and Speed                  */, 0x00010A04u /* rd,wr      */, 0x0017u, {{0x000Au, (void *)&cyBle_attValuesLen[15]}} },
+    { 0x0018u, 0x2800u /* Primary service                     */, 0x00080001u /*            */, 0x0025u, {{0x0010u, (void *)&cyBle_attValuesLen[16]}} },
+    { 0x0019u, 0x2803u /* Characteristic                      */, 0x00000601u /* rd,wwr     */, 0x001Bu, {{0x0010u, (void *)&cyBle_attValuesLen[17]}} },
+    { 0x001Au, 0xCDF1u /* SSID                                */, 0x00090604u /* rd,wwr     */, 0x001Bu, {{0x0020u, (void *)&cyBle_attValuesLen[18]}} },
+    { 0x001Bu, 0x2901u /* Characteristic User Description     */, 0x00010201u /* rd         */, 0x001Bu, {{0x0013u, (void *)&cyBle_attValuesLen[19]}} },
+    { 0x001Cu, 0x2803u /* Characteristic                      */, 0x00000401u /* wwr        */, 0x001Eu, {{0x0010u, (void *)&cyBle_attValuesLen[20]}} },
+    { 0x001Du, 0xCDF2u /* PassPhrase                          */, 0x00090402u /* wwr        */, 0x001Eu, {{0x0040u, (void *)&cyBle_attValuesLen[21]}} },
+    { 0x001Eu, 0x2901u /* Characteristic User Description     */, 0x00010201u /* rd         */, 0x001Eu, {{0x0019u, (void *)&cyBle_attValuesLen[22]}} },
+    { 0x001Fu, 0x2803u /* Characteristic                      */, 0x00000601u /* rd,wwr     */, 0x0022u, {{0x0010u, (void *)&cyBle_attValuesLen[23]}} },
+    { 0x0020u, 0xCDF3u /* Security type                       */, 0x00090604u /* rd,wwr     */, 0x0022u, {{0x0001u, (void *)&cyBle_attValuesLen[24]}} },
+    { 0x0021u, 0x2906u /* Valid Range                         */, 0x00010201u /* rd         */, 0x0021u, {{0x0002u, (void *)&cyBle_attValuesLen[25]}} },
+    { 0x0022u, 0x2901u /* Characteristic User Description     */, 0x00010201u /* rd         */, 0x0022u, {{0x0024u, (void *)&cyBle_attValuesLen[26]}} },
+    { 0x0023u, 0x2803u /* Characteristic                      */, 0x00000401u /* wwr        */, 0x0025u, {{0x0010u, (void *)&cyBle_attValuesLen[27]}} },
+    { 0x0024u, 0xCDF4u /* Wifi enable                         */, 0x00090402u /* wwr        */, 0x0025u, {{0x0001u, (void *)&cyBle_attValuesLen[28]}} },
+    { 0x0025u, 0x2901u /* Characteristic User Description     */, 0x00010201u /* rd         */, 0x0025u, {{0x000Eu, (void *)&cyBle_attValuesLen[29]}} },
+    { 0x0026u, 0x2800u /* Primary service                     */, 0x00080001u /*            */, 0x002Au, {{0x0010u, (void *)&cyBle_attValuesLen[30]}} },
+    { 0x0027u, 0x2803u /* Characteristic                      */, 0x00001601u /* rd,wwr,ntf */, 0x002Au, {{0x0010u, (void *)&cyBle_attValuesLen[31]}} },
+    { 0x0028u, 0xCE01u /* Raw data                            */, 0x00091604u /* rd,wwr,ntf */, 0x002Au, {{0x0017u, (void *)&cyBle_attValuesLen[32]}} },
+    { 0x0029u, 0x2901u /* Characteristic User Description     */, 0x00010201u /* rd         */, 0x0029u, {{0x0012u, (void *)&cyBle_attValuesLen[33]}} },
+    { 0x002Au, 0x2903u /* Client Characteristic Configuration */, 0x00010A04u /* rd,wr      */, 0x002Au, {{0x0002u, (void *)&cyBle_attValuesLen[34]}} },
+    { 0x002Bu, 0x2800u /* Primary service                     */, 0x00080001u /*            */, 0x0032u, {{0x0010u, (void *)&cyBle_attValuesLen[35]}} },
+    { 0x002Cu, 0x2803u /* Characteristic                      */, 0x00001201u /* rd,ntf     */, 0x002Fu, {{0x0010u, (void *)&cyBle_attValuesLen[36]}} },
+    { 0x002Du, 0xCE11u /* BP-Status                           */, 0x00091201u /* rd,ntf     */, 0x002Fu, {{0x0005u, (void *)&cyBle_attValuesLen[37]}} },
+    { 0x002Eu, 0x2903u /* Client Characteristic Configuration */, 0x00010A04u /* rd,wr      */, 0x002Eu, {{0x0002u, (void *)&cyBle_attValuesLen[38]}} },
+    { 0x002Fu, 0x2901u /* Characteristic User Description     */, 0x00010201u /* rd         */, 0x002Fu, {{0x0011u, (void *)&cyBle_attValuesLen[39]}} },
+    { 0x0030u, 0x2803u /* Characteristic                      */, 0x00000201u /* rd         */, 0x0032u, {{0x0010u, (void *)&cyBle_attValuesLen[40]}} },
+    { 0x0031u, 0x0000u /* Sensor Mask                         */, 0x00090201u /* rd         */, 0x0032u, {{0x0004u, (void *)&cyBle_attValuesLen[41]}} },
+    { 0x0032u, 0x2901u /* Characteristic User Description     */, 0x00010201u /* rd         */, 0x0032u, {{0x002Cu, (void *)&cyBle_attValuesLen[42]}} },
+    { 0x0033u, 0x2800u /* Primary service                     */, 0x00000001u /*            */, 0x0037u, {{0x180Fu, NULL}}                           },
+    { 0x0034u, 0x2803u /* Characteristic                      */, 0x00001201u /* rd,ntf     */, 0x0037u, {{0x2A19u, NULL}}                           },
+    { 0x0035u, 0x2A19u /* Battery Level                       */, 0x00001201u /* rd,ntf     */, 0x0037u, {{0x0001u, (void *)&cyBle_attValuesLen[43]}} },
+    { 0x0036u, 0x2904u /* Characteristic Presentation Format  */, 0x00000201u /* rd         */, 0x0036u, {{0x0007u, (void *)&cyBle_attValuesLen[44]}} },
+    { 0x0037u, 0x2902u /* Client Characteristic Configuration */, 0x00000A04u /* rd,wr      */, 0x0037u, {{0x0002u, (void *)&cyBle_attValuesLen[45]}} },
+    { 0x0038u, 0x2800u /* Primary service                     */, 0x00000001u /*            */, 0x004Au, {{0x180Au, NULL}}                           },
+    { 0x0039u, 0x2803u /* Characteristic                      */, 0x00000201u /* rd         */, 0x003Au, {{0x2A29u, NULL}}                           },
+    { 0x003Au, 0x2A29u /* Manufacturer Name String            */, 0x00000201u /* rd         */, 0x003Au, {{0x0007u, (void *)&cyBle_attValuesLen[46]}} },
+    { 0x003Bu, 0x2803u /* Characteristic                      */, 0x00000201u /* rd         */, 0x003Cu, {{0x2A24u, NULL}}                           },
+    { 0x003Cu, 0x2A24u /* Model Number String                 */, 0x00000201u /* rd         */, 0x003Cu, {{0x000Bu, (void *)&cyBle_attValuesLen[47]}} },
+    { 0x003Du, 0x2803u /* Characteristic                      */, 0x00000201u /* rd         */, 0x003Eu, {{0x2A25u, NULL}}                           },
+    { 0x003Eu, 0x2A25u /* Serial Number String                */, 0x00000201u /* rd         */, 0x003Eu, {{0x000Au, (void *)&cyBle_attValuesLen[48]}} },
+    { 0x003Fu, 0x2803u /* Characteristic                      */, 0x00000201u /* rd         */, 0x0040u, {{0x2A27u, NULL}}                           },
+    { 0x0040u, 0x2A27u /* Hardware Revision String            */, 0x00000201u /* rd         */, 0x0040u, {{0x000Au, (void *)&cyBle_attValuesLen[49]}} },
+    { 0x0041u, 0x2803u /* Characteristic                      */, 0x00000201u /* rd         */, 0x0042u, {{0x2A26u, NULL}}                           },
+    { 0x0042u, 0x2A26u /* Firmware Revision String            */, 0x00000201u /* rd         */, 0x0042u, {{0x000Au, (void *)&cyBle_attValuesLen[50]}} },
+    { 0x0043u, 0x2803u /* Characteristic                      */, 0x00000201u /* rd         */, 0x0044u, {{0x2A28u, NULL}}                           },
+    { 0x0044u, 0x2A28u /* Software Revision String            */, 0x00000201u /* rd         */, 0x0044u, {{0x000Au, (void *)&cyBle_attValuesLen[51]}} },
+    { 0x0045u, 0x2803u /* Characteristic                      */, 0x00000201u /* rd         */, 0x0046u, {{0x2A23u, NULL}}                           },
+    { 0x0046u, 0x2A23u /* System ID                           */, 0x00000201u /* rd         */, 0x0046u, {{0x0008u, (void *)&cyBle_attValuesLen[52]}} },
+    { 0x0047u, 0x2803u /* Characteristic                      */, 0x00000201u /* rd         */, 0x0048u, {{0x2A2Au, NULL}}                           },
+    { 0x0048u, 0x2A2Au /* IEEE 11073-20601 Regulatory Certifi */, 0x00000201u /* rd         */, 0x0048u, {{0x0001u, (void *)&cyBle_attValuesLen[53]}} },
+    { 0x0049u, 0x2803u /* Characteristic                      */, 0x00000201u /* rd         */, 0x004Au, {{0x2A50u, NULL}}                           },
+    { 0x004Au, 0x2A50u /* PnP ID                              */, 0x00000201u /* rd         */, 0x004Au, {{0x0007u, (void *)&cyBle_attValuesLen[54]}} },
+    { 0x004Bu, 0x2800u /* Primary service                     */, 0x00080001u /*            */, 0x0053u, {{0x0010u, (void *)&cyBle_attValuesLen[55]}} },
+    { 0x004Cu, 0x2803u /* Characteristic                      */, 0x00001201u /* rd,ntf     */, 0x004Fu, {{0x0010u, (void *)&cyBle_attValuesLen[56]}} },
+    { 0x004Du, 0x0000u /* Recording State                     */, 0x00091201u /* rd,ntf     */, 0x004Fu, {{0x0001u, (void *)&cyBle_attValuesLen[57]}} },
+    { 0x004Eu, 0x2901u /* Characteristic User Description     */, 0x00010201u /* rd         */, 0x004Eu, {{0x001Cu, (void *)&cyBle_attValuesLen[58]}} },
+    { 0x004Fu, 0x2902u /* Client Characteristic Configuration */, 0x00010A04u /* rd,wr      */, 0x004Fu, {{0x0002u, (void *)&cyBle_attValuesLen[59]}} },
+    { 0x0050u, 0x2803u /* Characteristic                      */, 0x00000C01u /* wr,wwr     */, 0x0053u, {{0x0010u, (void *)&cyBle_attValuesLen[60]}} },
+    { 0x0051u, 0x0000u /* Recording Request                   */, 0x00090C02u /* wr,wwr     */, 0x0053u, {{0x0001u, (void *)&cyBle_attValuesLen[61]}} },
+    { 0x0052u, 0x0000u /* Recording Request                   */, 0x00090004u /*            */, 0x0052u, {{0x0001u, (void *)&cyBle_attValuesLen[62]}} },
+    { 0x0053u, 0x2901u /* Characteristic User Description     */, 0x00010201u /* rd         */, 0x0053u, {{0x0038u, (void *)&cyBle_attValuesLen[63]}} },
 };
 
 

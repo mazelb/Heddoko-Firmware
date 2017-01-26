@@ -18,4 +18,13 @@ void ble_sendRawData(uint8_t *data, uint8_t size);
 void ble_wifiDataReq();
 void ble_rawDataReq();
 
+typedef struct  
+{
+    net_wirelessConfig_t* wirelessConfig;
+    char* serialNumber;
+    char* fwVersion; //update this to define
+    char* hwRevision;
+    char* modelString; //the model of the brainpack  
+}ble_moduleConfig_t;
+
 #endif /* BLE_BLUETOOTHMANAGER_H_ */

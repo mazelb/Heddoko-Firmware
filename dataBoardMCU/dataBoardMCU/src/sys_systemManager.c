@@ -100,13 +100,21 @@ net_wirelessConfig_t wirelessConfiguration =
     .ssid = "Heddoko_NoNetTest2Ghz",//"heddokoTestNet",//"HeddokoTest2ghz",
     .channel = 255, //default to 255 so it searches all channels for the signal
 };
+const char* versionStr = VERSION;
+const char* modelStr = MODEL;
+const char* hwRevisionStr = HARDWARE_REV;
+
 nvmSettings_t currentSystemSettings; 
 bool settingsChanges = false; 
 subp_moduleConfig_t subProcessorSettings = {0,0}; 
 net_moduleConfig_t wirelessNetworkSettings;    
 sdc_moduleConfig_t sdCardSettings;  
 cfg_moduleConfig_t configModuleSettings;
+ble_moduleConfig_t bleModuleSettings;
+
+
 /*	Local static functions	*/
+static void processToggleRecordingEvent(uint32_t requestedState);
 static void sendStateChangeMessage(sys_manager_systemState_t state);
 static void processMessage(msg_message_t message);
 static void processButtonEvent(uint32_t data);
@@ -141,9 +149,19 @@ void sys_systemManagerTask(void* pvParameters)
     wirelessNetworkSettings.advertisingPort = &(currentSystemSettings.advPortNumber);
     wirelessNetworkSettings.configurationPort = &(currentSystemSettings.serverPortNumber); 
     wirelessNetworkSettings.serialNumber = currentSystemSettings.serialNumber; 
+    
     sdCardSettings.serialNumber = currentSystemSettings.serialNumber;
+    
     configModuleSettings.serialNumber = currentSystemSettings.serialNumber;
     configModuleSettings.configPort = currentSystemSettings.serverPortNumber; 
+    
+    bleModuleSettings.serialNumber = currentSystemSettings.serialNumber;
+    bleModuleSettings.fwVersion = versionStr;
+    bleModuleSettings.modelString = modelStr;
+    bleModuleSettings.hwRevision = hwRevisionStr; 
+    bleModuleSettings.wirelessConfig = &wirelessConfiguration;
+    
+    
     drv_led_init(&ledConfiguration);
 	drv_led_set(DRV_LED_BLUE,DRV_LED_FLASH);
 	
@@ -180,7 +198,7 @@ void sys_systemManagerTask(void* pvParameters)
 	{
     	dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create wireless task\r\n");
 	}    
-	if(xTaskCreate(ble_bluetoothManagerTask, "ble", (4000/sizeof(portSTACK_TYPE)), NULL, tskIDLE_PRIORITY+3, NULL) != pdPASS)
+	if(xTaskCreate(ble_bluetoothManagerTask, "ble", (4000/sizeof(portSTACK_TYPE)), &bleModuleSettings, tskIDLE_PRIORITY+3, NULL) != pdPASS)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create ble task\r\n");
 	}
@@ -374,6 +392,9 @@ static void processMessage(msg_message_t message)
         case MSG_TYPE_SAVE_SETTINGS:
             nvm_writeToFlash(&currentSystemSettings);             
         break;  
+        case MSG_TYPE_TOGGLE_RECORDING:
+            processToggleRecordingEvent(message.data);
+        break;
 		default:
 		break;
 		
@@ -385,7 +406,44 @@ static void sendStateChangeMessage(sys_manager_systemState_t state)
 	msg_message_t message = {.source = MODULE_SYSTEM_MANAGER, .data = state, .msgType = MSG_TYPE_ENTERING_NEW_STATE};
 	msg_sendBroadcastMessage(&message);
 }
-
+static void processToggleRecordingEvent(uint32_t requestedState)
+{
+    if(requestedState == 1) //start recording TODO: Add enum
+    {
+        if(currentState == SYSTEM_STATE_IDLE)
+        {
+            //start recording
+            msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_RECORDING);
+            currentState = SYSTEM_STATE_RECORDING;
+            drv_led_set(DRV_LED_RED, DRV_LED_SOLID);
+            drv_piezo_playPattern(startRecordingTone, (sizeof(startRecordingTone) / sizeof(drv_piezo_noteElement_t)));
+        }
+    }
+    else if(requestedState == 2) //stop recording TODO: Add enum
+    {
+        if(currentState == SYSTEM_STATE_RECORDING)
+        {
+            msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
+            currentState = SYSTEM_STATE_IDLE;
+            drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID);
+            drv_piezo_playPattern(stopRecordingTone, (sizeof(stopRecordingTone) / sizeof(drv_piezo_noteElement_t)));
+        }
+        else if(currentState == SYSTEM_STATE_STREAMING)
+        {
+            msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
+            currentState = SYSTEM_STATE_IDLE;
+            if(sysNetworkState == NET_WIFI_STATE_CONNECTED)
+            {
+                drv_led_set(DRV_LED_TURQUOISE, DRV_LED_SOLID);
+            }
+            else
+            {
+                drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID);
+            }
+            drv_piezo_playPattern(stopRecordingTone, (sizeof(stopRecordingTone) / sizeof(drv_piezo_noteElement_t)));
+        }
+    }
+}
 static void processButtonEvent(uint32_t data)
 {
 	switch (data)
@@ -427,8 +485,7 @@ static void processButtonEvent(uint32_t data)
                 else
                 {
                     drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID);    
-                }
-                
+                }                
                 drv_piezo_playPattern(stopRecordingTone, (sizeof(stopRecordingTone) / sizeof(drv_piezo_noteElement_t)));                   
             }                                          
 		break;

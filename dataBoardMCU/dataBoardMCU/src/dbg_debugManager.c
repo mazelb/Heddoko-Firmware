@@ -244,8 +244,7 @@ status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cm
         cmdLength = strlen(command+9); 
         strncpy(newSerialNumber, command+9, 7); 
         snprintf(responseBuffer, MAX_RESPONSE_STRING_SIZE,"Serial Set: %s %d\r\n",newSerialNumber, cmdLength);
-        msg_sendMessage(MODULE_SYSTEM_MANAGER,MODULE_DEBUG,MSG_TYPE_SET_SERIAL,newSerialNumber); 
-        
+        msg_sendMessage(MODULE_SYSTEM_MANAGER,MODULE_DEBUG,MSG_TYPE_SET_SERIAL,newSerialNumber);         
     }
     else if(strncmp(command,"saveConfig",10) == 0)
     {
@@ -329,6 +328,10 @@ status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cm
     {
         drv_piezo_togglePiezo(false);
     }    
+    else if(strncmp(command, "sendBleInit\r\n",cmdSize)==0)
+    {
+        msg_sendMessageSimple(MODULE_BLE, MODULE_DEBUG, MSG_TYPE_DEBUG_BLE, 0);
+    }
     responseLength = strlen(responseBuffer);
     if(responseLength > 0)
     {

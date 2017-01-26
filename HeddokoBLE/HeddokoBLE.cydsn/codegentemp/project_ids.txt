@@ -1,5 +1,5 @@
-C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\HeddokoBLE.cyprj|a711f0bf-b576-4b64-8552-fd60740a7ec9
-C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|a489ac5e-6008-4584-a946-64ed2f7fc1a2
-C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|fff453e9-21e7-41c8-aded-6beafedd2d49
-C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|3182e0e7-c4ca-4389-9b09-a628ca07fabd
-C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|56b4c786-a8d5-4e8f-bc71-4c0e3a967911
+C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\HeddokoBLE.cyprj|3db07d25-adb7-433c-9509-618c63f89f7d
+C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|73f4cc77-4608-4209-9b33-6e5c7381c3d0
+C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|7f81232d-e7eb-4859-95f6-319d18fd1478
+C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|e11da8bd-c6ab-4c5e-a2c5-dbd77d812278
+C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|02c59cbe-4d6d-428c-9dc5-e97b0a72c257
