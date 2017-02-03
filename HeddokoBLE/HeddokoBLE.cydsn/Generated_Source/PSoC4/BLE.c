@@ -64,7 +64,7 @@ CYBLE_GAPP_DISC_PARAM_T cyBle_discoveryParam =
     CYBLE_GAPP_CONNECTABLE_UNDIRECTED_ADV, /* uint8 advertising_type */
     0x00u,      /* uint8 own_addr_type */
     0x00u,      /* uint8 direct_addr_type */
-    {0x12u, 0x11u, 0x10u, 0x50u, 0xA0u, 0xBBu}, /* uint8* direct_addr */
+    {0x00u, 0x00u, 0x00u, 0x50u, 0xA0u, 0xBBu}, /* uint8* direct_addr */
     0x07u,      /* uint8 advertising_channel_map */
     0x00u,      /* uint8 advertising_filter_policy */
 };
@@ -135,7 +135,7 @@ uint8 cyBle_pendingFlashWrite;
 #endif  /* (CYBLE_BONDING_REQUIREMENT == CYBLE_BONDING_YES) */
 
 CYBLE_CALLBACK_T CyBle_ApplCallback;
-CYBLE_GAP_BD_ADDR_T cyBle_deviceAddress = {{0x12u, 0x11u, 0x10u, 0x50u, 0xA0u, 0xBBu}, 0x00u };
+CYBLE_GAP_BD_ADDR_T cyBle_deviceAddress = {{0x00u, 0x00u, 0x00u, 0x50u, 0xA0u, 0xBBu}, 0x00u };
 CYBLE_GAP_BD_ADDR_T * cyBle_sflashDeviceAddress = CYBLE_SFLASH_DEVICE_ADDRESS_PTR;
 
 

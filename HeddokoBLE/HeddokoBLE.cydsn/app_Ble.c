@@ -188,57 +188,70 @@ void AppCallBack(uint32 event, void *eventParam)
             
             writeReqParam = (CYBLE_GATTS_WRITE_REQ_PARAM_T *) eventParam;
             
-            // notification status flags
-            if(CYBLE_SERVER_UART_SERVER_UART_TX_DATA_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE == \
-                                                                    writeReqParam->handleValPair.attrHandle)
+//            // notification status flags
+//            if(CYBLE_SERVER_UART_SERVER_UART_TX_DATA_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE == \
+//                                                                    writeReqParam->handleValPair.attrHandle)
+//            {
+//                errorCode = CyBle_GattsWriteAttributeValue(&(writeReqParam->handleValPair), \
+//                                                0, &cyBle_connHandle, CYBLE_GATT_DB_PEER_INITIATED);
+//                
+//                if (CYBLE_GATT_ERR_NONE  == errorCode)
+//                {
+//                    CyBle_GattsWriteRsp(cyBle_connHandle);
+//                    #ifdef PRINT_MESSAGE_LOG   
+//                        UART_UartPutString("\n\rNotifications enabled\n\r");
+//                        UART_UartPutString("\n\rStart entering data:\n\r");
+//                    #endif
+//                }
+//            }
+//            
+//            // enable notification flag for RAW data
+//            if(CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE == \
+//                                                                    writeReqParam->handleValPair.attrHandle)
+//            {
+//                errorCode = CyBle_GattsWriteAttributeValue(&(writeReqParam->handleValPair), \
+//                                                0, &cyBle_connHandle, CYBLE_GATT_DB_PEER_INITIATED);
+//                
+//                if (CYBLE_GATT_ERR_NONE  == errorCode)
+//                {
+//                    CyBle_GattsWriteRsp(cyBle_connHandle);
+//                    #ifdef PRINT_MESSAGE_LOG   
+//                        UART_UartPutString("\n\rRaw data Notifications enabled\n\r");
+//                        UART_UartPutString("\n\rStart entering data:\n\r");
+//                    #endif
+//                }
+//            }
+//            
+//            // enable notification flag for Brain Pack Status
+//            if(CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE == \
+//                                                                    writeReqParam->handleValPair.attrHandle)
+//            {
+//                errorCode = CyBle_GattsWriteAttributeValue(&(writeReqParam->handleValPair), \
+//                                                0, &cyBle_connHandle, CYBLE_GATT_DB_PEER_INITIATED);
+//                
+//                if (CYBLE_GATT_ERR_NONE  == errorCode)
+//                {
+//                    CyBle_GattsWriteRsp(cyBle_connHandle);
+//                    #ifdef PRINT_MESSAGE_LOG   
+//                        UART_UartPutString("\n\rBrain Pack Status Notifications enabled\n\r");
+//                        UART_UartPutString("\n\rStart entering data:\n\r");
+//                    #endif
+//                }
+//            }
+            //                errorCode = CyBle_GattsWriteAttributeValue(&(writeReqParam->handleValPair), \
+//                                                0, &cyBle_connHandle, CYBLE_GATT_DB_PEER_INITIATED);
+            //                
+            errorCode = CyBle_GattsWriteAttributeValue(&(writeReqParam->handleValPair), \
+                                        0, &cyBle_connHandle, CYBLE_GATT_DB_PEER_INITIATED);
+            HandleUartRxTraffic((CYBLE_GATTS_WRITE_REQ_PARAM_T *) eventParam);
+            if (CYBLE_GATT_ERR_NONE  == errorCode)
             {
-                errorCode = CyBle_GattsWriteAttributeValue(&(writeReqParam->handleValPair), \
-                                                0, &cyBle_connHandle, CYBLE_GATT_DB_PEER_INITIATED);
-                
-                if (CYBLE_GATT_ERR_NONE  == errorCode)
-                {
-                    CyBle_GattsWriteRsp(cyBle_connHandle);
-                    #ifdef PRINT_MESSAGE_LOG   
-                        UART_UartPutString("\n\rNotifications enabled\n\r");
-                        UART_UartPutString("\n\rStart entering data:\n\r");
-                    #endif
-                }
+                CyBle_GattsWriteRsp(cyBle_connHandle);
+                #ifdef PRINT_MESSAGE_LOG   
+                    UART_UartPutString("\n\rBrain Pack Status Notifications enabled\n\r");
+                    UART_UartPutString("\n\rStart entering data:\n\r");
+                #endif
             }
-            
-            // enable notification flag for RAW data
-            if(CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE == \
-                                                                    writeReqParam->handleValPair.attrHandle)
-            {
-                errorCode = CyBle_GattsWriteAttributeValue(&(writeReqParam->handleValPair), \
-                                                0, &cyBle_connHandle, CYBLE_GATT_DB_PEER_INITIATED);
-                
-                if (CYBLE_GATT_ERR_NONE  == errorCode)
-                {
-                    CyBle_GattsWriteRsp(cyBle_connHandle);
-                    #ifdef PRINT_MESSAGE_LOG   
-                        UART_UartPutString("\n\rRaw data Notifications enabled\n\r");
-                        UART_UartPutString("\n\rStart entering data:\n\r");
-                    #endif
-                }
-            }
-            
-            // enable notification flag for Brain Pack Status
-            if(CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE == \
-                                                                    writeReqParam->handleValPair.attrHandle)
-            {
-                errorCode = CyBle_GattsWriteAttributeValue(&(writeReqParam->handleValPair), \
-                                                0, &cyBle_connHandle, CYBLE_GATT_DB_PEER_INITIATED);
-                
-                if (CYBLE_GATT_ERR_NONE  == errorCode)
-                {
-                    CyBle_GattsWriteRsp(cyBle_connHandle);
-                    #ifdef PRINT_MESSAGE_LOG   
-                        UART_UartPutString("\n\rBrain Pack Status Notifications enabled\n\r");
-                        UART_UartPutString("\n\rStart entering data:\n\r");
-                    #endif
-                }
-            }
-            
             break;
         
         case CYBLE_EVT_GATTC_READ_RSP:
@@ -256,5 +269,59 @@ void AppCallBack(uint32 event, void *eventParam)
             break;
     }
 }
+CYBLE_API_RESULT_T CyBle_CustomSetCharacteristicValue(CYBLE_GATT_DB_ATTR_HANDLE_T handle, 
+    uint8 attrSize, uint8 *attrValue)
+{
+    CYBLE_API_RESULT_T apiResult = CYBLE_ERROR_OK;
+    CYBLE_GATT_HANDLE_VALUE_PAIR_T locHandleValuePair;
 
+
+    /* Store data in database */
+    locHandleValuePair.attrHandle = handle;
+    locHandleValuePair.value.len = attrSize;
+    locHandleValuePair.value.val = attrValue;
+    if(CYBLE_GATT_ERR_NONE !=
+        CyBle_GattsWriteAttributeValue(&locHandleValuePair, 0u, NULL, CYBLE_GATT_DB_LOCALLY_INITIATED))
+    {
+        apiResult = CYBLE_ERROR_INVALID_PARAMETER;
+    }
+    
+    return (apiResult);
+}
+
+CYBLE_API_RESULT_T CyBle_CustomSendNotification(CYBLE_CONN_HANDLE_T connHandle,
+    CYBLE_GATT_DB_ATTR_HANDLE_T handle, CYBLE_GATT_DB_ATTR_HANDLE_T cccdHandle,
+    uint8 attrSize, uint8 *attrValue)
+{
+    CYBLE_API_RESULT_T apiResult;
+
+    /* Store new data in database */
+    apiResult = CyBle_CustomSetCharacteristicValue(handle, attrSize, attrValue);
+    
+    if(CYBLE_ERROR_OK == apiResult)  
+    {
+        /* Send Notification if it is enabled and connected */
+        if(CYBLE_STATE_CONNECTED != CyBle_GetState())
+        {
+            apiResult = CYBLE_ERROR_INVALID_STATE;
+        }
+        else if((cccdHandle == CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE)
+            || (!CYBLE_IS_NOTIFICATION_ENABLED(cccdHandle)))
+        {
+            apiResult = CYBLE_ERROR_NTF_DISABLED;
+        }
+        else
+        {
+            CYBLE_GATTS_HANDLE_VALUE_NTF_T ntfReqParam;            
+            /* Fill all fields of write request structure ... */
+            ntfReqParam.attrHandle = handle;
+            ntfReqParam.value.val = attrValue;
+            ntfReqParam.value.len = attrSize;            
+            /* Send notification to client using previously filled structure */
+            apiResult = CyBle_GattsNotification(connHandle, &ntfReqParam);
+        }
+    }
+    
+    return (apiResult);
+}
 /* [] END OF FILE */

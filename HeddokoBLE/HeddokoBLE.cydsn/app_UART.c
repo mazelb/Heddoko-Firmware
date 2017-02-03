@@ -174,11 +174,15 @@ void HandleUartRxTraffic(CYBLE_GATTS_WRITE_REQ_PARAM_T * uartRxDataWrReq)
         #ifdef PRINT_MESSAGE_LOG
         UART_UartPutString("Received wifi enable command\r\n");
         #endif
-        if (sendWiFiData == WIFI_ALL_DATA_AVAILABLE_MASK)   // NOTE: this makes sure that everytime data needs to be written to the three parameters
-        {                                                   //       before enable command is sent or else no data will be sent to data board
-            getSendWiFiDataAll();   //send the wifi data
-            sendWiFiData = 0;
-        }
+//        if(*(uartRxDataWrReq->handleValPair.value.val) == 1)
+//        {
+//            if (sendWiFiData == WIFI_ALL_DATA_AVAILABLE_MASK)   // NOTE: this makes sure that everytime data needs to be written to the three parameters
+//            {                                                   //       before enable command is sent or else no data will be sent to data board
+                getSendWiFiDataAll(*(uartRxDataWrReq->handleValPair.value.val));   //send the wifi data
+                sendWiFiData = 0;
+//            }            
+//        }
+
     }
     else if (uartRxDataWrReq->handleValPair.attrHandle == CYBLE_HEDDOKO_RAW_DATA_RAW_DATA_CHAR_HANDLE)
     {
@@ -193,6 +197,24 @@ void HandleUartRxTraffic(CYBLE_GATTS_WRITE_REQ_PARAM_T * uartRxDataWrReq)
         makeSendPacket(PACKET_COMMAND_ID_BLE_RECORDING_REQUEST, uartRxDataWrReq->handleValPair.value.val,\
                         (uint16_t) uartRxDataWrReq->handleValPair.value.len);           
     }
+    else if(uartRxDataWrReq->handleValPair.attrHandle == CYBLE_HEDDOKO_RECORDING_CONTROL_REQUEST_CURRENT_TIME_CHAR_HANDLE)
+    {
+        //send the time request packet
+        makeSendPacket(PACKET_COMMAND_ID_BLE_TIME_REQUEST, uartRxDataWrReq->handleValPair.value.val,\
+                        (uint16_t) uartRxDataWrReq->handleValPair.value.len);         
+    }   
+    else if(uartRxDataWrReq->handleValPair.attrHandle == CYBLE_HEDDOKO_RECORDING_CONTROL_CURRENT_TIME_CHAR_HANDLE)
+    {
+        //send the time to the databoard
+        makeSendPacket(PACKET_COMMAND_ID_BLE_SET_TIME, uartRxDataWrReq->handleValPair.value.val,\
+                        (uint16_t) uartRxDataWrReq->handleValPair.value.len);         
+    }
+    else if(uartRxDataWrReq->handleValPair.attrHandle == CYBLE_HEDDOKO_RECORDING_CONTROL_EVENT_CHAR_HANDLE)
+    {
+        //send the event to the databoard
+        makeSendPacket(PACKET_COMMAND_ID_BLE_EVENT, uartRxDataWrReq->handleValPair.value.val,\
+                        (uint16_t) uartRxDataWrReq->handleValPair.value.len);         
+    }    
 }
 
 /*****************************************************************************************

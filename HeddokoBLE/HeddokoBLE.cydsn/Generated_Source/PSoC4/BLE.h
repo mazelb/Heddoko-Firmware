@@ -150,7 +150,7 @@
     #define CYBLE_GAPC_CONNECTION_TIME_OUT          (0x03E8u)
 #endif /* CYBLE_GAP_ROLE_CENTRAL */
 
-#define SILICON_GENERATED_DEVICE_ADDRESS            (0x00u)
+#define SILICON_GENERATED_DEVICE_ADDRESS            (0x01u)
 
 /*  Selected IO capability  
     CYBLE_GAP_IOCAP_DISPLAY_ONLY

@@ -32,6 +32,7 @@ typedef enum
     MSG_TYPE_STREAM_CONFIG, 
     MSG_TYPE_RECORDING_CONFIG,
     MSG_TYPE_WIFI_CONFIG,
+    MSG_TYPE_WIFI_CONTROL, //sent to connect and disconnect from a configured wifi network. 
     MSG_TYPE_SET_SERIAL,
     MSG_TYPE_SAVE_SETTINGS,
     MSG_TYPE_STREAM_REQUEST,

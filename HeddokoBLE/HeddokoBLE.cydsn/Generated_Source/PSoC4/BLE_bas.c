@@ -22,10 +22,10 @@ static CYBLE_CALLBACK_T CyBle_BasApplCallback = NULL;
 
 const CYBLE_BASS_T cyBle_bass[0x01u] = {
     {
-        0x0033u, /* Handle of the BAS service */ 
-        0x0035u, /* Handle of the Battery Level characteristic */ 
-        0x0036u, /* Handle of the Characteristic Presentation Format descriptor */ 
-        0x0037u, /* Handle of the Client Characteristic Configuration descriptor */ 
+        0x0037u, /* Handle of the BAS service */ 
+        0x0039u, /* Handle of the Battery Level characteristic */ 
+        0x003Au, /* Handle of the Characteristic Presentation Format descriptor */ 
+        0x003Bu, /* Handle of the Client Characteristic Configuration descriptor */ 
     },
 };
 

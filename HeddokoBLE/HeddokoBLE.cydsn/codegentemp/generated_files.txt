@@ -59,6 +59,8 @@
   <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_eventHandler.h" value="NONE;BLE" />
   <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_custom.h" value="NONE;BLE" />
   <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\BLE_custom.c" value="ARM_C_FILE;BLE" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\RTC_1.c" value="ARM_C_FILE;RTC_1" />
+  <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\RTC_1.h" value="NONE;RTC_1" />
   <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SCBCLK.c" value="ARM_C_FILE;UART_SCBCLK" />
   <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_SCBCLK.h" value="NONE;UART_SCBCLK" />
   <file name="C:\GitHub\Heddoko-Firmware\HeddokoBLE\HeddokoBLE.cydsn\codegentemp\UART_tx.c" value="ARM_C_FILE;UART_tx" />

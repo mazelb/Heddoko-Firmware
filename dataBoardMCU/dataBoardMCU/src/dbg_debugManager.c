@@ -53,6 +53,19 @@ const char* moduleNameString[] = {
 	"MODULE_NUMBER_OF_MODULES"
 };
 
+const char* systemStateString[] = {
+    	"SYSTEM_STATE_SLEEP",
+    	"SYSTEM_STATE_INIT",
+    	"SYSTEM_STATE_CONNECTING",
+    	"SYSTEM_STATE_WAITING_FOR_CAL",
+    	"SYSTEM_STATE_CALIBRATION",
+    	"SYSTEM_STATE_IDLE",
+    	"SYSTEM_STATE_ERROR",
+    	"SYSTEM_STATE_RECORDING",
+    	"SYSTEM_STATE_STREAMING",
+    	"SYSTEM_STATE_SYNCING"
+};
+
 bool debugMsgOverUsb = false; 
 
 /*	Local static functions	*/
@@ -357,15 +370,16 @@ static void processEvent(msg_message_t* message)
 	switch(message->msgType)
 	{
 		case MSG_TYPE_ENTERING_NEW_STATE:
-			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received Entering New State event\r\n");			
+			dbg_printf(DBG_LOG_LEVEL_DEBUG,"New State: %s\r\n",systemStateString[message->data]);			
 		break; 
 		case MSG_TYPE_SDCARD_STATE:
-			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received SD Card state Event\r\n");
+			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received SD Card state Event:%d\r\n",message->data);
 		break;
 		case MSG_TYPE_WIFI_STATE:
-			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received Wifi state event\r\n");
+			
             if(message->data == NET_WIFI_STATE_CONNECTED)
             {
+                dbg_printf(DBG_LOG_LEVEL_DEBUG,"Wifi Connected\r\n");
                 if(net_createServerSocket(&debugServer, 255) == STATUS_PASS)
                 {
                     dbg_printf(DBG_LOG_LEVEL_DEBUG,"Initializing server socket\r\n");
@@ -377,6 +391,7 @@ static void processEvent(msg_message_t* message)
             }
             else if(message->data == NET_WIFI_STATE_DISCONNECTED)
             {
+               dbg_printf(DBG_LOG_LEVEL_DEBUG,"Wifi Disconnected\r\n");
                net_closeSocket(&debugServer);  
             }                                
 		break;

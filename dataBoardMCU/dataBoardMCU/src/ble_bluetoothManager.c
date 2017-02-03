@@ -28,6 +28,8 @@ static void processMessage(msg_message_t message);
 static void processRawPacket(pkt_rawPacket_t* packet);
 static void sendBpStatusData();
 static void sendInitialParameters(ble_moduleConfig_t* moduleCfg);
+static void sendTimeToBleModule();
+static void setTimeFromPacket(uint8_t* timeData, uint16_t length);
 
 /*	Local variables	*/
 xQueueHandle queue_ble = NULL;
@@ -78,6 +80,17 @@ typedef struct
     uint8_t modelString[20]; //the model of the brainpack     
 }ble_pkt_initialData_t;
 
+typedef struct  
+{
+    uint16_t year;
+    uint8_t month;
+    uint8_t day;
+    uint8_t hour;
+    uint8_t minute;
+    uint8_t second; 
+    uint8_t dayOfWeek; 
+}ble_pkt_dateTime_t;
+
 
 /*		Function definitions	*/
 void ble_bluetoothManagerTask(void *pvParameters)
@@ -106,8 +119,9 @@ void ble_bluetoothManagerTask(void *pvParameters)
     moduleConfiguration = (ble_moduleConfig_t*)pvParameters;
     vTaskDelay(5000); 
     //send the initial configuration to the BLE module
-    sendInitialParameters(moduleConfiguration);    
-	
+    sendInitialParameters(moduleConfiguration);   
+    vTaskDelay(1000);  
+	sendTimeToBleModule();
 	//start the main thread where we listen for packets and messages
 	while (1)
 	{
@@ -147,13 +161,18 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 			break;
 			
 			case PACKET_COMMAND_ID_ALL_WIFI_DATA_RESP:
-                strncpy(receivedWifiConfig.ssid,&packet->payload[2],SSID_DATA_SIZE);
-				//memcpy(wifi_data.ssid, (uint8_t *) &packet->payload[2], SSID_DATA_SIZE);    
-				strncpy(receivedWifiConfig.passphrase,&packet->payload[34],PASSPHRASE_DATA_SIZE);
-                //memcpy(wifi_data.passphrase, (uint8_t *) &packet->payload[34], PASSPHRASE_DATA_SIZE);
-				receivedWifiConfig.securityType = packet->payload[98];
-                msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_DEBUG, MSG_TYPE_WIFI_CONFIG,&receivedWifiConfig);  
-                //maybe some sort of toggle to turn on and off the wifi here.   
+                if(packet->payload[2] == 1) //connect to wifi, only copy the data from the BLE if we are connecting. 
+                {
+                    strncpy(receivedWifiConfig.ssid,&packet->payload[3],SSID_DATA_SIZE);
+                    //memcpy(wifi_data.ssid, (uint8_t *) &packet->payload[2], SSID_DATA_SIZE);
+                    strncpy(receivedWifiConfig.passphrase,&packet->payload[35],PASSPHRASE_DATA_SIZE);
+                    //memcpy(wifi_data.passphrase, (uint8_t *) &packet->payload[34], PASSPHRASE_DATA_SIZE);
+                    receivedWifiConfig.securityType = packet->payload[99];
+                    msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_DEBUG, MSG_TYPE_WIFI_CONFIG,&receivedWifiConfig);  
+                    receivedWifiConfig.channel = 0xFF;                           
+                }
+                //send the message to connect and disconnect from the wifi network. 
+                msg_sendMessageSimple(MODULE_SYSTEM_MANAGER, MODULE_DEBUG, MSG_TYPE_WIFI_CONTROL,packet->payload[2]);
 			break;
 			
 			case PACKET_COMMAND_ID_SEND_RAW_DATA_TO_MASTER:	// received as notification every time new data is written
@@ -165,12 +184,28 @@ static void processRawPacket(pkt_rawPacket_t* packet)
             case PACKET_COMMAND_ID_BLE_RECORDING_REQUEST:
                 msg_sendMessageSimple(MODULE_SYSTEM_MANAGER, MODULE_BLE, MSG_TYPE_TOGGLE_RECORDING, packet->payload[2]); 
             break;
+            case PACKET_COMMAND_ID_BLE_TIME_REQUEST:
+                sendTimeToBleModule();
+            break;
+            case PACKET_COMMAND_ID_BLE_SET_TIME:
+                setTimeFromPacket(&(packet->payload[2]), packet->payloadSize -2); 
+            break;
+            case PACKET_COMMAND_ID_BLE_EVENT:
+                if(packet->payload[2] == 1)
+                {
+                    dbg_printf(DBG_LOG_LEVEL_DEBUG, "Received Pain Event!!\r\n");
+                }
+                else if(packet->payload[2] == 2)
+                {
+                    dbg_printf(DBG_LOG_LEVEL_DEBUG, "Received Concern Event!!\r\n");
+                }
+            break;
 			
 			default:
 			break;
 		}
 	}
-	dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received a packet!!!!");
+	//dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received a packet!!!!");
 }
 
 static void processMessage(msg_message_t message)
@@ -222,6 +257,7 @@ static void processMessage(msg_message_t message)
 		break;
         case MSG_TYPE_DEBUG_BLE:
             sendInitialParameters(moduleConfiguration);   
+            
         break;
 		default:
 		break;
@@ -307,4 +343,73 @@ void ble_rawDataReq()
 {
 	uint8_t outputData[2] = {PACKET_TYPE_MASTER_CONTROL, PACKET_COMMAND_ID_GET_RAW_DATA_REQ};
 	pkt_sendRawPacket(&usart1Config, outputData, sizeof(outputData));
+}
+
+static void sendTimeToBleModule()
+{
+    uint8_t outputData[sizeof(ble_pkt_dateTime_t)+2]; 
+    uint32_t hour, minute, second, year, month, day, dow;    
+    //cast the packet payload as a date time structure
+    ble_pkt_dateTime_t* dateTimePointer = (ble_pkt_dateTime_t*)outputData+2; 
+    //setup the packet header
+    outputData[0] = PACKET_TYPE_MASTER_CONTROL;
+    outputData[1] = PACKET_COMMAND_ID_BLE_INITIAL_TIME;
+    rtc_get_time(RTC,&hour,&minute,&second);
+    rtc_get_date(RTC,&year,&month,&day,&dow);
+     /*
+    Date time packet is in the following format
+    Byte 0-1:Year
+    Byte 2: Month
+    Byte 3: Day
+    Byte 4: Hour
+    Byte 5: Minute
+    Byte 6: Second
+    Byte 7: Day of week
+    */      
+    outputData[2] = year & 0xFF; 
+    outputData[3] = year >> 8; 
+    outputData[4] = (uint8_t)month; 
+    outputData[5] = (uint8_t)day; 
+    outputData[6] = (uint8_t)hour; 
+    outputData[7] = (uint8_t)minute; 
+    outputData[8] = (uint8_t)second; 
+    outputData[9] = (uint8_t)dow;  
+    pkt_sendRawPacket(&usart1Config, outputData, sizeof(outputData));   
+    
+}
+
+static void setTimeFromPacket(uint8_t* timeData, uint16_t length)
+{
+    uint32_t hour, minute, second, year, month, day, dow;    
+
+
+    //make sure the length is good      
+    if(length < 8)
+    {
+        return; 
+    }
+         /*
+    Date time packet is in the following format
+    Byte 0-1:Year
+    Byte 2: Month
+    Byte 3: Day
+    Byte 4: Hour
+    Byte 5: Minute
+    Byte 6: Second
+    Byte 7: Day of week
+    */ 
+    year = timeData[0];
+    year += (uint32_t)timeData[1]<<8;     
+    month = timeData[2]; 
+    day = timeData[3]; 
+    hour = timeData[4]; 
+    minute = timeData[5]; 
+    second = timeData[6]; 
+    dow = timeData[7];  
+    
+    rtc_set_date(RTC,year,month,day,dow);
+    rtc_set_time(RTC,hour,minute,second);  
+    dbg_printf(DBG_LOG_LEVEL_DEBUG,"Time set to: %d:%d:%d\r\n",hour,minute,second);
+    //need to add command to send the new time to the sub_processor. 
+    
 }

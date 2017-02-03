@@ -20,7 +20,9 @@ static void saveWifiDefaultConfig(rawPacket_t* packet);   // send the default wi
 static void sendUnsentWifiData();   // send new wifi data available if any
 void saveReceivedRawData(uint8 *data, uint16_t length);
 void saveReceivedBpStatusData(uint8 *data, uint16_t length);
+void setBleModuleTime(uint8_t* dateTimeData, uint16 length);
 
+#define CLOCK_1_FREQUENCY 32000UL
 #define RAW_DATA_SIZE 20
 #define SSID_DATA_SIZE 32
 #define PASSPHRASE_DATA_SIZE 64
@@ -87,27 +89,9 @@ void cmd_processPacket(rawPacket_t* packet)
                 #endif
                 saveReceivedBpStatusData((uint8 *) &packet->payload[2], (packet->payloadSize - 2)); // remove two bytes of header
             break;
-                
-//            case PACKET_COMMAND_ID_SSID_DATA_REQ:
-//                #ifdef PRINT_MESSAGE_LOG
-//                UART_UartPutString("Received SSID data request\r\n");
-//                #endif
-//                getSendAttrData(CYBLE_HEDDOKO_WIFI_SSID_CHAR_HANDLE, PACKET_COMMAND_ID_SSID_DATA_RESP, 32);
-//            break;
-//            
-//            case PACKET_COMMAND_ID_PASSPHRASE_DATA_REQ:
-//                #ifdef PRINT_MESSAGE_LOG
-//                UART_UartPutString("Received Passphrase data request\r\n");
-//                #endif
-//                getSendAttrData(CYBLE_HEDDOKO_WIFI_PASSPHRASE_CHAR_HANDLE, PACKET_COMMAND_ID_PASSPHRASE_DATA_RESP, 64);
-//            break;
-//            
-//            case PACKET_COMMAND_ID_SECURITY_TYPE_DATA_REQ:
-//                #ifdef PRINT_MESSAGE_LOG
-//                UART_UartPutString("Received Security type data request\r\n");
-//                #endif
-//                getSendAttrData(CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_CHAR_HANDLE, PACKET_COMMAND_ID_SECURITY_TYPE_DATA_RESP, 1);
-//            break;
+            case PACKET_COMMAND_ID_BLE_INITIAL_TIME:
+                setBleModuleTime((uint8 *)&(packet->payload[2]), packet->payloadSize-2);
+            break;
             
             case PACKET_COMMAND_ID_BLE_INITIAL_PARAMETERS:    // default WIFI data received from data board on boot-up
                 #ifdef PRINT_MESSAGE_LOG
@@ -116,12 +100,12 @@ void cmd_processPacket(rawPacket_t* packet)
                 saveWifiDefaultConfig(packet);
             break;
                 
-            case PACKET_COMMAND_ID_ALL_WIFI_DATA_REQ:
-                #ifdef PRINT_MESSAGE_LOG
-                UART_UartPutString("Received All WiFi data request\r\n");
-                #endif
-                getSendWiFiDataAll();       // fetch complete WiFi data and send it
-            break;
+//            case PACKET_COMMAND_ID_ALL_WIFI_DATA_REQ:
+//                #ifdef PRINT_MESSAGE_LOG
+//                UART_UartPutString("Received All WiFi data request\r\n");
+//                #endif
+//                getSendWiFiDataAll(1);       // fetch complete WiFi data and send it
+//            break;
             
             case PACKET_COMMAND_ID_GET_RAW_DATA_REQ:
                 #ifdef PRINT_MESSAGE_LOG
@@ -163,6 +147,13 @@ pkt_packetParserConfiguration_t packetParserConfig =
 {
 	.packetReceivedCallback = cmd_processPacket
 };
+CY_ISR(MY_ISR) 
+{    
+    //TIMER_1_Stop();
+    //TIMER_1_WritePeriod(CLOCK_1_FREQUENCY); 
+    RTC_1_Update();
+    //TIMER_1_Enable();
+}
 
 int main()
 {
@@ -171,18 +162,37 @@ int main()
         CYBLE_BLESS_STATE_T     blessState;
     #endif
     
-    CYBLE_API_RESULT_T      bleApiResult;
-    
+    CYBLE_API_RESULT_T      bleApiResult;    
+
     CyGlobalIntEnable;
-    
+//    Clock_1_StartEx(0);
+//    TIMER_1_Start(); // Configure and enable timer    
+//    TIMER_1_Stop();
+//    TIMER_1_WritePeriod(CLOCK_1_FREQUENCY); 
+//    TIMER_1_Enable();
+    RTC_1_Start();       
+    RTC_1_SetPeriod(1, 10); //every tick is 100ms, there are 10 ticks of the clock per second. 
+    //isr_1_StartEx(MY_ISR); // Point to MY_ISR to carry out the interrupt sub-routine   
      /* Start UART and BLE component */
-    CySysTickInit();
-    CySysTickStart();
+    CySysTickStart();    
+    
     UART_Start();   
     pkt_packetParserInit(&packetParserConfig);
     bleApiResult = CyBle_Start(AppCallBack); 
     Adv_led_SetDriveMode(CY_SYS_PINS_DM_STRONG);
     Conn_Led_SetDriveMode(CY_SYS_PINS_DM_STRONG);
+    
+    Conn_Led_Write(LED_OFF);
+    Adv_led_Write(LED_ON);
+    CyDelay(200);
+    Conn_Led_Write(LED_ON);
+    Adv_led_Write(LED_OFF);
+    CyDelay(200);
+    Conn_Led_Write(LED_OFF);
+    Adv_led_Write(LED_ON);
+    CyDelay(200);
+    Conn_Led_Write(LED_OFF);
+    Adv_led_Write(LED_OFF);
 
     if(bleApiResult == CYBLE_ERROR_OK)
     {
@@ -275,6 +285,7 @@ int main()
         HandleBleProcessing();
         CyBle_ProcessEvents();
         pkt_getRawPacket(&dataPacket, 200, 0);
+        //RTC_1_Update();
     }
 }
 
@@ -303,15 +314,15 @@ void getSendAttrData(CYBLE_GATT_DB_ATTR_HANDLE_T attrHandle, uint8 outDataType, 
     pkt_SendRawPacket(outputBuffer, size+2);
 }
 
-void getSendWiFiDataAll(void)
+void getSendWiFiDataAll(uint8_t enable)
 {
     uint8 outputBuffer[RAW_PACKET_MAX_SIZE] = {0};
     CYBLE_GATT_HANDLE_VALUE_PAIR_T handlePair = {{0, SSID_DATA_SIZE, SSID_DATA_SIZE}, CYBLE_HEDDOKO_WIFI_SSID_CHAR_HANDLE};
     
     outputBuffer[0] = PACKET_TYPE_BLUETOOTH_MODULE;
     outputBuffer[1] = PACKET_COMMAND_ID_ALL_WIFI_DATA_RESP;
-    
-    handlePair.value.val = (uint8 *) &outputBuffer[2];
+    outputBuffer[2] = enable; 
+    handlePair.value.val = (uint8 *) &outputBuffer[3];
     //get the SSID data
     CyBle_GattsReadAttributeValue(&handlePair, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
     
@@ -319,18 +330,18 @@ void getSendWiFiDataAll(void)
     handlePair.attrHandle = CYBLE_HEDDOKO_WIFI_PASSPHRASE_CHAR_HANDLE;
     handlePair.value.len = PASSPHRASE_DATA_SIZE;
     handlePair.value.actualLen = PASSPHRASE_DATA_SIZE;
-    handlePair.value.val = (uint8 *) &outputBuffer[34];
+    handlePair.value.val = (uint8 *) &outputBuffer[35];
     CyBle_GattsReadAttributeValue(&handlePair, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
     
     //get security type 
     handlePair.attrHandle = CYBLE_HEDDOKO_WIFI_SECURITY_TYPE_CHAR_HANDLE;
     handlePair.value.len = SECURITY_TYPE_DATA_SIZE;
     handlePair.value.actualLen = SECURITY_TYPE_DATA_SIZE;
-    handlePair.value.val = (uint8 *) &outputBuffer[98];
+    handlePair.value.val = (uint8 *) &outputBuffer[99];
     CyBle_GattsReadAttributeValue(&handlePair, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
     
     //we have all the data, pass it over UART now
-    pkt_SendRawPacket(outputBuffer, 99);
+    pkt_SendRawPacket(outputBuffer, 100);
 }
 
 void saveWifiDefaultConfig(rawPacket_t* packet)
@@ -388,6 +399,8 @@ void saveWifiDefaultConfig(rawPacket_t* packet)
     CyBle_ProcessEvents();
     // set the flag to indicate the presence of new data
     //newWifiDataAvailable = true;
+    CyBle_GapSetLocalName((const char*)initialData->serialNumber); 
+    
 }
 
 /*  OBSOLETE: WiFi should not send out notifications
@@ -498,8 +511,14 @@ void saveReceivedBpStatusData(uint8 *data, uint16_t length)
         memset(bpStatusData, 0, BP_STATUS_DATA_SIZE + SENSOR_MASK_SIZE);
         memcpy(bpStatusData, data, length);
         newBpStatusDataAvailable = true;        
-        handlePair.value.val = (uint8 *) bpStatusData;
-        CyBle_GattsWriteAttributeValue(&handlePair, 0, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
+//        handlePair.value.val = (uint8 *) bpStatusData;
+//        CyBle_GattsWriteAttributeValue(&handlePair, 0, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
+//        
+        CyBle_CustomSendNotification(cyBle_connHandle,
+        CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CHAR_HANDLE, 
+            CYBLE_HEDDOKO_BRAINPACK_STATUS_BPSTATUS_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE,
+             BP_STATUS_DATA_SIZE,(bpStatusData));   
+        
         CyBle_ProcessEvents();
         handlePair.attrHandle = CYBLE_HEDDOKO_BRAINPACK_STATUS_SENSOR_MASK_CHAR_HANDLE;
         handlePair.value.len = 4;
@@ -507,13 +526,24 @@ void saveReceivedBpStatusData(uint8 *data, uint16_t length)
         handlePair.value.val = (bpStatusData + 5); //pointer to the start of the mask data.  
         CyBle_GattsWriteAttributeValue(&handlePair, 0, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);
         CyBle_ProcessEvents();
-        handlePair.attrHandle = CYBLE_HEDDOKO_RECORDING_CONTROL_RECORDING_STATE_CHAR_HANDLE;
-        handlePair.value.len = 1;
-        handlePair.value.actualLen = 1;
-        handlePair.value.val = (bpStatusData + 2); //pointer to the current state.  
-        CyBle_GattsWriteAttributeValue(&handlePair, 0, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);       
+        CyBle_CustomSendNotification(cyBle_connHandle,
+        CYBLE_HEDDOKO_RECORDING_CONTROL_RECORDING_STATE_CHAR_HANDLE, 
+            CYBLE_HEDDOKO_RECORDING_CONTROL_RECORDING_STATE_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE,
+             1,(bpStatusData + 2));
+        
+        CyBle_CustomSendNotification(cyBle_connHandle,
+        CYBLE_HEDDOKO_WIFI_WIFI_CONNECTION_STATE_CHAR_HANDLE, 
+            CYBLE_HEDDOKO_WIFI_WIFI_CONNECTION_STATE_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE,
+             1,(bpStatusData + 3));
+        
+//        handlePair.attrHandle = CYBLE_HEDDOKO_RECORDING_CONTROL_RECORDING_STATE_CHAR_HANDLE;
+//        handlePair.value.len = 1;
+//        handlePair.value.actualLen = 1;
+//        handlePair.value.val = (bpStatusData + 2); //pointer to the current state.  
+//        CyBle_GattsWriteAttributeValue(&handlePair, 0, &cyBle_connHandle, CYBLE_GATT_DB_LOCALLY_INITIATED);       
         CyBle_ProcessEvents();
-        CyBle_BassSetCharacteristicValue(0, 0,1, &bpStatusData[0]);        
+        CyBle_BassSendNotification(cyBle_connHandle,0, 0,1, &bpStatusData[0]);
+        //CyBle_BassSetCharacteristicValue(0, 0,1, &bpStatusData[0]);        
     }
 }
 
@@ -539,4 +569,74 @@ void sendUnsentData()
     sendUnsentBpStatusData();
 }
 
+void updateTimeCharacteristic()
+{
+    uint8_t dateTimeCharacteristicData[10] = {0};
+    RTC_1_DATE_TIME dateTime; 
+    RTC_1_GetDateAndTime(&dateTime);   
+    
+//    memcpy(dateTimeCharacteristicData, &(dateTime.date), 4);
+//    memcpy(dateTimeCharacteristicData+4, &(dateTime.time), 3);
+    
+    /*
+    Date time packet is in the following format
+    Byte 0-1:Year
+    Byte 2: Month
+    Byte 3: Day
+    Byte 4: Hour
+    Byte 5: Minute
+    Byte 6: Second
+    Byte 7: Day of week
+    */      
+    uint16_t year = (uint16_t)RTC_1_GetYear(dateTime.date);
+    dateTimeCharacteristicData[0] = year & 0xFF; 
+    dateTimeCharacteristicData[1] = year >> 8;
+    dateTimeCharacteristicData[2] = (uint8_t)RTC_1_GetMonth(dateTime.date);
+    dateTimeCharacteristicData[3] = (uint8_t)RTC_1_GetDay(dateTime.date);
+    dateTimeCharacteristicData[4] = (uint8_t)RTC_1_GetHours(dateTime.time);
+    dateTimeCharacteristicData[5] = (uint8_t)RTC_1_GetMinutes(dateTime.time);
+    dateTimeCharacteristicData[6] = (uint8_t)RTC_1_GetSecond(dateTime.time);
+    dateTimeCharacteristicData[7] = (uint8_t)dateTime.dayOfWeek; 
+    CyBle_CustomSetCharacteristicValue(CYBLE_HEDDOKO_RECORDING_CONTROL_CURRENT_TIME_CHAR_HANDLE, 
+    8, dateTimeCharacteristicData);
+    
+}
+
+void setBleModuleTime(uint8_t* dateTimeData, uint16 length)
+{
+    /*
+    Date time packet is in the following format
+    Byte 0-1:Year
+    Byte 2: Month
+    Byte 3: Day
+    Byte 4: Hour
+    Byte 5: Minute
+    Byte 6: Second
+    Byte 7: Day of week
+    */    
+    
+    if(length != 8)
+    {
+        return;    
+    }
+    uint16_t year = dateTimeData[0] + (dateTimeData[1] << 8) ;
+    uint32_t date = RTC_1_ConstructDate(dateTimeData[2],
+                                        dateTimeData[3],
+                                        year);
+    uint32_t time = RTC_1_ConstructTime(RTC_1_INITIAL_TIME_FORMAT,
+                                          0u,
+                                          dateTimeData[4],
+                                          dateTimeData[5],
+                                          dateTimeData[6]);
+    RTC_1_SetDateAndTime(time, date);
+    //update the characteristic
+//    CyBle_CustomSetCharacteristicValue(CYBLE_HEDDOKO_RECORDING_CONTROL_CURRENT_TIME_CHAR_HANDLE, 
+//    8, dateTimeData);
+    CyBle_CustomSendNotification(cyBle_connHandle,
+        CYBLE_HEDDOKO_RECORDING_CONTROL_CURRENT_TIME_CHAR_HANDLE, 
+        CYBLE_HEDDOKO_RECORDING_CONTROL_CURRENT_TIME_CLIENT_CHARACTERISTIC_CONFIGURATION_DESC_HANDLE,
+        8,(dateTimeData));   
+    
+    
+}
 /* [] END OF FILE */

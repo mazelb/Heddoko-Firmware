@@ -44,7 +44,7 @@ drv_piezo_noteElement_t noteElementsArray[] =
 	//{000, 250},
 	{2500, 300},
 	//{000, 250},
-	{4000, 300},
+	{4000, 300}
 	//{000, 250}
 };
 drv_piezo_noteElement_t startRecordingTone[] =
@@ -53,7 +53,7 @@ drv_piezo_noteElement_t startRecordingTone[] =
     //{000, 250},
     {3000, 150},
     //{000, 250},
-    {3500, 150},
+    {3500, 150}
     //{000, 250}
 };
 drv_piezo_noteElement_t stopRecordingTone[] =
@@ -62,14 +62,14 @@ drv_piezo_noteElement_t stopRecordingTone[] =
     //{000, 250},
     {3000, 150},
     //{000, 250},
-    {2500, 150},
+    {2500, 150}
     //{000, 250}
 };
 drv_piezo_noteElement_t errorTone[] =
 {
     {800, 300},
     //{000, 250},
-    {800, 300},
+    {800, 300}
     //{000, 250},
 };
 drv_piezo_noteElement_t btnPress[] =
@@ -77,7 +77,24 @@ drv_piezo_noteElement_t btnPress[] =
     {2500, 250},
     {3000, 250}    
 };
-
+drv_piezo_noteElement_t wifiTone[] =
+{
+    {2500, 300},
+    //{000, 250},
+    {2500, 300},
+    //{000, 250},
+    {2500, 300}
+};
+drv_piezo_noteElement_t heddokoTone[] =
+{
+    {800, 600},
+    //{000, 100},
+    {800, 600},
+    {800, 600},
+    {2000, 900}
+    //{000, 100},
+    //{1800, 1000}
+};
 drv_haptic_config_t hapticConfig =
 {
 	.hapticGpio = DRV_GPIO_PIN_HAPTIC_OUT,
@@ -117,12 +134,11 @@ ble_moduleConfig_t bleModuleSettings;
 static void processToggleRecordingEvent(uint32_t requestedState);
 static void sendStateChangeMessage(sys_manager_systemState_t state);
 static void processMessage(msg_message_t message);
+static void processWifiControlEvent(uint32_t requestedState);
 static void processButtonEvent(uint32_t data);
 /*	Extern functions	*/
 /*	Extern variables	*/
 
-
-//Delete me after testing complete
 
 void sys_systemManagerTask(void* pvParameters)
 {
@@ -234,7 +250,7 @@ static void processMessage(msg_message_t message)
 		break;
 		case MSG_TYPE_ERROR:
             drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));
-            drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));
+            //drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));
             if(currentState == SYSTEM_STATE_RECORDING || currentState == SYSTEM_STATE_STREAMING)
             {
                 //go back to idle if the error is from the subprocessor. 
@@ -250,8 +266,7 @@ static void processMessage(msg_message_t message)
                      {
                          drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID);
                      }
-                     
-                     drv_piezo_playPattern(stopRecordingTone, (sizeof(stopRecordingTone) / sizeof(drv_piezo_noteElement_t)));                   
+                                       
                 }   
             }                
 		break;
@@ -320,6 +335,7 @@ static void processMessage(msg_message_t message)
             memcpy(&(currentSystemSettings.recordingCfg),message.parameters, sizeof(subp_recordingConfig_t));
         break;
         case MSG_TYPE_STREAM_REQUEST:
+             dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received Stream Request: %d\r\n",message.data);	
              if(message.data == 1)
              {            
                  if(currentState == SYSTEM_STATE_IDLE)
@@ -395,6 +411,8 @@ static void processMessage(msg_message_t message)
         case MSG_TYPE_TOGGLE_RECORDING:
             processToggleRecordingEvent(message.data);
         break;
+        case MSG_TYPE_WIFI_CONTROL:
+            processWifiControlEvent(message.data); 
 		default:
 		break;
 		
@@ -444,6 +462,25 @@ static void processToggleRecordingEvent(uint32_t requestedState)
         }
     }
 }
+static void processWifiControlEvent(uint32_t requestedState)
+{
+    if(requestedState == 1)
+    {
+        drv_piezo_playPattern(wifiTone, (sizeof(wifiTone) / sizeof(drv_piezo_noteElement_t)));            
+        if(sysNetworkState != NET_WIFI_STATE_CONNECTED)
+        {
+            net_connectToNetwork(&(currentSystemSettings.defaultWifiConfig));
+        }
+    }
+    else
+    {
+        if(sysNetworkState == NET_WIFI_STATE_CONNECTED)
+        {
+            net_disconnectFromNetwork();
+        }    
+    }
+ 
+}    
 static void processButtonEvent(uint32_t data)
 {
 	switch (data)
@@ -494,7 +531,7 @@ static void processButtonEvent(uint32_t data)
 		case GPM_BUTTON_TWO_SHORT_PRESS:
 			//drv_led_set(DRV_LED_RED, DRV_LED_SOLID);
 			//drv_haptic_playPattern(hapticPatternArray, (sizeof(hapticPatternArray) / sizeof(drv_haptic_patternElement_t)));
-			//drv_piezo_playPattern(&noteElementsArray[2], 1);
+			drv_piezo_playPattern(heddokoTone, (sizeof(heddokoTone) / sizeof(drv_piezo_noteElement_t)));
 		break;
 		case GPM_BUTTON_TWO_LONG_PRESS:
         //try to connect to the wifi network. 

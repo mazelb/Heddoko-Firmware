@@ -22,10 +22,14 @@
     #define PACKET_TYPE_MASTER_CONTROL                  0x01
     #define PACKET_TYPE_BLUETOOTH_MODULE                0x06
     
+    #define PACKET_COMMAND_ID_BLE_TIME_REQUEST          0x40
     #define PACKET_COMMAND_ID_GPS_DATA_REQ              0x41
     #define PACKET_COMMAND_ID_GPS_DATA_RESP             0x42
     #define PACKET_COMMAND_ID_BP_STATUS                 0x43
     #define PACKET_COMMAND_ID_BLE_RECORDING_REQUEST     0x44
+    #define PACKET_COMMAND_ID_BLE_SET_TIME              0x45
+    #define PACKET_COMMAND_ID_BLE_INITIAL_TIME          0x46
+    #define PACKET_COMMAND_ID_BLE_EVENT                 0x47
     #define PACKET_COMMAND_ID_BLE_INITIAL_PARAMETERS    0x48
     #define PACKET_COMMAND_ID_ALL_WIFI_DATA_REQ			0x49
     #define PACKET_COMMAND_ID_ALL_WIFI_DATA_RESP		0x4a
@@ -57,9 +61,9 @@
     void AppCallBack(uint32 , void *);
     void makeSendPacket(uint8 dataType, uint8_t* payload, uint16_t payloadSize);
     void getSendAttrData(CYBLE_GATT_DB_ATTR_HANDLE_T attrHandle, uint8 outDataType, uint32 size);   // get data from the Database and send it to data board
-    void getSendWiFiDataAll(void);      // get all WIFI parameters from the Database and send it to data board
+    void getSendWiFiDataAll(uint8_t enable);      // get all WIFI parameters from the Database and send it to data board
     void sendUnsentData();
-    
+    void updateTimeCharacteristic();
 #endif
 
 /* [] END OF FILE */
