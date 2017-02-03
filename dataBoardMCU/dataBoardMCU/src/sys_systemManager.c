@@ -18,7 +18,6 @@
 #include "drv_uart.h"
 #include "drv_led.h"
 #include "subp_subProcessor.h"
-#include "dat_dataManager.h"
 #include "dbg_debugManager.h"
 #include "net_wirelessNetwork.h"
 #include "ble_bluetoothManager.h"
@@ -31,7 +30,7 @@
 
 /* Global Variables */
 xQueueHandle queue_systemManager = NULL;
-sys_manager_systemState_t currentState = SYSTEM_STATE_INIT; 
+sys_manager_systemState_t sgCurrentState = SYSTEM_STATE_INIT; 
 static net_wifiState_t sysNetworkState = NET_WIFI_STATE_INIT;
 
 drv_piezo_config_t piezoConfig =
@@ -251,13 +250,13 @@ static void processMessage(msg_message_t message)
 		case MSG_TYPE_ERROR:
             drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));
             //drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));
-            if(currentState == SYSTEM_STATE_RECORDING || currentState == SYSTEM_STATE_STREAMING)
+            if(sgCurrentState == SYSTEM_STATE_RECORDING || sgCurrentState == SYSTEM_STATE_STREAMING)
             {
                 //go back to idle if the error is from the subprocessor. 
                 if(message.source == MODULE_SUB_PROCESSOR)
                 {
                      msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
-                     currentState = SYSTEM_STATE_IDLE;
+                     sgCurrentState = SYSTEM_STATE_IDLE;
                      if(sysNetworkState == NET_WIFI_STATE_CONNECTED)
                      {
                          drv_led_set(DRV_LED_TURQUOISE, DRV_LED_SOLID);
@@ -273,16 +272,16 @@ static void processMessage(msg_message_t message)
 		case MSG_TYPE_SDCARD_STATE:
             if(message.data == SD_CARD_MOUNTED)
             {
-                if(currentState == SYSTEM_STATE_INIT || currentState == SYSTEM_STATE_ERROR)
+                if(sgCurrentState == SYSTEM_STATE_INIT || sgCurrentState == SYSTEM_STATE_ERROR)
                 {
-                    currentState = SYSTEM_STATE_IDLE;
+                    sgCurrentState = SYSTEM_STATE_IDLE;
                     msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE); 
                     drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID); 
                 }   
             }
             else
             {
-                currentState = SYSTEM_STATE_ERROR;
+                sgCurrentState = SYSTEM_STATE_ERROR;
                 drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));             
                 msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_ERROR);
                 drv_led_set(DRV_LED_YELLOW, DRV_LED_FLASH);   
@@ -291,7 +290,7 @@ static void processMessage(msg_message_t message)
 		case MSG_TYPE_WIFI_STATE:
             if(message.data == NET_WIFI_STATE_CONNECTED)
             {
-                if(currentState == SYSTEM_STATE_IDLE)
+                if(sgCurrentState == SYSTEM_STATE_IDLE)
                 {
                     drv_led_set(DRV_LED_TURQUOISE, DRV_LED_SOLID); 
                 }
@@ -303,7 +302,7 @@ static void processMessage(msg_message_t message)
                     //since we were trying to connect, this is an error. 
                     drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));             
                 }
-                if(currentState == SYSTEM_STATE_IDLE)
+                if(sgCurrentState == SYSTEM_STATE_IDLE)
                 {
                     drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID); 
                 }
@@ -338,12 +337,12 @@ static void processMessage(msg_message_t message)
              dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received Stream Request: %d\r\n",message.data);	
              if(message.data == 1)
              {            
-                 if(currentState == SYSTEM_STATE_IDLE)
+                 if(sgCurrentState == SYSTEM_STATE_IDLE)
                  {
                      if(sysNetworkState == NET_WIFI_STATE_CONNECTED)
                      {
                          msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_STREAMING);
-                         currentState = SYSTEM_STATE_STREAMING;
+                         sgCurrentState = SYSTEM_STATE_STREAMING;
                          drv_led_set(DRV_LED_PURPLE, DRV_LED_SOLID);
                          drv_piezo_playPattern(startRecordingTone, (sizeof(startRecordingTone) / sizeof(drv_piezo_noteElement_t)));
                      }
@@ -351,10 +350,10 @@ static void processMessage(msg_message_t message)
              }
              else
              {
-                 if(currentState == SYSTEM_STATE_STREAMING)
+                 if(sgCurrentState == SYSTEM_STATE_STREAMING)
                  {
                     msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
-                    currentState = SYSTEM_STATE_IDLE;
+                    sgCurrentState = SYSTEM_STATE_IDLE;
                     if(sysNetworkState == NET_WIFI_STATE_CONNECTED)
                     {
                         drv_led_set(DRV_LED_TURQUOISE, DRV_LED_SOLID);
@@ -375,7 +374,7 @@ static void processMessage(msg_message_t message)
         break;
 		case MSG_TYPE_SUBP_STATUS:
 		    subpReceivedStatus = (subp_status_t*)message.parameters;		
-		    if(currentState == SYSTEM_STATE_RECORDING || currentState == SYSTEM_STATE_STREAMING)
+		    if(sgCurrentState == SYSTEM_STATE_RECORDING || sgCurrentState == SYSTEM_STATE_STREAMING)
             {
                 if(subpReceivedStatus->streamState != 0) //stream state not equal to idle
                 {
@@ -386,7 +385,7 @@ static void processMessage(msg_message_t message)
                         drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));
                         msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
                         vTaskDelay(200); 
-                        currentState = SYSTEM_STATE_IDLE; // go to error state. 
+                        sgCurrentState = SYSTEM_STATE_IDLE; // go to error state. 
                         if(sysNetworkState == NET_WIFI_STATE_CONNECTED)
                         {
                             drv_led_set(DRV_LED_TURQUOISE, DRV_LED_SOLID); 
@@ -428,28 +427,28 @@ static void processToggleRecordingEvent(uint32_t requestedState)
 {
     if(requestedState == 1) //start recording TODO: Add enum
     {
-        if(currentState == SYSTEM_STATE_IDLE)
+        if(sgCurrentState == SYSTEM_STATE_IDLE)
         {
             //start recording
             msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_RECORDING);
-            currentState = SYSTEM_STATE_RECORDING;
+            sgCurrentState = SYSTEM_STATE_RECORDING;
             drv_led_set(DRV_LED_RED, DRV_LED_SOLID);
             drv_piezo_playPattern(startRecordingTone, (sizeof(startRecordingTone) / sizeof(drv_piezo_noteElement_t)));
         }
     }
     else if(requestedState == 2) //stop recording TODO: Add enum
     {
-        if(currentState == SYSTEM_STATE_RECORDING)
+        if(sgCurrentState == SYSTEM_STATE_RECORDING)
         {
             msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
-            currentState = SYSTEM_STATE_IDLE;
+            sgCurrentState = SYSTEM_STATE_IDLE;
             drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID);
             drv_piezo_playPattern(stopRecordingTone, (sizeof(stopRecordingTone) / sizeof(drv_piezo_noteElement_t)));
         }
-        else if(currentState == SYSTEM_STATE_STREAMING)
+        else if(sgCurrentState == SYSTEM_STATE_STREAMING)
         {
             msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
-            currentState = SYSTEM_STATE_IDLE;
+            sgCurrentState = SYSTEM_STATE_IDLE;
             if(sysNetworkState == NET_WIFI_STATE_CONNECTED)
             {
                 drv_led_set(DRV_LED_TURQUOISE, DRV_LED_SOLID);
@@ -486,35 +485,35 @@ static void processButtonEvent(uint32_t data)
 	switch (data)
 	{
 		case GPM_BUTTON_ONE_SHORT_PRESS:
-            if(currentState == SYSTEM_STATE_IDLE)
+            if(sgCurrentState == SYSTEM_STATE_IDLE)
             {
                 if(sysNetworkState == NET_WIFI_STATE_CONNECTED)
                 {
                     msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_STREAMING);
-                    currentState = SYSTEM_STATE_STREAMING;
+                    sgCurrentState = SYSTEM_STATE_STREAMING;
                     drv_led_set(DRV_LED_PURPLE, DRV_LED_SOLID);
                     drv_piezo_playPattern(startRecordingTone, (sizeof(startRecordingTone) / sizeof(drv_piezo_noteElement_t)));                    
                 }
                 else
                 {
                     msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_RECORDING);
-                    currentState = SYSTEM_STATE_RECORDING;
+                    sgCurrentState = SYSTEM_STATE_RECORDING;
                     drv_led_set(DRV_LED_RED, DRV_LED_SOLID);
                     drv_piezo_playPattern(startRecordingTone, (sizeof(startRecordingTone) / sizeof(drv_piezo_noteElement_t)));                 
                 }
 
             }
-            else if(currentState == SYSTEM_STATE_RECORDING)
+            else if(sgCurrentState == SYSTEM_STATE_RECORDING)
             {
                 msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
-                currentState = SYSTEM_STATE_IDLE;
+                sgCurrentState = SYSTEM_STATE_IDLE;
                 drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID);
                 drv_piezo_playPattern(stopRecordingTone, (sizeof(stopRecordingTone) / sizeof(drv_piezo_noteElement_t)));
             }
-            else if(currentState == SYSTEM_STATE_STREAMING)
+            else if(sgCurrentState == SYSTEM_STATE_STREAMING)
             {
                 msg_sendBroadcastMessageSimple(MODULE_SYSTEM_MANAGER, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
-                currentState = SYSTEM_STATE_IDLE;
+                sgCurrentState = SYSTEM_STATE_IDLE;
                 if(sysNetworkState == NET_WIFI_STATE_CONNECTED)
                 {
                     drv_led_set(DRV_LED_TURQUOISE, DRV_LED_SOLID);

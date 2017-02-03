@@ -255,6 +255,53 @@
 <VisibleNodeIds>
 <v>HeddokoBLE</v>
 <v>HeddokoBLE\HeddokoBLE</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\Adv_led.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\Adv_led_PM.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\app_Ble.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\app_LED.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\app_UART.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\BLE.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\BLE_bas.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\BLE_bless_isr.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\BLE_custom.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\BLE_dis.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\BLE_eventHandler.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\BLE_gatt.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\BLE_HAL_INT.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\BLE_HAL_PVT.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\Cm0Start.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\Conn_Led.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\Conn_Led_PM.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\CyBootAsmGnu.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\cyfitter_cfg.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\CyFlash.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\CyLFClk.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\CyLib.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\cymetadata.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\cyPm.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\cyutils.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\main.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\pkt_packetParser.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\RTC_1.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_BOOT.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_PM.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_rx.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_rx_PM.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_SCB_IRQ.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_SCBCLK.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_SPI_UART.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_SPI_UART_INT.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_tx.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_tx_PM.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_UART.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\Listing Files\UART_UART_BOOT.lst</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\HeddokoBLE.elf</v>
+<v>HeddokoBLE\HeddokoBLE\CortexM0\ARM_GCC_493\Debug\HeddokoBLE.hex</v>
 </VisibleNodeIds>
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 </TreeStates>

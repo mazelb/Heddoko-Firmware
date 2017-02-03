@@ -467,7 +467,7 @@ void drv_gpio_service_Int(drv_gpio_pins_t pin, uint32_t ul_mask, bool *intGenera
  * @param uint32_t ul_id, uint32_t ul_mask
  * @return 
  ***********************************************************************************************/
-//#ifdef DRV_GPIO_PIN_PW_SW
+
 static void drv_gpio_int_pw(uint32_t ul_id, uint32_t ul_mask)
 {
 	uint32_t PinMask = pio_get_pin_group_mask(gpioConfig[DRV_GPIO_PIN_PW_SW].pinId);
@@ -479,7 +479,7 @@ static void drv_gpio_int_pw(uint32_t ul_id, uint32_t ul_mask)
 	}
 	pio_enable_interrupt(PIOA, PinMask);
 }
-//#endif
+
 
 /***********************************************************************************************
  * drv_gpio_int_sw1(uint32_t ul_id, uint32_t ul_mask)
@@ -519,127 +519,6 @@ void drv_gpio_int_sw2(uint32_t ul_id, uint32_t ul_mask)
 	}
 	pio_enable_interrupt(PIOB, PinMask);
 }
-
-
-/***********************************************************************************************
- * drv_gpio_int_oc1(uint32_t ul_id, uint32_t ul_mask)
- * @brief Interrupt routine for Jack-1 Over Current
- * @param uint32_t ul_id, uint32_t ul_mask
- * @return 
- ***********************************************************************************************/
-#ifdef DRV_GPIO_PIN_JC_OC1
-static void drv_gpio_int_oc1(uint32_t ul_id, uint32_t ul_mask)
-{
-	uint32_t PinMask = pio_get_pin_group_mask(gpioConfig[DRV_GPIO_PIN_JC_OC1].pinId);
-	pio_disable_interrupt(PIOA, PinMask);
-	uint32_t ReadIsr = PIOA->PIO_ISR;
-	if (PinMask == ul_mask)
-	{
-		gpioConfig[DRV_GPIO_PIN_JC_OC1].gpioSetFlag = 1;
-	}
-	pio_enable_interrupt(PIOA, PinMask);
-}
-#endif
-
-/***********************************************************************************************
- * drv_gpio_int_oc2(uint32_t ul_id, uint32_t ul_mask)
- * @brief Interrupt routine for Jack-2 Over Current
- * @param uint32_t ul_id, uint32_t ul_mask
- * @return 
- ***********************************************************************************************/
-#ifdef DRV_GPIO_PIN_JC_OC2
-static void drv_gpio_int_oc2(uint32_t ul_id, uint32_t ul_mask)
-{
-	uint32_t PinMask = pio_get_pin_group_mask(gpioConfig[DRV_GPIO_PIN_JC_OC2].pinId);
-	pio_disable_interrupt(PIOA, PinMask);
-	uint32_t ReadIsr = PIOA->PIO_ISR;
-	if (PinMask == ul_mask)
-	{
-		gpioConfig[DRV_GPIO_PIN_JC_OC2].gpioSetFlag = 1;
-	}
-	pio_enable_interrupt(PIOA, PinMask);
-}
-#endif
-
-/***********************************************************************************************
- * drv_gpio_int_dc1(uint32_t ul_id, uint32_t ul_mask)
- * @brief Interrupt routine for Jack-1 Detect
- * @param uint32_t ul_id, uint32_t ul_mask
- * @return 
- ***********************************************************************************************/
-#ifdef DRV_GPIO_PIN_JC_DC1
-static void drv_gpio_int_dc1(uint32_t ul_id, uint32_t ul_mask)
-{
-	uint32_t PinMask = pio_get_pin_group_mask(gpioConfig[DRV_GPIO_PIN_JC_DC1].pinId);
-	pio_disable_interrupt(PIOA, PinMask);
-	uint32_t ReadIsr = PIOA->PIO_ISR;
-	if (PinMask == ul_mask)
-	{
-		gpioConfig[DRV_GPIO_PIN_JC_DC1].gpioSetFlag = 1;
-	}
-	pio_enable_interrupt(PIOA, PinMask);
-}
-#endif
-
-/***********************************************************************************************
- * drv_gpio_int_dc2(uint32_t ul_id, uint32_t ul_mask)
- * @brief Interrupt routine for Jack-2 Detect
- * @param uint32_t ul_id, uint32_t ul_mask
- * @return 
- ***********************************************************************************************/
-#ifdef DRV_GPIO_PIN_JC_DC2
-static void drv_gpio_int_dc2(uint32_t ul_id, uint32_t ul_mask)
-{
-	uint32_t PinMask = pio_get_pin_group_mask(gpioConfig[DRV_GPIO_PIN_JC_DC2].pinId);
-	pio_disable_interrupt(PIOA, PinMask);
-	uint32_t ReadIsr = PIOA->PIO_ISR;
-	if (PinMask == ul_mask)
-	{
-		gpioConfig[DRV_GPIO_PIN_JC_DC2].gpioSetFlag = 1;
-	}
-	pio_enable_interrupt(PIOA, PinMask);
-}
-#endif
-
-/***********************************************************************************************
- * drv_gpio_int_lbo(uint32_t ul_id, uint32_t ul_mask)
- * @brief Interrupt routine for Low Battery Out
- * @param uint32_t ul_id, uint32_t ul_mask
- * @return 
- ***********************************************************************************************/
-#ifdef DRV_GPIO_PIN_LBO
-static void drv_gpio_int_lbo(uint32_t ul_id, uint32_t ul_mask)
-{
-	uint32_t PinMask = pio_get_pin_group_mask(gpioConfig[DRV_GPIO_PIN_LBO].pinId);
-	pio_disable_interrupt(PIOA, PinMask);
-	uint32_t ReadIsr = PIOA->PIO_ISR;
-	if (PinMask == ul_mask)
-	{
-		gpioConfig[DRV_GPIO_PIN_LBO].gpioSetFlag = 1;
-	}
-	pio_enable_interrupt(PIOA, PinMask);
-}
-#endif
-
-/***********************************************************************************************
- * drv_gpio_int_stat(uint32_t ul_id, uint32_t ul_mask)
- * @brief Interrupt routine for Power Status
- * @param uint32_t ul_id, uint32_t ul_mask
- * @return 
- ***********************************************************************************************/
-#ifdef DRV_GPIO_PIN_PB_GPIO
-static void drv_gpio_int_stat(uint32_t ul_id, uint32_t ul_mask)
-{
-	uint32_t PinMask = pio_get_pin_group_mask(gpioConfig[DRV_GPIO_PIN_PB_GPIO].pinId);
-	pio_disable_interrupt(PIOA, PinMask);
-	uint32_t ReadIsr = PIOA->PIO_ISR;
-	if (PinMask == ul_mask)
-	{
-		gpioConfig[DRV_GPIO_PIN_PB_GPIO].gpioSetFlag = 1;
-	}
-	pio_enable_interrupt(PIOA, PinMask);
-}
-#endif
 
 /***********************************************************************************************
  * drv_gpio_int_cd(uint32_t ul_id, uint32_t ul_mask)

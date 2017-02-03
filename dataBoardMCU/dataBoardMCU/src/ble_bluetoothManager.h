@@ -1,10 +1,12 @@
-/*
- * ble_bluetoothManager.h
- *
- * Created: 8/17/2016 4:40:58 PM
- *  Author: sean
- */ 
-
+/**
+* @file ble_bluetoothManager.h
+* @brief This file contains all code pertaining to the functionality with the on board BLE
+* Module. The interface with this module should be done explicitly through the messenger
+* module.
+* @author Sean Cloghesy (sean@heddoko.com)
+* @date August 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 
 #ifndef BLE_BLUETOOTHMANAGER_H_
 #define BLE_BLUETOOTHMANAGER_H_
@@ -12,11 +14,6 @@
 #include "net_wirelessNetwork.h"
 
 void ble_bluetoothManagerTask(void *pvParameters);
-void ble_startFastAdv();
-void ble_sendWiFiConfig(net_wirelessConfig_t *wiFiConfig);
-void ble_sendRawData(uint8_t *data, uint8_t size);
-void ble_wifiDataReq();
-void ble_rawDataReq();
 
 typedef struct  
 {

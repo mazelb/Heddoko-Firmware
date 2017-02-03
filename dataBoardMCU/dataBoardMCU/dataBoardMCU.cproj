@@ -1319,12 +1319,6 @@
     <Compile Include="src\config\conf_clock.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\dat_dataManager.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\dat_dataManager.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\dbg_debugManager.c">
       <SubType>compile</SubType>
     </Compile>
@@ -1353,9 +1347,6 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\gpm_gpioManager.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\imu.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\net_wirelessNetwork.c">

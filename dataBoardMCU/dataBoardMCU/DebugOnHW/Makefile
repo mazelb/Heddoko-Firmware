@@ -171,7 +171,6 @@ C_SRCS +=  \
 ../src/ASF/sam/services/flash_efc/flash_efc.c \
 ../src/ble_bluetoothManager.c \
 ../src/cfg_configurationManager.c \
-../src/dat_dataManager.c \
 ../src/dbg_debugManager.c \
 ../src/drv_haptic.c \
 ../src/drv_led.c \
@@ -260,7 +259,6 @@ src/ASF/sam/drivers/tc/tc.o \
 src/ASF/sam/services/flash_efc/flash_efc.o \
 src/ble_bluetoothManager.o \
 src/cfg_configurationManager.o \
-src/dat_dataManager.o \
 src/dbg_debugManager.o \
 src/drv_haptic.o \
 src/drv_led.o \
@@ -342,7 +340,6 @@ src/ASF/sam/drivers/tc/tc.o \
 src/ASF/sam/services/flash_efc/flash_efc.o \
 src/ble_bluetoothManager.o \
 src/cfg_configurationManager.o \
-src/dat_dataManager.o \
 src/dbg_debugManager.o \
 src/drv_haptic.o \
 src/drv_led.o \
@@ -424,7 +421,6 @@ src/ASF/sam/drivers/tc/tc.d \
 src/ASF/sam/services/flash_efc/flash_efc.d \
 src/ble_bluetoothManager.d \
 src/cfg_configurationManager.d \
-src/dat_dataManager.d \
 src/dbg_debugManager.d \
 src/drv_haptic.d \
 src/drv_led.d \
@@ -506,7 +502,6 @@ src/ASF/sam/drivers/tc/tc.d \
 src/ASF/sam/services/flash_efc/flash_efc.d \
 src/ble_bluetoothManager.d \
 src/cfg_configurationManager.d \
-src/dat_dataManager.d \
 src/dbg_debugManager.d \
 src/drv_haptic.d \
 src/drv_led.d \
@@ -577,8 +572,6 @@ LINKER_SCRIPT_DEP+=  \
 
 
 # AVR32/GNU C Compiler
-
-
 
 
 

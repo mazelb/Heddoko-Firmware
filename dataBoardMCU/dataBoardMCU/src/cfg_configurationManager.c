@@ -1,9 +1,13 @@
-/*
- * cfg_configurationManager.c
- *
- * Created: 11/9/2016 1:12:40 PM
- *  Author: sean
- */ 
+/**
+* @file cfg_configurationManager.c
+* @brief This file contains all code dealing with the handling of configuration
+* protocol buffer packets. This module runs a task that is directly responsible 
+* for opening the configuration socket when the brainpack is connected to wifi. 
+* The interface to and from the module is ideally through the intra-module messenger.
+* @author Sean Cloghesy (sean@heddoko.com)
+* @date November 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 
 #include "cfg_configurationManager.h"
 #include "dbg_debugManager.h"
@@ -13,38 +17,28 @@
 #include "net_wirelessNetwork.h"
 #include "subp_subProcessor.h"
 
-
+/* Local Defines */
+#define MAX_ENCODED_PACKET_SIZE 255
 /* Global Variables */
-
-/*	Static function forward declarations	*/
-
-/*	Local variables	*/
-
-/*	Extern functions	*/
-
-/*	Extern variables	*/
-
-/*	Function Definitions	*/
 
 /*	Static function forward declarations	*/
 static void processMessage(msg_message_t* message);
 static void configSocketEventCallback(SOCKET socketId, net_socketStatus_t status);
 static void configSocketReceivedDataCallback(SOCKET socketId, uint8_t* buf, uint16_t bufLength);
 static void processProtoPacket( Heddoko__Packet* packet);
-static void sendStatusPacket(net_socketConfig_t* socket);
+static void sendStatusPacket();
 static void sendMessageStatus(bool status);
 static void sendProtoPacketToClient(Heddoko__Packet* packet, net_socketConfig_t* socket);
 static status_t processRecordSettings(Heddoko__Packet* packet); 
 static status_t processStartStream(Heddoko__Packet* packet); 
 static status_t processStopStream(Heddoko__Packet* packet);
 /*	Local variables	*/
-
-xQueueHandle msg_queue_cfgManager = NULL;
-cfg_moduleConfig_t* configSettings = NULL; 
-static sys_manager_systemState_t currentState = SYSTEM_STATE_INIT; 
-static subp_recordingConfig_t receivedRecordingConfig; 
-static subp_streamConfig_t receivedStreamConfig; 
-net_socketConfig_t configServer =
+static xQueueHandle sgQueue_cfgManager = NULL;
+static cfg_moduleConfig_t* sgpConfigSettings = NULL; 
+static sys_manager_systemState_t sgCurrentState = SYSTEM_STATE_INIT; 
+static subp_recordingConfig_t sgReceivedRecordingConfig; 
+static subp_streamConfig_t sgReceivedStreamConfig; 
+static net_socketConfig_t sgConfigServerSocket =
 {
     .endpoint.sin_addr = 0, //irrelevant for the server
     .endpoint.sin_family = AF_INET,
@@ -55,49 +49,65 @@ net_socketConfig_t configServer =
     .socketId = -1,
     .clientSocketId = -1    
 };
-pkt_rawPacket_t receivedPacket;
-static Heddoko__Packet statusPacket;
+static pkt_rawPacket_t sgReceivedPacket;
+static Heddoko__Packet sgStatusProtoPacket;
 	
 /*	Extern functions	*/
 
 /*	Extern variables	*/
 
 /*	Function definitions	*/
+
+/**
+* @brief The configuration manager task. Is executed by the free rtos
+* main task and loops while the brainpack is functional.
+* Processes messages from the other free rtos tasks. 
+* @param pvParameters, pointer to the initialization variables for the task
+* @return void
+*/
 void cfg_configurationTask(void *pvParameters)
 {
-    msg_message_t receivedMessage;
-    configSettings = (cfg_moduleConfig_t*)pvParameters; 
-    msg_queue_cfgManager = xQueueCreate(10, sizeof(msg_message_t));
-    if (msg_queue_cfgManager != NULL)
+    msg_message_t vReceivedMessage;
+    //cast the module configuration to the initial values. 
+    sgpConfigSettings = (cfg_moduleConfig_t*)pvParameters; 
+    sgQueue_cfgManager = xQueueCreate(10, sizeof(msg_message_t));
+    if (sgQueue_cfgManager != NULL)
     {
-        msg_registerForMessages(MODULE_CONFIG_MANAGER, 0xff, msg_queue_cfgManager);
+        msg_registerForMessages(MODULE_CONFIG_MANAGER, 0xff, sgQueue_cfgManager);
     }
-    //configure the listenning port
-    configServer.endpoint.sin_port = _htons(configSettings->configPort); 
+    //configure the listening port
+    sgConfigServerSocket.endpoint.sin_port = _htons(sgpConfigSettings->configPort); 
     //initialize the status packet
-    heddoko__packet__init(&statusPacket);
-    statusPacket.type = HEDDOKO__PACKET_TYPE__StatusResponse;
-    statusPacket.serialnumber = configSettings->serialNumber;    
+    heddoko__packet__init(&sgStatusProtoPacket);
+    sgStatusProtoPacket.type = HEDDOKO__PACKET_TYPE__StatusResponse;
+    sgStatusProtoPacket.serialnumber = sgpConfigSettings->serialNumber;    
     while (1)
     {
-        //receive from message queue and data queue, take necessary actions
-        if (xQueueReceive(msg_queue_cfgManager, &receivedMessage, 20) == TRUE)
+        //receive from message queue, take necessary actions
+        if (xQueueReceive(sgQueue_cfgManager, &vReceivedMessage, 20) == TRUE)
         {
-            processMessage(&receivedMessage);
+            processMessage(&vReceivedMessage);
         }       
     }
 }
-static void configSocketEventCallback(SOCKET socketId, net_socketStatus_t status)
+/**
+* @brief Configuration socket event callback. Is called from the wifi callback when a 
+* socket connection event occurs.
+* @param vSocketId, the socket ID pertaining to the event
+* @param vStatus, enumerated status code pertaining to the event
+* @return void
+*/
+static void configSocketEventCallback(SOCKET vSocketId, net_socketStatus_t vStatus)
 {
-    switch (status)
+    switch (vStatus)
     {
         case NET_SOCKET_STATUS_SERVER_OPEN:
         dbg_printString(DBG_LOG_LEVEL_VERBOSE, "Config Server Open!\r\n");
         break;
         case NET_SOCKET_STATUS_SERVER_OPEN_FAILED:
         dbg_printString(DBG_LOG_LEVEL_VERBOSE, "Config Server Open Failed!\r\n");
-        //close the debug server socket
-        net_closeSocket(&configServer);
+        //close the config server socket
+        net_closeSocket(&sgConfigServerSocket);
         break;
         case NET_SOCKET_STATUS_CLIENT_CONNECTED:
         dbg_printString(DBG_LOG_LEVEL_VERBOSE, "Client Connected!\r\n");
@@ -107,33 +117,42 @@ static void configSocketEventCallback(SOCKET socketId, net_socketStatus_t status
         break;
     }
 }
-static void configSocketReceivedDataCallback(SOCKET socketId, uint8_t* buf, uint16_t bufLength)
+/**
+* @brief Configuration socket received data callback. Is called from the wifi callback when
+* data is received on the client socket.
+* @param vSocketId, the socket ID where the data came from. 
+* @param vpReceivedData, pointer to the received data
+* @param vReceivedLength, length of the received data
+* @return void
+*/
+static void configSocketReceivedDataCallback(SOCKET vSocketId, uint8_t* vpReceivedData, uint16_t vReceivedLength)
 {
     //process the protobuf packet. 
     int i = 0;
-    status_t status = STATUS_FAIL;
-    Heddoko__Packet* receivedProtoPacket; 	
-    for(i=0;i<bufLength;i++)
+    status_t vStatus = STATUS_FAIL;
+    Heddoko__Packet* vpReceivedProtoPacket; 	
+    for(i=0;i<vReceivedLength;i++)
     {
-        if(pkt_processIncomingByte(&receivedPacket, buf[i]) == STATUS_PASS)
+        //TODO: This is not thread safe... Fix this. 
+        if(pkt_processIncomingByte(&sgReceivedPacket, vpReceivedData[i]) == STATUS_PASS)
         {
             //the raw packet was successfully parsed. 
-            status = STATUS_PASS;
+            vStatus = STATUS_PASS;
             break; 
         }    
     }
-    if(status == STATUS_PASS)
+    if(vStatus == STATUS_PASS)
     {
         //check that the packet is a protobuf packet
-        if(receivedPacket.payload[0] == 0x04)
+        if(sgReceivedPacket.payload[0] == 0x04)
         {
-            receivedProtoPacket = heddoko__packet__unpack(NULL,receivedPacket.payloadSize-1,receivedPacket.payload+1);
+            vpReceivedProtoPacket = heddoko__packet__unpack(NULL,sgReceivedPacket.payloadSize-1,sgReceivedPacket.payload+1);
             //check that the protopacket was deserialized properly
-            if(receivedProtoPacket != NULL)
+            if(vpReceivedProtoPacket != NULL)
             {
-                processProtoPacket(receivedProtoPacket);
+                processProtoPacket(vpReceivedProtoPacket);
                 //clean the memory
-                heddoko__packet__free_unpacked(receivedProtoPacket,NULL); 	
+                heddoko__packet__free_unpacked(vpReceivedProtoPacket,NULL); 	
             }
             else
             {
@@ -143,34 +162,39 @@ static void configSocketReceivedDataCallback(SOCKET socketId, uint8_t* buf, uint
         }
     }    
 }
-static void processMessage(msg_message_t* message)
+/**
+* @brief Processes messages received from other modules. Is called from config task.
+* @param vMessage, message that was received
+* @return void
+*/
+static void processMessage(msg_message_t* vpMessage)
 {
-    switch(message->msgType)
+    switch(vpMessage->msgType)
     {
         case MSG_TYPE_ENTERING_NEW_STATE:
         {
             //update the status packet with the current state. 
-            currentState = (sys_manager_systemState_t)message->data;
-            statusPacket.has_brainpackstate = true; 
-            if(currentState == SYSTEM_STATE_IDLE)
+            sgCurrentState = (sys_manager_systemState_t)vpMessage->data;
+            sgStatusProtoPacket.has_brainpackstate = true; 
+            if(sgCurrentState == SYSTEM_STATE_IDLE)
             {
-                statusPacket.brainpackstate = HEDDOKO__BRAINPACK_STATE__Idle;      
+                sgStatusProtoPacket.brainpackstate = HEDDOKO__BRAINPACK_STATE__Idle;      
             }
-            else if(currentState == SYSTEM_STATE_RECORDING)
+            else if(sgCurrentState == SYSTEM_STATE_RECORDING)
             {
-                statusPacket.brainpackstate = HEDDOKO__BRAINPACK_STATE__Recording;      
+                sgStatusProtoPacket.brainpackstate = HEDDOKO__BRAINPACK_STATE__Recording;      
             }
-            else if(currentState == SYSTEM_STATE_STREAMING)
+            else if(sgCurrentState == SYSTEM_STATE_STREAMING)
             {
-                statusPacket.brainpackstate = HEDDOKO__BRAINPACK_STATE__Streaming;      
+                sgStatusProtoPacket.brainpackstate = HEDDOKO__BRAINPACK_STATE__Streaming;      
             }
-            else if(currentState == SYSTEM_STATE_ERROR)
+            else if(sgCurrentState == SYSTEM_STATE_ERROR)
             {
-                statusPacket.brainpackstate = HEDDOKO__BRAINPACK_STATE__Error;      
+                sgStatusProtoPacket.brainpackstate = HEDDOKO__BRAINPACK_STATE__Error;      
             }
             else //default to initializing
             {
-                statusPacket.brainpackstate = HEDDOKO__BRAINPACK_STATE__Initializing;      
+                sgStatusProtoPacket.brainpackstate = HEDDOKO__BRAINPACK_STATE__Initializing;      
             }  
         }            
         break;
@@ -180,20 +204,20 @@ static void processMessage(msg_message_t* message)
         break;
 		case MSG_TYPE_SUBP_STATUS:
         {
-		    subp_status_t* subpReceivedStatus = (subp_status_t*)message->parameters;		
+		    subp_status_t* subpReceivedStatus = (subp_status_t*)vpMessage->parameters;		
             //update the status packet
-            statusPacket.has_chargestate = true;
-            statusPacket.chargestate = (Heddoko__ChargeState)subpReceivedStatus->chargerState;
-            statusPacket.has_batterylevel = true;
-            statusPacket.batterylevel = subpReceivedStatus->chargeLevel; 
-            statusPacket.has_sensormask = true; 
-            statusPacket.sensormask = subpReceivedStatus->sensorMask; 
+            sgStatusProtoPacket.has_chargestate = true;
+            sgStatusProtoPacket.chargestate = (Heddoko__ChargeState)subpReceivedStatus->chargerState;
+            sgStatusProtoPacket.has_batterylevel = true;
+            sgStatusProtoPacket.batterylevel = subpReceivedStatus->chargeLevel; 
+            sgStatusProtoPacket.has_sensormask = true; 
+            sgStatusProtoPacket.sensormask = subpReceivedStatus->sensorMask; 
         }                        
 		break;        
         case MSG_TYPE_WIFI_STATE:
- 			if(message->data == NET_WIFI_STATE_CONNECTED)
+ 			if(vpMessage->data == NET_WIFI_STATE_CONNECTED)
  			{
-     			if(net_createServerSocket(&configServer, 512) == STATUS_PASS)
+     			if(net_createServerSocket(&sgConfigServerSocket, 512) == STATUS_PASS)
      			{
          			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Initializing config server socket\r\n");
      			}
@@ -202,9 +226,9 @@ static void processMessage(msg_message_t* message)
          			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Failed to initialize config server socket\r\n");
      			}
  			}
- 			else if(message->data == NET_WIFI_STATE_DISCONNECTED)
+ 			else if(vpMessage->data == NET_WIFI_STATE_DISCONNECTED)
  			{
-     			net_closeSocket(&configServer);
+     			net_closeSocket(&sgConfigServerSocket);
  			}       
         
         break;
@@ -213,19 +237,23 @@ static void processMessage(msg_message_t* message)
         
     }
 }
-
-static void processProtoPacket( Heddoko__Packet* packet)
+/**
+* @brief Processes a received protobuf packet. 
+* @param vProtoPacket, pointer to protocol buffer packet that was received. 
+* @return void
+*/
+static void processProtoPacket( Heddoko__Packet* vpProtoPacket)
 {
-    switch(packet->type)
+    switch(vpProtoPacket->type)
     {
         case HEDDOKO__PACKET_TYPE__StatusRequest:
         {
-            sendStatusPacket(&configServer);            
+            sendStatusPacket();            
         }        
         break;
         case HEDDOKO__PACKET_TYPE__ConfigureRecordingSettings:
         {
-           if(processRecordSettings(packet) == STATUS_PASS)
+           if(processRecordSettings(vpProtoPacket) == STATUS_PASS)
            {
                //message was processed successfully, send a message status of pass. 
                sendMessageStatus(true);
@@ -238,7 +266,7 @@ static void processProtoPacket( Heddoko__Packet* packet)
         break; 
         case HEDDOKO__PACKET_TYPE__StartDataStream:
         {
-            if(processStartStream(packet) == STATUS_PASS)
+            if(processStartStream(vpProtoPacket) == STATUS_PASS)
             {
                 //message was processed successfully, send a message status of pass.
                 sendMessageStatus(true);
@@ -251,7 +279,7 @@ static void processProtoPacket( Heddoko__Packet* packet)
         break;
         case HEDDOKO__PACKET_TYPE__StopDataStream:
         {
-            if(processStopStream(packet) == STATUS_PASS)
+            if(processStopStream(vpProtoPacket) == STATUS_PASS)
             {
                 //message was processed successfully, send a message status of pass.
                 sendMessageStatus(true);
@@ -271,111 +299,137 @@ static void processProtoPacket( Heddoko__Packet* packet)
     }
 }
 
-
-
-static void sendStatusPacket(net_socketConfig_t* socket)
+/**
+* @brief Sends the completed status packet to the connected client
+* @return void
+*/
+static void sendStatusPacket()
 {
 	static char firmwareVersion[] = VERSION;
 
 	//TODO Fill this information with the real stuff
-	statusPacket.type = HEDDOKO__PACKET_TYPE__StatusResponse;
-	statusPacket.firmwareversion = firmwareVersion;  
-    statusPacket.serialnumber = configSettings->serialNumber;
-    sendProtoPacketToClient(&statusPacket, socket);    
+	sgStatusProtoPacket.type = HEDDOKO__PACKET_TYPE__StatusResponse;
+	sgStatusProtoPacket.firmwareversion = firmwareVersion;  
+    sgStatusProtoPacket.serialnumber = sgpConfigSettings->serialNumber;
+    sendProtoPacketToClient(&sgStatusProtoPacket, &sgConfigServerSocket);    
 }
-
-static void sendMessageStatus(bool status)
+/**
+* @brief Sends the completed message status packet to the connected client
+* @param vStatus,boolean representing the pass fail status of the received packet. 
+* @return void
+*/
+static void sendMessageStatus(bool vStatus)
 {
     Heddoko__Packet packet;
     heddoko__packet__init(&packet);
     packet.type = HEDDOKO__PACKET_TYPE__MessageStatus;
     packet.has_messagestatus = true; 
-    packet.messagestatus = status; 
-    sendProtoPacketToClient(&packet,&configServer);        
+    packet.messagestatus = vStatus; 
+    sendProtoPacketToClient(&packet,&sgConfigServerSocket);        
 }    
 
-#define MAX_ENCODED_PACKET_SIZE 255
-static void sendProtoPacketToClient(Heddoko__Packet* packet, net_socketConfig_t* socket)
+/**
+* @brief Sends a protobuf packet to a connected client
+* @param vpPacket,pointer to protocol buffer packet
+* @param vpSocket,pointer to configuration socket structure
+* @return void
+*/
+static void sendProtoPacketToClient(Heddoko__Packet* vpPacket, net_socketConfig_t* vpSocket)
 {
-    static uint8_t serializedPacket[MAX_ENCODED_PACKET_SIZE];
-    static uint8_t encodedPacket[MAX_ENCODED_PACKET_SIZE];
- 	serializedPacket[0] = PACKET_TYPE_PROTO_BUF;
-    size_t packetLength = heddoko__packet__pack(packet, serializedPacket+1); //increment packet pointer by one for packet type
- 	packetLength += 1; //increment length to account for the packet type.
- 	uint16_t encodedLength = 0;
+    static uint8_t vaSerializedPacket[MAX_ENCODED_PACKET_SIZE];
+    static uint8_t vaEncodedPacket[MAX_ENCODED_PACKET_SIZE];
+ 	vaSerializedPacket[0] = PACKET_TYPE_PROTO_BUF;
+    size_t vPacketLength = heddoko__packet__pack(vpPacket, vaSerializedPacket+1); //increment packet pointer by one for packet type
+ 	vPacketLength += 1; //increment length to account for the packet type.
+ 	uint16_t vEncodedLength = 0;
  	//encode the serialized packet
- 	pkt_serializeRawPacket(encodedPacket, MAX_ENCODED_PACKET_SIZE, &encodedLength,
- 	serializedPacket, packetLength);
- 	net_sendPacketToClientSock(socket,encodedPacket, encodedLength, false);   
+ 	pkt_serializeRawPacket(vaEncodedPacket, MAX_ENCODED_PACKET_SIZE, &vEncodedLength,
+ 	vaSerializedPacket, vPacketLength);
+ 	net_sendPacketToClientSock(vpSocket,vaEncodedPacket, vEncodedLength, false);   
 }
-
-static status_t processRecordSettings(Heddoko__Packet* packet)
+/**
+* @brief Processes a received recording settings protobuf packet
+* @param vpPacket,pointer to protocol buffer packet
+* @return STATUS_PASS if the packet was processed, STATUS_FAIL if there was something 
+* missing from it. 
+*/
+static status_t processRecordSettings(Heddoko__Packet* vpPacket)
 {
-    status_t status = STATUS_PASS;
-    if(packet->has_recordingrate && (packet->recordingfilename != NULL) && packet->has_sensormask)
+    status_t vStatus = STATUS_PASS;
+    if(vpPacket->has_recordingrate && (vpPacket->recordingfilename != NULL) && vpPacket->has_sensormask)
     {
-        receivedRecordingConfig.rate = packet->recordingrate; 
-        receivedRecordingConfig.sensorMask = packet->sensormask; 
-        strncpy(receivedRecordingConfig.filename, packet->recordingfilename,SUBP_RECORDING_FILENAME_MAX_LENGTH); 
-        msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_DEBUG, MSG_TYPE_RECORDING_CONFIG,&receivedRecordingConfig);
-        msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_DEBUG, MSG_TYPE_RECORDING_CONFIG,&receivedRecordingConfig);        
+        sgReceivedRecordingConfig.rate = vpPacket->recordingrate; 
+        sgReceivedRecordingConfig.sensorMask = vpPacket->sensormask; 
+        strncpy(sgReceivedRecordingConfig.filename, vpPacket->recordingfilename,SUBP_RECORDING_FILENAME_MAX_LENGTH); 
+        msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_DEBUG, MSG_TYPE_RECORDING_CONFIG,&sgReceivedRecordingConfig);
+        msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_DEBUG, MSG_TYPE_RECORDING_CONFIG,&sgReceivedRecordingConfig);        
     }
     else
     {
         //the packet doesn't contain what we need, return fail
-        status = STATUS_FAIL; 
+        vStatus = STATUS_FAIL; 
     }
-    return status; 
+    return vStatus; 
 }
 
-
-static status_t processStartStream(Heddoko__Packet* packet)
+/**
+* @brief Processes a received start stream packet
+* @param vpPacket,pointer to protocol buffer packet
+* @return STATUS_PASS if the packet was processed, STATUS_FAIL if there was something
+* missing from it, or the brainpack was in an incorrect state. 
+*/
+static status_t processStartStream(Heddoko__Packet* vpPacket)
 {
-    status_t status = STATUS_FAIL;
-    int ip[4] = {0,0,0,0};
+    status_t vStatus = STATUS_FAIL;
+    int vaIP[4] = {0,0,0,0};
     //to start a stream the brainpack must be in idle state
-    if(currentState != SYSTEM_STATE_IDLE)
+    if(sgCurrentState != SYSTEM_STATE_IDLE)
     {
         return STATUS_FAIL;    
     }        
-    if(packet->has_recordingrate && (packet->recordingfilename != NULL) && packet->has_sensormask && (packet->endpoint != NULL))
+    if(vpPacket->has_recordingrate && (vpPacket->recordingfilename != NULL) && vpPacket->has_sensormask && (vpPacket->endpoint != NULL))
     {
-        receivedRecordingConfig.rate = packet->recordingrate;
-        receivedRecordingConfig.sensorMask = packet->sensormask;
-        strncpy(receivedRecordingConfig.filename, packet->recordingfilename,SUBP_RECORDING_FILENAME_MAX_LENGTH);
-        if(packet->endpoint->address != NULL)
+        sgReceivedRecordingConfig.rate = vpPacket->recordingrate;
+        sgReceivedRecordingConfig.sensorMask = vpPacket->sensormask;
+        strncpy(sgReceivedRecordingConfig.filename, vpPacket->recordingfilename,SUBP_RECORDING_FILENAME_MAX_LENGTH);
+        if(vpPacket->endpoint->address != NULL)
         {                
             //right now the command only accepts IPV4 addresses, in the future we will have to resolve hosts. 
-            int ret = sscanf(packet->endpoint->address, "%d.%d.%d.%d",ip,ip+1,ip+2,ip+3);
+            int ret = sscanf(vpPacket->endpoint->address, "%d.%d.%d.%d",vaIP,vaIP+1,vaIP+2,vaIP+3);
             //the ret value should be 5 if the information was correctly parsed.
             if(ret == 4)
             {                    
-                receivedStreamConfig.ipaddress.s_addr = (ip[3] << 24) | (ip[2] << 16) | (ip[1] << 8) | ip[0] ;
-                receivedStreamConfig.streamPort = (uint16_t)packet->endpoint->port; 
-                status = STATUS_PASS;                
+                sgReceivedStreamConfig.ipaddress.s_addr = (vaIP[3] << 24) | (vaIP[2] << 16) | (vaIP[1] << 8) | vaIP[0] ;
+                sgReceivedStreamConfig.streamPort = (uint16_t)vpPacket->endpoint->port; 
+                vStatus = STATUS_PASS;                
             }                    
         }
     }
     
-    if(status == STATUS_PASS)
+    if(vStatus == STATUS_PASS)
     {
          //send the recording configuration command
-         msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_CONFIG_MANAGER, MSG_TYPE_RECORDING_CONFIG,&receivedRecordingConfig);
-         msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_CONFIG_MANAGER, MSG_TYPE_RECORDING_CONFIG,&receivedRecordingConfig);         
+         msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_CONFIG_MANAGER, MSG_TYPE_RECORDING_CONFIG,&sgReceivedRecordingConfig);
+         msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_CONFIG_MANAGER, MSG_TYPE_RECORDING_CONFIG,&sgReceivedRecordingConfig);         
          //send the stream configuration command
-         msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_CONFIG_MANAGER, MSG_TYPE_STREAM_CONFIG,&receivedStreamConfig);
-         msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_CONFIG_MANAGER, MSG_TYPE_STREAM_CONFIG,&receivedStreamConfig);          
+         msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_CONFIG_MANAGER, MSG_TYPE_STREAM_CONFIG,&sgReceivedStreamConfig);
+         msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_CONFIG_MANAGER, MSG_TYPE_STREAM_CONFIG,&sgReceivedStreamConfig);          
          //send start stream request. 
          msg_sendMessageSimple(MODULE_SYSTEM_MANAGER, MODULE_CONFIG_MANAGER, MSG_TYPE_STREAM_REQUEST,1); //1= start stream      
     }        
      
-    return status;
+    return vStatus;
 }
-
-static status_t processStopStream(Heddoko__Packet* packet)
+/**
+* @brief Processes a received stop stream packet
+* @param vpPacket,pointer to protocol buffer packet
+* @return STATUS_PASS if the packet was processed, STATUS_FAIL if there was something
+* missing from it, or the brainpack was in an incorrect state.
+*/
+static status_t processStopStream(Heddoko__Packet* vpPacket)
 {
     status_t status = STATUS_PASS;
-    if(currentState != SYSTEM_STATE_STREAMING)
+    if(sgCurrentState != SYSTEM_STATE_STREAMING)
     {
         return STATUS_FAIL;
     }         

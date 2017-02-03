@@ -46,7 +46,6 @@ const char* moduleNameString[] = {
 	"MODULE_CONFIG_MANAGER",
 	"MODULE_DEBUG",
 	"MODULE_SUB_PROCESSOR",
-	"MODULE_DATA_MANAGER",
 	"MODULE_BLE",
 	"MODULE_GPIO_MANAGER",
     "MODULE_TFTP_CLIENT",
@@ -189,7 +188,8 @@ void dbg_printString(dbg_debugLogLevel_t msgLogLevel, char* string)
 /***********************************************************************************************
  * processCommand(char* command, size_t cmdSize)
  * @brief A general Command processor which receives commands from Serial terminal and executes them
- * @param char* command, size_t cmdSize
+ * @param command, pointer to char array of the command 
+ * @param cmdSize, length of the command. 
  * @return STATUS_PASS if successful, STATUS_FAIL if there is an error 
  ***********************************************************************************************/
 #define MAX_RESPONSE_STRING_SIZE 255

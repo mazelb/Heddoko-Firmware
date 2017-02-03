@@ -52,8 +52,6 @@ src\ble_bluetoothManager.c
 
 src\cfg_configurationManager.c
 
-src\dat_dataManager.c
-
 src\dbg_debugManager.c
 
 src\drv_haptic.c
