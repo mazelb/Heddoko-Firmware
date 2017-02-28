@@ -42,12 +42,13 @@ static void sendCommand(sensor_commands_t commandId, uint8_t sensorId, uint32_t 
 static void changeSensorState(sensor_state_t sensorState);
 static status_t verifyFakePacket(pkt_rawPacketVarSize_t packet);
 
-/*	OBSOLETE FUNCTIONS	- SHALL BE REMOVED AFTER TESTING AND APPROVAL
+static void checkSensorStatus(uint8_t sensorId); 
 static void storePacket(pkt_rawPacket_t *packet);	// store the packet to local Full Frame structure
-static void sendGetFrame(int sensorId);
+static void sendGetFrame(uint8_t sensorId);
 static void sendSetupModeEnable();
 static void sendUpdateCommand();
-static void sendGetDebugStatus();
+static void sendGetSensorStatus(uint8_t sensorId);
+/*	OBSOLETE FUNCTIONS	- SHALL BE REMOVED AFTER TESTING AND APPROVAL
 static void sendUpdateCommandFake();
 static void sendResetCommandFake();
 static void sendEnableHPR(uint8_t enable);
@@ -129,8 +130,6 @@ void sen_sensorHandlerTask(void *pvParameters)
 	
 	// initialize the UART driver
 	sensorPortConfig = &uart0Config;
-		
-	//sendCommand(COMMAND_ID_CHANGE_BAUD, NULL, SENSOR_BUS_SPEED_HIGH);	// change the baud rate of sensors and designated UART.
 	
 	while (1)
 	{
@@ -139,13 +138,14 @@ void sen_sensorHandlerTask(void *pvParameters)
 			if (sensorLoopCount < 1)													// if all the sensors data are fetched then pass update command
 			{
 				#ifndef ENABLE_SENSORS_DEBUG_MODE
-				sendCommand(COMMAND_ID_UPDATE, NULL, NULL);
+				//sendCommand(COMMAND_ID_UPDATE, NULL, NULL);
+                sendUpdateCommand();
 				#endif
 				
 				if (!firstFrame)
 				{	
 					#ifdef ENABLE_SENSORS_DEBUG_MODE
-					sendCommand(COMMAND_ID_UPDATE_FAKE, NULL, NULL);
+					//sendCommand(COMMAND_ID_UPDATE_FAKE, NULL, NULL);
 					#endif
 					sendFullFrame();
 				}
@@ -154,7 +154,7 @@ void sen_sensorHandlerTask(void *pvParameters)
 					// change the sensor state to streaming
 					changeSensorState(SENSOR_STREAMING);
 					#ifdef ENABLE_SENSORS_DEBUG_MODE
-					sendCommand(COMMAND_ID_RESET_FAKE, NULL, NULL);	// send the reset fake command to reset the counts to default values.
+					//sendCommand(COMMAND_ID_RESET_FAKE, NULL, NULL);	// send the reset fake command to reset the counts to default values.
 					#endif
 				}
 				
@@ -185,9 +185,7 @@ void sen_sensorHandlerTask(void *pvParameters)
 			// request packet
 			if (isSensorRequested(sensorID) == STATUS_PASS)		// only fetch the frame if the sensor is requested
 			{
-				sendCommand(COMMAND_ID_GET_FRAME, sensorID, NULL);											// actual sensor id count is 0 to 8
-				//vTaskDelay(1);
-			
+				sendGetFrame(sensorID);			
 				// fetch the packet from buffer
 				
 				/* we start filling the buffer from its tail. The location of the data for sensorId #8 is the tail,
@@ -240,10 +238,20 @@ void sen_sensorHandlerTask(void *pvParameters)
 		{
 			changeSensorState(SENSOR_IDLE);
 			sensorLoopCount = 0;	// make sure that if the next time the stream starts, buffer is always cleared
-			detectedSensorMask = 0;
+			//detectedSensorMask = 0;
+            if(sensorID > SEN_MAX_SENSOR_ID)
+            {
+                sendUpdateCommand(); //send the update command so that the LEDs change on the sensor. 
+                //reset the sensor ID back to 0; 
+                sensorID = 0;
+            }
+            else
+            {
+                checkSensorStatus(sensorID++);     
+            }            
 			firstFrame = TRUE;
 			// sit idle
-			vTaskDelay(100);
+			vTaskDelay(50);
 		}
 		/*	End of 'enableStream' if-else loop	*/
 	}
@@ -299,102 +307,123 @@ static void enableRs485Transmit()
  * @param sensor_commands_t commandId, uint8_t sensorId, uint32_t data - data to be passed
  * @return void                      
  ************************************************************************/
-static void __attribute__((Optimize("O0"))) sendCommand(sensor_commands_t commandId, uint8_t sensorId, uint32_t data)
+//static void __attribute__((Optimize("O0"))) sendCommand(sensor_commands_t commandId, uint8_t sensorId, uint32_t data)
+//{
+	//uint8_t outputDataBuffer[6] = {0};
+	//outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
+	//
+	//switch (commandId)
+	//{
+		//case COMMAND_ID_GET_FRAME:
+		//{
+			//outputDataBuffer[1] = PACKET_COMMAND_ID_GET_FRAME;
+			//outputDataBuffer[2] = sensorId;
+			//sendPacket(outputDataBuffer, 3);
+		//}
+		//break;
+		//case COMMAND_ID_UPDATE:
+		//{
+			//outputDataBuffer[1] = PACKET_COMMAND_ID_UPDATE;
+			//sendPacket(outputDataBuffer, 2);
+		//}
+		//break;
+		//case COMMAND_ID_SETUP_MODE:
+		//{
+			//outputDataBuffer[1] = PACKET_COMMAND_ID_SETUP_MODE;
+			//outputDataBuffer[2] = 0x01;
+			//sendPacket(outputDataBuffer, 3);
+		//}
+		//break;
+		//case COMMAND_ID_GET_STATUS:
+		//{
+			//outputDataBuffer[1] = PACKET_COMMAND_ID_GET_STATUS;
+			//outputDataBuffer[2] = 0x00;
+			//sendPacket(outputDataBuffer, 3);
+		//}
+		//break;
+		//case COMMAND_ID_ENABLE_HPR:
+		//{
+			//outputDataBuffer[1] = PACKET_COMMAND_ID_ENABLE_HPR;
+			//outputDataBuffer[2] = (uint8_t)data;
+			//sendPacket(outputDataBuffer, 3);
+		//}
+		//break;
+		//case COMMAND_ID_CHANGE_BAUD:
+		//{
+			//outputDataBuffer[1] = PACKET_COMMAND_ID_CHANGE_BAUD;
+			////send out the baud rate in 8bits, LSB first (Little endian)
+			//outputDataBuffer[2] = (uint8_t)(data & 0x000000ff);
+			//outputDataBuffer[3] = (uint8_t)((data & 0x0000ff00) >> 8);
+			//outputDataBuffer[4] = (uint8_t)((data & 0x00ff0000) >> 16);
+			//outputDataBuffer[5] = (uint8_t)((data & 0xff000000) >> 24);
+			//sendPacket(outputDataBuffer, 6);
+			//vTaskDelay(10);	// give time to send out the command and the sensor to implement it
+			//// change local baud rate
+			//changeUartBaud(data);
+		//}
+		//break;
+		//case COMMAND_ID_CHANGE_PADDING:
+		//{
+			//outputDataBuffer[1] = PACKET_COMMAND_ID_CHANGE_PADDING;
+			//
+			//if (sensorPortConfig->mode == DRV_UART_MODE_DMA)		//padding is only used in interrupt driven DMA mode
+			//{
+				//outputDataBuffer[2] = (uint8_t)(data & 0x000000ff);			// padding enable
+				//outputDataBuffer[3] = (uint8_t)((data & 0x0000ff00) >> 8);	// padding length
+			//}
+			//else
+			//{
+				//outputDataBuffer[2] = FALSE;
+				//outputDataBuffer[3] = NULL;
+			//}
+			//
+			//sendPacket(outputDataBuffer, 4);
+		//}
+		//break;
+		//case COMMAND_ID_SET_RATES:
+		//break;
+		//case COMMAND_ID_SET_IMU_ID:
+		//break;
+		//#ifdef ENABLE_SENSORS_DEBUG_MODE
+		//case COMMAND_ID_RESET_FAKE:
+		//{
+			//sendResetCommandFake();
+		//}
+		//break;
+		//case COMMAND_ID_UPDATE_FAKE:
+		//{
+			//sendUpdateCommandFake();
+		//}
+		//#endif
+		//break;
+		//default:
+		//break;
+	//}
+//}
+
+
+static void checkSensorStatus(uint8_t sensorId)
 {
-	uint8_t outputDataBuffer[6] = {0};
-	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
-	
-	switch (commandId)
-	{
-		case COMMAND_ID_GET_FRAME:
-		{
-			outputDataBuffer[1] = PACKET_COMMAND_ID_GET_FRAME;
-			outputDataBuffer[2] = sensorId;
-			sendPacket(outputDataBuffer, 3);
-		}
-		break;
-		case COMMAND_ID_UPDATE:
-		{
-			outputDataBuffer[1] = PACKET_COMMAND_ID_UPDATE;
-			sendPacket(outputDataBuffer, 2);
-		}
-		break;
-		case COMMAND_ID_SETUP_MODE:
-		{
-			outputDataBuffer[1] = PACKET_COMMAND_ID_SETUP_MODE;
-			outputDataBuffer[2] = 0x01;
-			sendPacket(outputDataBuffer, 3);
-		}
-		break;
-		case COMMAND_ID_GET_STATUS:
-		{
-			outputDataBuffer[1] = PACKET_COMMAND_ID_GET_STATUS;
-			outputDataBuffer[2] = 0x00;
-			sendPacket(outputDataBuffer, 3);
-		}
-		break;
-		case COMMAND_ID_ENABLE_HPR:
-		{
-			outputDataBuffer[1] = PACKET_COMMAND_ID_ENABLE_HPR;
-			outputDataBuffer[2] = (uint8_t)data;
-			sendPacket(outputDataBuffer, 3);
-		}
-		break;
-		case COMMAND_ID_CHANGE_BAUD:
-		{
-			outputDataBuffer[1] = PACKET_COMMAND_ID_CHANGE_BAUD;
-			//send out the baud rate in 8bits, LSB first (Little endian)
-			outputDataBuffer[2] = (uint8_t)(data & 0x000000ff);
-			outputDataBuffer[3] = (uint8_t)((data & 0x0000ff00) >> 8);
-			outputDataBuffer[4] = (uint8_t)((data & 0x00ff0000) >> 16);
-			outputDataBuffer[5] = (uint8_t)((data & 0xff000000) >> 24);
-			sendPacket(outputDataBuffer, 6);
-			vTaskDelay(10);	// give time to send out the command and the sensor to implement it
-			// change local baud rate
-			changeUartBaud(data);
-		}
-		break;
-		case COMMAND_ID_CHANGE_PADDING:
-		{
-			outputDataBuffer[1] = PACKET_COMMAND_ID_CHANGE_PADDING;
-			
-			if (sensorPortConfig->mode == DRV_UART_MODE_DMA)		//padding is only used in interrupt driven DMA mode
-			{
-				outputDataBuffer[2] = (uint8_t)(data & 0x000000ff);			// padding enable
-				outputDataBuffer[3] = (uint8_t)((data & 0x0000ff00) >> 8);	// padding length
-			}
-			else
-			{
-				outputDataBuffer[2] = FALSE;
-				outputDataBuffer[3] = NULL;
-			}
-			
-			sendPacket(outputDataBuffer, 4);
-		}
-		break;
-		case COMMAND_ID_SET_RATES:
-		break;
-		case COMMAND_ID_SET_IMU_ID:
-		break;
-		#ifdef ENABLE_SENSORS_DEBUG_MODE
-		case COMMAND_ID_RESET_FAKE:
-		{
-			sendResetCommandFake();
-		}
-		break;
-		case COMMAND_ID_UPDATE_FAKE:
-		{
-			sendUpdateCommandFake();
-		}
-		#endif
-		break;
-		default:
-		break;
-	}
+    pkt_rawPacket_t vStatusPacket; 
+    sendGetSensorStatus(sensorId); 
+    if(pkt_getPacketTimed(sensorPortConfig, &vStatusPacket, 20) == STATUS_PASS)
+    {
+        if(vStatusPacket.payload[1] == PACKET_COMMAND_ID_GET_STATUS_RESP)
+        {
+            if(vStatusPacket.payload[2] == sensorId)
+            {
+                //we received the status back from the sensor, that means it's connected.
+                //update the sensor mask. 
+                detectedSensorMask |= (0x01 << (sensorId));
+                return; 
+            }
+        }
+    }
+    //we didn't hear back from the sensor, so we should remove it from the found mask
+    detectedSensorMask &= ~(0x01 << (sensorId));
 }
 
-/*		OBSOLETE FUNCTIONS	
-static void sendGetFrame(int sensorId)
+static void sendGetFrame(uint8_t sensorId)
 {
 	uint8_t outputDataBuffer[3] = {0};
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
@@ -420,15 +449,15 @@ static void sendSetupModeEnable()
 	sendPacket(outputDataBuffer, 3);
 }
 
-static void sendGetDebugStatus()
+static void sendGetSensorStatus(uint8_t sensorId)
 {
 	uint8_t outputDataBuffer[3] = {0};
 	outputDataBuffer[0] = PACKET_TYPE_MASTER_CONTROL;
 	outputDataBuffer[1] = PACKET_COMMAND_ID_GET_STATUS;
-	outputDataBuffer[2] = 0x00;
+	outputDataBuffer[2] = sensorId;
 	sendPacket(outputDataBuffer, 3);
 }
-
+/*		OBSOLETE FUNCTIONS	
 static void sendEnableHPR(uint8_t enable)
 {
 	// enable Head, Pitch and Roll.
@@ -627,7 +656,9 @@ void sen_enableSensorStream(bool enable)
 	if (reqSensorMask != 0)
 	{
 		enableStream = enable;	// only enable the stream if any sensors are requested
-		if (enableStream)
+		//reset the loop count
+        sensorLoopCount = 0;
+        if (enableStream)
 		{
 			// reconfigure the baud rate (in case sensors were disconnected, default speed is LOW)
 			//changeUartBaud(SENSOR_BUS_SPEED_LOW);	// NOTE: these functions do not work with optimization.

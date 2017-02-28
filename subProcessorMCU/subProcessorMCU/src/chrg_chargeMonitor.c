@@ -152,7 +152,8 @@ void chrg_task_chargeMonitor(void *pvParameters)
 			//should be we reset the power board? or just power off
 			if (mgr_getState() == SYS_STATE_POWER_ON)
 			{
-				brd_sendPowerDownReq();	// send command to the data board manager
+				dat_sendDebugMsgToDataBoard("PwrBrdMsg:sending power down request\r\n");
+                brd_sendPowerDownReq();	// send command to the data board manager
 			}
 			else
 			{
@@ -186,7 +187,7 @@ void chrg_task_chargeMonitor(void *pvParameters)
 				break;
 				case CHRG_CHARGER_STATE_CHARGE_COMPLETE:
 				{
-					ltc2941GetCharge(&ltc2941Config, batteryCharge);
+					ltc2941GetCharge(&ltc2941Config, &batteryCharge);
                     sprintf(tempString,"PwrBrdMsg:Receive Battery Full indication at %d level\r\n", batteryCharge);
 					dat_sendDebugMsgToDataBoard(tempString);
 					ltc2941SetChargeComplete(&ltc2941Config);									
@@ -204,7 +205,7 @@ void chrg_task_chargeMonitor(void *pvParameters)
 					eventMessage.sysEvent = SYS_EVENT_LOW_BATTERY; 
 					if(mgr_eventQueue != NULL)
 					{
-						ltc2941GetCharge(&ltc2941Config, batteryCharge);
+						ltc2941GetCharge(&ltc2941Config, &batteryCharge);
                         sprintf(tempString,"PwrBrdMsg:Receive Low Battery indication at ??%d level\r\n", batteryCharge);
 						dat_sendDebugMsgToDataBoard(tempString);
 						ltc2941SetCharge(&ltc2941Config, CHARGE_EMPTY_VALUE); //set the gas gauge to zero. 						

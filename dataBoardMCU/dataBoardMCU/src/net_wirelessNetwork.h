@@ -83,7 +83,7 @@ status_t net_bindUpdSocket(net_socketConfig_t* sock,uint16_t port);
 status_t net_createServerSocket(net_socketConfig_t* sock, size_t receiveBufSize);
 status_t net_sendPacketToClientSock(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength, bool semaphoreNeeded);
 status_t net_closeSocket(net_socketConfig_t* socket); 
-
+void net_processWifiEvents(int waitTime);
 
 
 

@@ -213,7 +213,7 @@ void sys_systemManagerTask(void* pvParameters)
 	{
     	dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create wireless task\r\n");
 	}    
-	if(xTaskCreate(ble_bluetoothManagerTask, "ble", (4000/sizeof(portSTACK_TYPE)), &bleModuleSettings, tskIDLE_PRIORITY+3, NULL) != pdPASS)
+	if(xTaskCreate(ble_bluetoothManagerTask, "ble", (4000/sizeof(portSTACK_TYPE)), &bleModuleSettings, tskIDLE_PRIORITY+1, NULL) != pdPASS)
 	{
 		dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create ble task\r\n");
 	}

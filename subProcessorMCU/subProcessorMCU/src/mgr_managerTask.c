@@ -52,7 +52,7 @@ static void enterSleepMode();
 static void enterSleep();
 static void PostSleepProcess();
 static void PreSleepProcess();
-static bool UsbConnected();
+
 static void enterPowerDownChargeState();
 static void exitPowerDownChargeState();
 static void clearAllEvents(); 
@@ -72,7 +72,7 @@ void mgr_managerTask(void *pvParameters)
 	//initialize power button listener. 	
 	drv_gpio_config_interrupt_handler(DRV_GPIO_PIN_PWR_BTN, DRV_GPIO_INTERRUPT_LOW_EDGE,powerButtonHandler_LowEdge);
 	mgr_eventQueue = xQueueCreate( 10, sizeof(mgr_eventMessage_t));
-	pwrButtonTimer = xTimerCreate("PowerBnt timer", (SLEEP_ENTRY_WAIT_TIME/portTICK_RATE_MS), pdFALSE, NULL, powerButtonTimerCallback);
+	//pwrButtonTimer = xTimerCreate("PowerBnt timer", (SLEEP_ENTRY_WAIT_TIME/portTICK_RATE_MS), pdFALSE, NULL, powerButtonTimerCallback);
 	//start all the other tasks
 	int retCode = 0;
 	retCode = xTaskCreate(chrg_task_chargeMonitor, "CHRG", TASK_CHRG_MON_STACK_SIZE, &chargeMonitorConfiguration, TASK_CHRG_MON_STACK_PRIORITY, NULL);
@@ -110,7 +110,9 @@ void mgr_managerTask(void *pvParameters)
 	drv_gpio_setPinState(DRV_GPIO_PIN_CHRG_SEL, DRV_GPIO_PIN_STATE_HIGH);	
 	uint32_t pwrButtonHeldLowCount = 0;
 	drv_gpio_pin_state_t pwrButtonState = DRV_GPIO_PIN_STATE_HIGH; 
-	while(1)
+    //turn the board on
+	drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_HIGH);	
+    while(1)
 	{
 		//test code for the power board. 
 		if(xQueueReceive( mgr_eventQueue, &(msgEvent), 50) == TRUE)
@@ -184,7 +186,7 @@ void mgr_managerTask(void *pvParameters)
 				
 			}
 		}
-		vTaskDelay(150);
+		vTaskDelay(10);
 		//drv_gpio_getPinState(DRV_GPIO_PIN_PWR_BTN,&pwrButtonState);
 		//if(pwrButtonState == DRV_GPIO_PIN_STATE_LOW)
 		//{
@@ -244,18 +246,18 @@ static void powerButtonHandler_LowEdge(uint32_t ul_id, uint32_t ul_mask)
 	pio_disable_interrupt(PIOA, PinMask);
 	uint32_t ReadIsr = PIOA->PIO_ISR;
 	
-	if (PinMask == ul_mask)
-	{
-		//drv_gpio_config_interrupt_handler(DRV_GPIO_PIN_PWR_BTN, DRV_GPIO_INTERRUPT_HIGH_EDGE,powerButtonHandler_HighEdge);
-		xTimerResetFromISR(pwrButtonTimer,&hasWoken);
-	}
+	//if (PinMask == ul_mask)
+	//{
+		////drv_gpio_config_interrupt_handler(DRV_GPIO_PIN_PWR_BTN, DRV_GPIO_INTERRUPT_HIGH_EDGE,powerButtonHandler_HighEdge);
+		//xTimerResetFromISR(pwrButtonTimer,&hasWoken);
+	//}
 	pio_enable_interrupt(PIOA, PinMask);	
-	if( hasWoken != pdFALSE )
-    {
-        /* Call the interrupt safe yield function here (actual function
-        depends on the FreeRTOS port being used). */
-		taskYIELD();
-    }
+	//if( hasWoken != pdFALSE )
+    //{
+        ///* Call the interrupt safe yield function here (actual function
+        //depends on the FreeRTOS port being used). */
+		//taskYIELD();
+    //}
 	
 }
 
@@ -311,7 +313,9 @@ static void __attribute__((Optimize("O0"))) enterSleep()
 		//uint32_t regVal = SUPC->SUPC_SR;
 		pmc_sleep(SAM_PM_SMODE_WAIT);
 		//Processor wakes up from sleep
-		delay_ms(WAKEUP_DELAY);
+		//Feed the watch dog
+        wdt_restart(WDT);
+        delay_ms(WAKEUP_DELAY);
 		drv_gpio_getPinState(DRV_GPIO_PIN_PWR_BTN, &pwSwState);	//poll the power switch
 		drv_gpio_getPinState(DRV_GPIO_PIN_CHRG_PG, &chargingDetect); //
 		if(pwSwState == DRV_GPIO_PIN_STATE_LOW)	//check if it is a false wakeup
@@ -345,11 +349,7 @@ static void __attribute__((Optimize("O0"))) enterSleep()
 		//invalidate the current charger state so that it is re-evaluated
 		chrg_currentChargerState = CHRG_CHARGER_STATE_INVALID_CODE;
 		//send the date time command to the brain MCU.
-		vTaskDelay(2000);
-		cmd_sendDateTimeCommand();
 		//enable power to both Jacks
-		vTaskDelay(100);
-		//TODO add switching auto-enabling to this code.
         setJackState(true);
 		// enable the UARTs
 		brd_initAllUarts();
@@ -384,8 +384,8 @@ static void PreSleepProcess()
 	drv_gpio_enable_interrupt(DRV_GPIO_PIN_PWR_BTN);
 	//drv_gpio_config_interrupt(DRV_GPIO_PIN_USB_DET, DRV_GPIO_INTERRUPT_HIGH_EDGE);
 	//drv_gpio_enable_interrupt(DRV_GPIO_PIN_USB_DET);
-	NVIC_DisableIRQ(WDT_IRQn);
-	NVIC_ClearPendingIRQ(WDT_IRQn);
+	//NVIC_DisableIRQ(WDT_IRQn);
+	//NVIC_ClearPendingIRQ(WDT_IRQn);
 	
 }
 
@@ -403,10 +403,10 @@ static void PostSleepProcess()
 	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;	//enable the systick timer
 	
 	//pmc_disable_periph_clk(ID_WDT);
-	NVIC_EnableIRQ(WDT_IRQn);		
+	//NVIC_EnableIRQ(WDT_IRQn);		
 }
 
-static bool UsbConnected()
+bool UsbConnected()
 {
 	drv_gpio_pin_state_t usbConnectedState = DRV_GPIO_PIN_STATE_LOW; 
 	drv_gpio_getPinState(DRV_GPIO_PIN_USB_DET, &usbConnectedState);

@@ -13,12 +13,15 @@
 #include "drv_gpio.h"
 #include "pkt_packetCommandsList.h"
 #include "pkt_packetParser.h"
+#include "mgr_managerTask.h"
 
 pkt_rawPacket_t dataBoardPacket;
 dat_dataRouterConfig_t* dataRouterConfig; 
 extern xQueueHandle cmd_queue_commandQueue;
 extern xQueueHandle queue_dataBoard;
+extern bool usbCommState;
 static bool my_flag_autorize_cdc_transfert = false;
+
 int my_callback_cdc_enable(void)
 {
 	my_flag_autorize_cdc_transfert = true;
@@ -137,13 +140,15 @@ status_t dat_sendPacketToDataBoard(cmd_commandPacket_t* packet)	// send the comm
 	outputBuf[1] = PACKET_COMMAND_ID_SUBP_OUTPUT_DATA;
 	memcpy(&outputBuf[2], packet->packetData, packet->packetSize);
 	pkt_sendRawPacket(dataRouterConfig->dataBoardUart, outputBuf, packet->packetSize  + 2);	// 2 bytes for the header
-	//drv_uart_putData(dataRouterConfig->dataBoardUart, packet->packetData, packet->packetSize);	//TODO: what is this, if important wrap it before sending.
 	return STATUS_PASS;	
 }
 
 status_t dat_sendStringToUsb(char* str)
 {	
 	size_t length = strlen(str); 
-	udi_cdc_write_buf(str, length); 
+    if(UsbConnected() == true && usbCommState == true && udi_cdc_is_tx_ready())
+    {
+	    udi_cdc_write_buf(str, length); 
+    }    
 	return STATUS_PASS;	
 }

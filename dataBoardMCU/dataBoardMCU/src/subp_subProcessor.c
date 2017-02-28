@@ -71,8 +71,8 @@ Heddoko__Packet dataFrameProtoPacket;
 Heddoko__FullDataFrame dataFrame;
 Heddoko__ImuDataFrame* frameArrayPtr[MAX_NUMBER_OF_IMU_SENSORS];
 Heddoko__ImuDataFrame frameArray[MAX_NUMBER_OF_IMU_SENSORS];
-uint8_t serializedProtoBuf[2000]; //storage buffer for the largest serialized proto packet. 
-#define MAX_SERIALIZED_DATA_LENGTH 2000
+uint8_t serializedProtoBuf[1500]; //storage buffer for the largest serialized proto packet. 
+#define MAX_SERIALIZED_DATA_LENGTH 1500
 uint8_t serializedDataBuffer[MAX_SERIALIZED_DATA_LENGTH]; //storage buffer for the encoded data. 
 
 volatile uint8_t dataLogBufferA[DATALOG_MAX_BUFFER_SIZE] = {0} , dataLogBufferB[DATALOG_MAX_BUFFER_SIZE] = {0};
@@ -173,7 +173,6 @@ void subp_sendForcedRestartMessage()
 }
 
 
-char tempString[200] = {0};
 uint32_t packetReceivedCount = 0;
 
 uint32_t lastTimeStamp = 0;	

@@ -1,12 +1,10 @@
-/*
- * common.h
- *
- * Created: 9/21/2015 8:34:24 AM
- *  Author: sean
- * @brief: Includes all the generic values used by all files
- * Copyright Heddoko(TM) 2015, all rights reserved
- */ 
-
+/**
+* @file common.h
+* @brief Contains all the generic values used by all files. 
+* @author Sean Cloghesy (sean@heddoko.com)
+* @date November 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 
 #ifndef COMMON_H_
 #define COMMON_H_
@@ -16,10 +14,7 @@
 #define VERSION "0.0.0.1"
 #define MODEL "Version 1.5"
 #define HARDWARE_REV "Proto B"
-/*
-* Changes from previous version:
-* @brief: see VersionNotes.txt for details
-*/
+
 
 #define ALL_INTERRUPT_MASK  0xffffffff
 #define TRUE 1

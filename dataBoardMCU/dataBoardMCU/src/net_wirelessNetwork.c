@@ -58,7 +58,7 @@ static SOCKET tcp_client_socket = -1;
 static SOCKET udp_socket = -1;
 //static function forward declarations
 
-uint8_t receiveBuffer[512] = {0};
+//uint8_t receiveBuffer[512] = {0};
 	
 net_wifiState_t currentWifiState = NET_WIFI_STATE_DISCONNECTED; 	
 net_moduleConfig_t taskConfiguration = {6668,NULL,5};
@@ -125,7 +125,7 @@ void net_wirelessNetworkTask(void *pvParameters)
 		
 		if(currentWifiState == NET_WIFI_STATE_CONNECTED)
 		{
-			if(xTaskGetTickCount() > (advertisingPacketLastSentTime + (taskConfig->advertisingInterval*1000)))
+			if(xTaskGetTickCount() > (advertisingPacketLastSentTime + (taskConfig->advertisingInterval*100000)))
 			{
 				advertisingPacketLastSentTime = xTaskGetTickCount();
 				sendAdvertisingPacket(&advertisingSocket, taskConfig);
@@ -157,8 +157,7 @@ void net_wirelessNetworkTask(void *pvParameters)
 }
 
 status_t net_sendPacket(uint8_t* packetBuf, uint32_t packetBufLength)
-{
-	
+{	
 	if(tcp_connected == 1 && tcp_client_socket > -1)
 	{	
 		if(xSemaphoreTake(semaphore_wifiAccess, 100) == true)
@@ -178,8 +177,7 @@ status_t net_sendPacket(uint8_t* packetBuf, uint32_t packetBufLength)
 			}		
 			xSemaphoreGive(semaphore_wifiAccess);			
 		}		
-	}
-	
+	}	
 }
 
 status_t net_connectToNetwork(net_wirelessConfig_t* wirelessConfig)
@@ -210,7 +208,6 @@ status_t net_connectToNetwork(net_wirelessConfig_t* wirelessConfig)
 		status = STATUS_FAIL;
 		currentWifiState = NET_WIFI_STATE_DISCONNECTED;		
 	}
-
 	return status;
 }
 status_t net_disconnectFromNetwork()
@@ -310,6 +307,7 @@ status_t net_sendUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_
 			{
 				dbg_printf(DBG_LOG_LEVEL_ERROR,"Failed to send packet! %d\r\n", ret);
 			}
+            m2m_wifi_handle_events(NULL);
 			xSemaphoreGive(semaphore_wifiAccess);
 		}
 	}
@@ -334,6 +332,7 @@ status_t net_receiveUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint
             {
                 dbg_printf(DBG_LOG_LEVEL_ERROR,"Failed to async receive packet! %d\r\n", ret);
             }
+            //m2m_wifi_handle_events(NULL);
             xSemaphoreGive(semaphore_wifiAccess);
         }
     }
@@ -450,6 +449,16 @@ status_t net_closeSocket(net_socketConfig_t* sock)
         xSemaphoreGive(semaphore_wifiAccess);	            
 	}
 	return status;	
+}
+
+void net_processWifiEvents(int waitTime)
+{
+    if(xSemaphoreTake(semaphore_wifiAccess, waitTime) == true)
+    {
+        //handle the wifi process
+        m2m_wifi_handle_events(NULL);
+        xSemaphoreGive(semaphore_wifiAccess);
+    }
 }
 
 static void processEvent(msg_message_t* message)
@@ -576,9 +585,7 @@ static void wifi_cb(uint8 msg_type, void *msg_data)
             msg_sendBroadcastMessageSimple(MODULE_WIFI, MSG_TYPE_WIFI_STATE, currentWifiState);
 			//m2m_wifi_connect((char *)MAIN_WLAN_SSID, sizeof(MAIN_WLAN_SSID),
 					//MAIN_WLAN_AUTH, (char *)MAIN_WLAN_PSK, M2M_WIFI_CH_ALL);
-		}
-		
-		
+		}	
 	}
 	break;
 
@@ -714,7 +721,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
                     }
 					//tcp_client_socket = pstrAccept->sock;
 					//tcp_connected = 1;
-					recv(pstrAccept->sock, receiveBuffer, sizeof(receiveBuffer), 0);
+					//recv(pstrAccept->sock, receiveBuffer, sizeof(receiveBuffer), 0);
 				}                    
 				
 			} 
@@ -818,10 +825,10 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
                     }                    
                     recv(sock, socketConfig->buffer, socketConfig->bufferLength, 0);                        
                 }
-                else
-                {
-                    recv(sock, receiveBuffer, sizeof(receiveBuffer), 0);
-                }
+                //else
+                //{
+                    //recv(sock, receiveBuffer, sizeof(receiveBuffer), 0);
+                //}
                 
 			} 
 			else 

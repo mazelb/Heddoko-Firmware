@@ -273,8 +273,7 @@ status_t sdc_readFromFile(sdc_file_t* fileObject, void* data, size_t fileOffset,
 	if (fileObject->fileOpen == true)
 	{
 		if (xSemaphoreTake(semaphore_fatFsAccess, 100) == true)
-		{
-			
+		{			
 			res = f_lseek(&fileObject->fileObj, (DWORD)fileOffset);
 			res |= f_read(&fileObject->fileObj, data, length, &numBytesRead);
 			if (res != FR_OK)
@@ -288,6 +287,7 @@ status_t sdc_readFromFile(sdc_file_t* fileObject, void* data, size_t fileOffset,
 			status = STATUS_FAIL;
 		}
 	}
+    
 	return status;
 }
 

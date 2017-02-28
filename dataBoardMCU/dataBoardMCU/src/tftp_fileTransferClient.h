@@ -10,9 +10,13 @@
 #define TFTP_FILETRANSFERCLIENT_H_
 #include "common.h"
 #include "net_wirelessNetwork.h"
-#define TFTP_FILE_BUFFER_SIZE 1024
-#define TFTP_PACKET_TIMEOUT 5000 //5 seconds for now... TODO update this value
-#define TFTP_BLOCK_SIZE 512
+#define TFTP_FILE_BUFFER_SIZE 2000
+#define TFTP_PACKET_TIMEOUT 500 //0.25 seconds for now... TODO update this value
+#define TFTP_BLOCK_SIZE 1350
+#define TFTP_BLOCK_SIZE_STRING "1350"
+#define TFTP_MAX_BLOCK_RETRY 20
+#define TFTP_WINDOW_SIZE_STRING "8"
+#define TFTP_WINDOW_SIZE 8
 
 typedef enum 
 {
@@ -26,7 +30,8 @@ typedef enum
     TFTP_OPCODE_WRQ = 2,
     TFTP_OPCODE_DATA = 3,
     TFTP_OPCODE_ACK = 4,
-    TFTP_OPCODE_ERROR = 5 
+    TFTP_OPCODE_ERROR = 5,
+    TFTP_OPCODE_OACK = 6  
 }tftp_opcodes_t;
 
 

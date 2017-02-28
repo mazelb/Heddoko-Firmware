@@ -45,7 +45,7 @@ xQueueHandle queue_dataBoard = NULL;		// queue to pass data to the data router
 xSemaphoreHandle semaphore_dataBoardUart = NULL;
 xTimerHandle pwrDwnRspTimeoutTimer = NULL;
 static bool pwrDwnRspTimerActive = false;
-static bool usbCommState;	// indicates whether comm is detected on USB
+bool usbCommState = false;	// indicates whether comm is detected on USB
 static drv_uart_config_t *dataBoardPortConfig;
 
 /*	Function definitions	*/

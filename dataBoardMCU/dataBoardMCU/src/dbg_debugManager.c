@@ -1,9 +1,12 @@
-/*
- * dbg_debugManager.c
- *
- * Created: 7/12/2016 10:25:21 AM
- *  Author: sean
- */ 
+/**
+* @file dbg_debugManager.c
+* @brief Contains code relevant to debug prints, logging and string command interpreter.
+* The string command interpreter listens on connection to a wifi network and through the 
+* USB and debug com ports.
+* @author Sean Cloghesy (sean@heddoko.com)
+* @date July 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 #include "dbg_debugManager.h"
 #include "asf.h"
 #include "sdc_sdCard.h"
@@ -65,7 +68,32 @@ const char* systemStateString[] = {
     	"SYSTEM_STATE_SYNCING"
 };
 
-bool debugMsgOverUsb = false; 
+static bool debugMsgOverUsb = false; 
+
+
+drv_uart_config_t debugUartConfig =
+{
+    .p_usart = UART1,
+    .mem_index = 1,
+    .uart_options =
+    {
+        .baudrate   = CONF_BAUDRATE,
+        .charlength = CONF_CHARLENGTH,
+        .paritytype = CONF_PARITY,
+        .stopbits   = CONF_STOPBITS
+    },
+    .mode = DRV_UART_MODE_INTERRUPT
+};
+
+net_wirelessConfig_t wirelessConfig =
+{
+    .securityType = M2M_WIFI_SEC_WPA_PSK,
+    .passphrase = "test$891",
+    .ssid = "HeddokoTest2ghz",
+    .channel = 255, //default to 255 so it searches all channels for the signal
+};
+
+
 
 /*	Local static functions	*/
 static void processEvent(msg_message_t* message);
@@ -82,31 +110,6 @@ static status_t processFileTransferTest(tftp_transferType_t transferType, char* 
 /*	Extern functions	*/
 /*	Extern variables	*/
 extern nvmSettings_t currentSystemSettings;
-
-
-
-drv_uart_config_t debugUartConfig =
-{
-	.p_usart = UART1,
-	.mem_index = 1,
-	.uart_options =
-	{
-		.baudrate   = CONF_BAUDRATE,
-		.charlength = CONF_CHARLENGTH,
-		.paritytype = CONF_PARITY,
-		.stopbits   = CONF_STOPBITS
-	},
-	.mode = DRV_UART_MODE_INTERRUPT
-};
-
-net_wirelessConfig_t wirelessConfig = 
-{
-	.securityType = M2M_WIFI_SEC_WPA_PSK,
-	.passphrase = "test$891",
-	.ssid = "HeddokoTest2ghz",	
-	.channel = 255, //default to 255 so it searches all channels for the signal	
-};
-
 net_socketConfig_t debugServer =
 {
     .endpoint.sin_addr = 0, //irrelevant for the server
@@ -119,6 +122,8 @@ net_socketConfig_t debugServer =
     .clientSocketId = -1
     
 };
+
+
 
 void dbg_debugTask(void* pvParameters)
 {
