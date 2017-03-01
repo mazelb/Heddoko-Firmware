@@ -58,7 +58,7 @@ static SOCKET tcp_client_socket = -1;
 static SOCKET udp_socket = -1;
 //static function forward declarations
 
-//uint8_t receiveBuffer[512] = {0};
+uint8_t receiveBuffer[512] = {0};
 	
 net_wifiState_t currentWifiState = NET_WIFI_STATE_DISCONNECTED; 	
 net_moduleConfig_t taskConfiguration = {6668,NULL,5};
@@ -125,7 +125,7 @@ void net_wirelessNetworkTask(void *pvParameters)
 		
 		if(currentWifiState == NET_WIFI_STATE_CONNECTED)
 		{
-			if(xTaskGetTickCount() > (advertisingPacketLastSentTime + (taskConfig->advertisingInterval*100000)))
+			if(xTaskGetTickCount() > (advertisingPacketLastSentTime + (taskConfig->advertisingInterval*1000)))
 			{
 				advertisingPacketLastSentTime = xTaskGetTickCount();
 				sendAdvertisingPacket(&advertisingSocket, taskConfig);
@@ -721,7 +721,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
                     }
 					//tcp_client_socket = pstrAccept->sock;
 					//tcp_connected = 1;
-					//recv(pstrAccept->sock, receiveBuffer, sizeof(receiveBuffer), 0);
+					recv(pstrAccept->sock, receiveBuffer, sizeof(receiveBuffer), 0);
 				}                    
 				
 			} 
@@ -846,8 +846,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 					if(sock == tcp_client_socket)
 					{
 						tcp_client_socket = -1;		
-					}            
-					
+					}   				
 				}
 				tcp_connected = 0;
 				break;

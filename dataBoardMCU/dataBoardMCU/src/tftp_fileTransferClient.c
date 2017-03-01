@@ -92,7 +92,8 @@ void tftp_FileTransferTask(void *pvParameters)
         if (xQueueReceive(msg_queue_tftpClient, &receivedMessage, 10) == TRUE)
         {
             processMessage(&receivedMessage);
-        }     
+        }
+             
         net_processWifiEvents(5); //only wait 5ms max.   
         vTaskDelay(1);
     }
@@ -235,10 +236,6 @@ static void processPacket(uint8_t* buffer, uint32_t length)
             }              
             return;             
         }
-        //if(blockNumber == lastReceiveAckedBlock)
-        //{
-            //dbg_printf(DBG_LOG_LEVEL_DEBUG, "Received Same ACK Twice!: %d expected: %d\r\n",blockNumber,expectedAckedBlock);  
-        //}
         if(blockNumber < expectedAckedBlock)
         {
             //get ready to receive the response

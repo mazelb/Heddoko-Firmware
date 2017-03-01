@@ -98,7 +98,7 @@ void mgr_managerTask(void *pvParameters)
 	retCode = xTaskCreate(sen_sensorHandlerTask, "SEN", TASK_SENSOR_HANDLER_STACK_SIZE, NULL, TASK_SENSOR_HANDLER_PRIORITY, NULL);
 	if (retCode != pdPASS)
 	{
-		printf("Failed to create SEN task code %d\r\n", retCode);
+    	printf("Failed to create SEN task code %d\r\n", retCode);
 	}
 	
 	drv_led_set(DRV_LED_GREEN, DRV_LED_FLASH);
