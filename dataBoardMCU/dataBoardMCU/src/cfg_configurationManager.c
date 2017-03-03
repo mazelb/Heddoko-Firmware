@@ -16,6 +16,7 @@
 #include "heddokoPacket.pb-c.h"
 #include "net_wirelessNetwork.h"
 #include "subp_subProcessor.h"
+#include "tftp_fileTransferClient.h"
 
 /* Local Defines */
 #define MAX_ENCODED_PACKET_SIZE 255
@@ -32,12 +33,15 @@ static void sendProtoPacketToClient(Heddoko__Packet* packet, net_socketConfig_t*
 static status_t processRecordSettings(Heddoko__Packet* packet); 
 static status_t processStartStream(Heddoko__Packet* packet); 
 static status_t processStopStream(Heddoko__Packet* packet);
+static status_t processUpdateFirmwareRequest(Heddoko__Packet* vpPacket);
+static void sendFirmwareUpdateResponse(bool vStatus);
 /*	Local variables	*/
 static xQueueHandle sgQueue_cfgManager = NULL;
 static cfg_moduleConfig_t* sgpConfigSettings = NULL; 
 static sys_manager_systemState_t sgCurrentState = SYSTEM_STATE_INIT; 
 static subp_recordingConfig_t sgReceivedRecordingConfig; 
 static subp_streamConfig_t sgReceivedStreamConfig; 
+static tftp_transferParameters_t transferParameters = {.filename = "TestFile.txt", .transferType = TFTP_TRANSFER_TYPE_SEND_FILE};
 static net_socketConfig_t sgConfigServerSocket =
 {
     .endpoint.sin_addr = 0, //irrelevant for the server
@@ -156,8 +160,7 @@ static void configSocketReceivedDataCallback(SOCKET vSocketId, uint8_t* vpReceiv
             }
             else
             {
-                //failed to deserialize the packet, send a failed message response
-                
+                //failed to deserialize the packet, send a failed message response                
             }
         }
     }    
@@ -232,6 +235,24 @@ static void processMessage(msg_message_t* vpMessage)
  			}       
         
         break;
+        case MSG_TYPE_TFTP_TRANSFER_RESULT:
+            if(sgCurrentState == SYSTEM_STATE_FIRMWARE_UPDATE)
+            {
+                if(vpMessage->data == TFTP_TRANSFER_RESULT_PASS)
+                {
+                     sendFirmwareUpdateResponse(true);
+                     //reset the board
+                     msg_sendMessage(MODULE_SYSTEM_MANAGER,MODULE_CONFIG_MANAGER, MSG_TYPE_FW_UPDATE_RESTART_REQUEST, NULL);   
+                }
+                else
+                {
+                    sendFirmwareUpdateResponse(false); 
+                    //send message to initiate firmware update
+                    msg_sendMessageSimple(MODULE_SYSTEM_MANAGER, MODULE_CONFIG_MANAGER, MSG_TYPE_REQUEST_STATE,SYSTEM_STATE_IDLE);
+                }    
+            }
+            
+        break;
         default:
         break;
         
@@ -289,7 +310,13 @@ static void processProtoPacket( Heddoko__Packet* vpProtoPacket)
                 sendMessageStatus(false);
             }
         }
-        break;        
+        break;  
+        case HEDDOKO__PACKET_TYPE__UpdateFirmwareRequest:
+            if(processUpdateFirmwareRequest(vpProtoPacket) != STATUS_PASS)
+            {
+                sendMessageStatus(false);
+            }
+        break;       
         default:
         {
             // we aren't handling this message, send a failed status response. 
@@ -436,4 +463,69 @@ static status_t processStopStream(Heddoko__Packet* vpPacket)
     //send stop stream request.
     msg_sendMessageSimple(MODULE_SYSTEM_MANAGER, MODULE_CONFIG_MANAGER, MSG_TYPE_STREAM_REQUEST,0); //0 = stop stream
     return status;
+}
+
+/**
+* @brief Processes a firmware update request
+* @param vpPacket,pointer to protocol buffer packet
+* @return STATUS_PASS if the packet was processed, STATUS_FAIL if there was something
+* missing from it, or the brainpack was in an incorrect state.
+*/
+static status_t processUpdateFirmwareRequest(Heddoko__Packet* vpPacket)
+{
+    status_t status = STATUS_PASS;
+    int ip[4] = {0,0,0,0};
+    int ret = -1 ;
+    
+      
+    if(sgCurrentState != SYSTEM_STATE_IDLE)
+    {
+        return STATUS_FAIL;
+    }
+    //validate the parameters
+    if(vpPacket->firmwareupdate != NULL)
+    {
+        if(vpPacket->firmwareupdate->fwfilename != NULL)
+        {
+            strncpy(transferParameters.filename,vpPacket->firmwareupdate->fwfilename,TFTP_MAX_FILENAME_LENGTH); 
+        }
+        else 
+        {
+            status == STATUS_FAIL; 
+        }
+        if(vpPacket->firmwareupdate->fwendpoint->address != NULL)
+        {
+            ret = sscanf(vpPacket->firmwareupdate->fwendpoint->address, "%d.%d.%d.%d",ip,ip+1,ip+2,ip+3);    
+        }
+        else
+        {
+            status == STATUS_FAIL;
+        }
+        if(ret == 4 && status == STATUS_PASS)
+        {
+            transferParameters.transferEndpoint.sin_addr.s_addr = (ip[3] << 24) | (ip[2] << 16) | (ip[1] << 8) | ip[0] ;
+            transferParameters.transferEndpoint.sin_port = _htons(vpPacket->firmwareupdate->fwendpoint->port);
+            transferParameters.transferType = TFTP_TRANSFER_TYPE_GET_FILE;  
+            //send to both modules, TODO in the future use the broadcast method when all the module have their masks configured.
+            msg_sendMessage(MODULE_TFTP_CLIENT, MODULE_CONFIG_MANAGER, MSG_TYPE_TFTP_INITIATE_TRANSFER,&transferParameters);
+            //send message to initiate firmware update
+            msg_sendMessageSimple(MODULE_SYSTEM_MANAGER, MODULE_CONFIG_MANAGER, MSG_TYPE_REQUEST_STATE,SYSTEM_STATE_FIRMWARE_UPDATE);
+        }       
+    }    
+    return status;
+}
+
+/**
+* @brief Sends the firmware update respnse packet to the connected client
+* @param vStatus,boolean representing the pass fail status of the firmware update process.
+* @return void
+*/
+static void sendFirmwareUpdateResponse(bool vStatus)
+{
+    Heddoko__Packet packet;
+    heddoko__packet__init(&packet);
+    packet.type = HEDDOKO__PACKET_TYPE__UpdatedFirmwareResponse;
+    packet.has_messagestatus = true;
+    packet.messagestatus = vStatus;
+    sendProtoPacketToClient(&packet,&sgConfigServerSocket);
 }

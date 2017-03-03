@@ -36,7 +36,7 @@
 #if(CYBLE_GATT_ROLE_SERVER)
 
 #define CYBLE_GATT_DB_INDEX_COUNT                    (0x0062u)
-#define CYBLE_GATT_DB_ATT_VAL_COUNT                  (0x4Eu)
+#define CYBLE_GATT_DB_ATT_VAL_COUNT                  (0x4Fu)
 #define CYBLE_GATT_DB_MAX_VALUE_LEN                  (0x0080u)
 
 #endif /* CYBLE_GATT_ROLE_SERVER */
@@ -49,12 +49,12 @@
     #define CYBLE_GATT_DB_FLASH_CCCD_COUNT          (CYBLE_GATT_DB_CCCD_COUNT)
 #endif
 
-#define CYBLE_CUSTOM
-#define CYBLE_CUSTOM_SERVER
-#define CYBLE_BAS
-#define CYBLE_BAS_SERVER
 #define CYBLE_DIS
 #define CYBLE_DIS_SERVER
+#define CYBLE_BAS
+#define CYBLE_BAS_SERVER
+#define CYBLE_CUSTOM
+#define CYBLE_CUSTOM_SERVER
 
 
 /***************************************
@@ -234,7 +234,7 @@ void CyBle_GattcIndicationEventHandler(CYBLE_GATTC_HANDLE_VALUE_IND_PARAM_T *eve
     
 extern const CYBLE_GATTS_T cyBle_gatts;
 extern const CYBLE_GATTS_DB_T cyBle_gattDB[CYBLE_GATT_DB_INDEX_COUNT];
-extern const uint8 cyBle_attUuid128[21u][16u];
+extern const uint8 cyBle_attUuid128[22u][16u];
 
 #if(CYBLE_GATT_DB_CCCD_COUNT != 0u)
 extern uint8 cyBle_attValuesCCCD[CYBLE_GATT_DB_CCCD_COUNT];

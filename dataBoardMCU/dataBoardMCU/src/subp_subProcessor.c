@@ -301,20 +301,9 @@ static void processMessage(msg_message_t message)
 			}
 		}
 		break;
-		case MSG_TYPE_LEAVING_STATE:
+		case MSG_TYPE_REQUEST_STATE:
 		{
-			if(message.data == SYSTEM_STATE_RECORDING)
-			{
-				recordingStateExit();
-				msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL);
-				subpState = SYSTEM_STATE_IDLE;
-			}
-			else if(message.data == SYSTEM_STATE_STREAMING)
-			{
-				streamingStateExit();
-				msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL);
-				subpState = SYSTEM_STATE_IDLE;
-			}			
+		
 		}
 		break;
 		case MSG_TYPE_SUBP_POWER_DOWN_READY:

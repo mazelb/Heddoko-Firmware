@@ -38,6 +38,7 @@
 #include "conf_board.h"
 #include "common.h"
 #include "sys_systemManager.h"
+#include "bootloader.h"
 
 void  prvGetRegistersFromStack( uint32_t *pulFaultStackAddress )
 {
@@ -96,13 +97,15 @@ void UsageFault_Handler()
 {
 	while (1);
 }
-
 int main (void)
 {	
 	/*	Board initialization	*/
 	irq_initialize_vectors();
 	cpu_irq_enable();
 	sysclk_init();
+    #ifdef BOOTLOADER
+    runBootloader(); 
+    #else       
 	board_init();
 	
 	/* Insert application code here, after the board has been initialized. */
@@ -130,4 +133,5 @@ int main (void)
 			ioport_set_pin_level(LED_0_PIN, !LED_0_ACTIVE);
 		}
 	}
+    #endif
 }

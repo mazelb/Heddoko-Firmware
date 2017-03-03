@@ -16,7 +16,7 @@
 typedef enum
 {
 	MSG_TYPE_ENTERING_NEW_STATE = 0, //sent before a change state event
-	MSG_TYPE_LEAVING_STATE,			 //sent before the entering new state message is sent. 
+	MSG_TYPE_REQUEST_STATE,			 //sent when a module wishes to change the state of the brainpack
 	MSG_TYPE_READY,					 //sent after a manager deems itself ready for the state change
 	MSG_TYPE_STATE,					 //sent when the actual change takes place. 
 	MSG_TYPE_ERROR,
@@ -41,7 +41,8 @@ typedef enum
     MSG_TYPE_TFTP_TRANSFER_RESULT,
     MSG_TYPE_TFTP_PACKET_TIMEOUT, 
     MSG_TYPE_DEBUG_BLE, 
-    MSG_TYPE_TOGGLE_RECORDING
+    MSG_TYPE_TOGGLE_RECORDING, 
+    MSG_TYPE_FW_UPDATE_RESTART_REQUEST
     
 }msg_messageType_t;
 

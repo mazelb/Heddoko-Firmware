@@ -264,8 +264,7 @@ static void processMessage(msg_message_t message)
                      else
                      {
                          drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID);
-                     }
-                                       
+                     }                                       
                 }   
             }                
 		break;
@@ -319,7 +318,7 @@ static void processMessage(msg_message_t message)
 		case MSG_TYPE_SUBP_POWER_DOWN_REQ:
 			if(settingsChanges == true)
             {
-                nvm_writeToFlash(&currentSystemSettings);    
+                nvm_writeToFlash(&currentSystemSettings, NVM_SETTINGS_VALID_SIGNATURE);    
             }                
 			msg_sendMessage(MODULE_SUB_PROCESSOR, MODULE_SYSTEM_MANAGER, MSG_TYPE_SUBP_POWER_DOWN_READY,NULL);
 		break;
@@ -402,19 +401,28 @@ static void processMessage(msg_message_t message)
         case MSG_TYPE_SET_SERIAL:
            //always write to flash when setting the serial number. 
            strncpy(currentSystemSettings.serialNumber, message.parameters, 10); 
-           nvm_writeToFlash(&currentSystemSettings);             
+           nvm_writeToFlash(&currentSystemSettings, NVM_SETTINGS_VALID_SIGNATURE);             
         break;      
         case MSG_TYPE_SAVE_SETTINGS:
-            nvm_writeToFlash(&currentSystemSettings);             
+            nvm_writeToFlash(&currentSystemSettings, NVM_SETTINGS_VALID_SIGNATURE);             
         break;  
         case MSG_TYPE_TOGGLE_RECORDING:
             processToggleRecordingEvent(message.data);
         break;
         case MSG_TYPE_WIFI_CONTROL:
             processWifiControlEvent(message.data); 
-		default:
 		break;
-		
+        case MSG_TYPE_REQUEST_STATE:
+            //TODO Add some changes here
+            sendStateChangeMessage(message.data);
+            sgCurrentState = message.data; 
+        break;
+        case MSG_TYPE_FW_UPDATE_RESTART_REQUEST:
+            nvm_writeToFlash(&currentSystemSettings, NVM_SETTINGS_NEW_FIRMWARE_FLAG);
+            subp_sendForcedRestartMessage();
+        break;
+        default:
+		break;		
 	}
 }
 

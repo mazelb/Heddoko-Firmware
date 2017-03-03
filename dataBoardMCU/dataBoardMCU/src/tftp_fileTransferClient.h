@@ -17,6 +17,7 @@
 #define TFTP_MAX_BLOCK_RETRY 20
 #define TFTP_WINDOW_SIZE_STRING "8"
 #define TFTP_WINDOW_SIZE 8
+#define TFTP_MAX_FILENAME_LENGTH 255
 
 typedef enum 
 {
@@ -54,7 +55,7 @@ typedef enum
 
 typedef struct  
 {
-    char filename[255]; 
+    char filename[TFTP_MAX_FILENAME_LENGTH]; 
     tftp_transferType_t transferType; 
     struct sockaddr_in transferEndpoint;    
 }tftp_transferParameters_t;

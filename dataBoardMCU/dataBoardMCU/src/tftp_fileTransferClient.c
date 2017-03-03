@@ -195,8 +195,17 @@ static void processMessage(msg_message_t* message)
             }
             else
             {
-               endFileTransfer(TFTP_TRANSFER_RESULT_FAIL_TIMEOUT);
-               dbg_printf(DBG_LOG_LEVEL_DEBUG, "Transmission Timed out!\r\n"); 
+                if(blockRetryCount++ > TFTP_MAX_BLOCK_RETRY)
+                {
+                    endFileTransfer(TFTP_TRANSFER_RESULT_FAIL_TIMEOUT);
+                    dbg_printf(DBG_LOG_LEVEL_DEBUG, "Max retry reached!\r\n");
+                    blockRetryCount = 0;
+                }
+                else
+                {
+                    xTimerReset(tftpTimeoutTimer,TFTP_PACKET_TIMEOUT/portTICK_RATE_MS);    
+                }
+               
             }
             
         break; 
@@ -266,6 +275,7 @@ static void processPacket(uint8_t* buffer, uint32_t length)
             net_receiveUdpPacket(&transferSocket,transferSocket.buffer, transferSocket.bufferLength, 0); 
             //send the ACK if it was successful
             sendAckPacket(&transferSocket, blockNumber); 
+            lastReceiveAckedBlock = blockNumber; 
             vTaskDelay(1);    
             if(blockLength < TFTP_BLOCK_SIZE)
             {
@@ -293,7 +303,16 @@ static void processPacket(uint8_t* buffer, uint32_t length)
         blockNumber = 0;
         blockRetryCount = 0;
         blockNumber++;
-        sendWindowedBlocks(blockNumber);     
+        if(transferType == TFTP_TRANSFER_TYPE_SEND_FILE)
+        {
+            sendWindowedBlocks(blockNumber);         
+        }
+        else
+        {
+            net_receiveUdpPacket(&transferSocket,transferSocket.buffer, transferSocket.bufferLength, 0); 
+            sendAckPacket(&transferSocket, 0); 
+            lastReceiveAckedBlock = 0;
+        }        
         xTimerReset(tftpTimeoutTimer,TFTP_PACKET_TIMEOUT/portTICK_RATE_MS);        
     } 
          
@@ -340,20 +359,26 @@ static status_t startFileTransfer(tftp_transferParameters_t* transferParameters)
         expectedAckedBlock = 0; 
         lastReceiveAckedBlock = 0;
         //send write request
-        status |= sendRequestPacket(&transferSocket, TFTP_OPCODE_WRQ, transferParameters->filename);        
+        status |= sendRequestPacket(&transferSocket, TFTP_OPCODE_WRQ, transferParameters->filename);       
+        if(status == STATUS_PASS)
+        {
+            //set the transfer state to sending
+            transferState = TFTP_TRANSFER_STATE_SENDING;
+        } 
         
     }
     else
     {
         //send read request
-        status |= sendRequestPacket(&transferSocket, TFTP_OPCODE_RRQ, transferParameters->filename);        
+        status |= sendRequestPacket(&transferSocket, TFTP_OPCODE_RRQ, transferParameters->filename);   
+        if(status == STATUS_PASS)
+        {
+            //set the transfer state to sending
+            transferState = TFTP_TRANSFER_STATE_RECEIVING;
+        }     
     }
     xTimerReset(tftpTimeoutTimer,TFTP_PACKET_TIMEOUT/portTICK_RATE_MS); 
-    if(status == STATUS_PASS)
-    {     
-        //set the transfer state to sending
-        transferState = TFTP_TRANSFER_STATE_SENDING;                
-    }
+
     //now, wait for ack    
     return status; 
 }
@@ -380,10 +405,13 @@ static status_t sendRequestPacket(net_socketConfig_t* socket, tftp_opcodes_t opC
     offset += 8;
     memcpy(packetBuffer+offset,blkSizeString,5); //add a string of the desired block size
     offset += 5; 
-    memcpy(packetBuffer+offset,windowSizeOption,11); //add the block size option code
-    offset += 11;
-    memcpy(packetBuffer+offset,windowSizeString,2); //add a string of the desired block size
-    offset += 3; 
+    if(opCode == TFTP_OPCODE_WRQ)
+    {    
+        memcpy(packetBuffer+offset,windowSizeOption,11); //add the block size option code
+        offset += 11;
+        memcpy(packetBuffer+offset,windowSizeString,2); //add a string of the desired block size
+        offset += 3; 
+    }    
     net_receiveUdpPacket(&transferSocket,transferSocket.buffer, transferSocket.bufferLength, 0); 
     return net_sendUdpPacket(socket,packetBuffer, offset);         
 }
@@ -406,7 +434,8 @@ static void endFileTransfer(tftp_transferResult_t result)
     //make sure the file is closed
     sdc_closeFile(&fileObject);   
     //set the transfer state back to idle. 
-    transferState = TFTP_TRANSFER_STATE_IDLE;  
+    transferState = TFTP_TRANSFER_STATE_IDLE;      
+    xTimerStop(tftpTimeoutTimer, 100); 
 }
 
 static void sendBlock(uint16_t blockNumber)

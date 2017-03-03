@@ -25,91 +25,30 @@
    The array index definitions are located in the CYBLE_custom.h file. */
 const CYBLE_CUSTOMS_T cyBle_customs[0x06u] = {
 
-    /* Server_UART service */
+    /* Heddoko: BrainPack Status service */
     {
-        0x000Cu, /* Handle of the Server_UART service */ 
+        0x0024u, /* Handle of the Heddoko: BrainPack Status service */ 
         {
 
-            /* Server_UART_Tx_data characteristic */
+            /* BP-Status characteristic */
             {
-                0x000Eu, /* Handle of the Server_UART_Tx_data characteristic */ 
+                0x0026u, /* Handle of the BP-Status characteristic */ 
                 
                 /* Array of Descriptors handles */
                 {
-                    0x000Fu, /* Handle of the Client Characteristic Configuration descriptor */ 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    0x0027u, /* Handle of the Client Characteristic Configuration descriptor */ 
+                    0x0028u, /* Handle of the Characteristic User Description descriptor */ 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                 }, 
             },
 
-            /* Server_UART_Rx_data characteristic */
+            /* Sensor Mask characteristic */
             {
-                0x0011u, /* Handle of the Server_UART_Rx_data characteristic */ 
+                0x002Au, /* Handle of the Sensor Mask characteristic */ 
                 
                 /* Array of Descriptors handles */
                 {
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                }, 
-            },
-            {
-                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                
-                /* Array of Descriptors handles */
-                {
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                }, 
-            },
-            {
-                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                
-                /* Array of Descriptors handles */
-                {
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                }, 
-            },
-            {
-                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                
-                /* Array of Descriptors handles */
-                {
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                }, 
-            },
-        }, 
-    },
-
-    /* Heddoko: GPS service */
-    {
-        0x0012u, /* Handle of the Heddoko: GPS service */ 
-        {
-
-            /* GPS data characteristic */
-            {
-                0x0014u, /* Handle of the GPS data characteristic */ 
-                
-                /* Array of Descriptors handles */
-                {
-                    0x0015u, /* Handle of the Characteristic User Description descriptor */ 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                }, 
-            },
-
-            /* Location and Speed characteristic */
-            {
-                0x0017u, /* Handle of the Location and Speed characteristic */ 
-                
-                /* Array of Descriptors handles */
-                {
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    0x002Bu, /* Handle of the Characteristic User Description descriptor */ 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                 }, 
@@ -149,16 +88,16 @@ const CYBLE_CUSTOMS_T cyBle_customs[0x06u] = {
 
     /* Heddoko: WiFi service */
     {
-        0x0018u, /* Handle of the Heddoko: WiFi service */ 
+        0x002Cu, /* Handle of the Heddoko: WiFi service */ 
         {
 
             /* SSID characteristic */
             {
-                0x001Au, /* Handle of the SSID characteristic */ 
+                0x002Eu, /* Handle of the SSID characteristic */ 
                 
                 /* Array of Descriptors handles */
                 {
-                    0x001Bu, /* Handle of the Characteristic User Description descriptor */ 
+                    0x002Fu, /* Handle of the Characteristic User Description descriptor */ 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                 }, 
@@ -166,11 +105,11 @@ const CYBLE_CUSTOMS_T cyBle_customs[0x06u] = {
 
             /* PassPhrase characteristic */
             {
-                0x001Du, /* Handle of the PassPhrase characteristic */ 
+                0x0031u, /* Handle of the PassPhrase characteristic */ 
                 
                 /* Array of Descriptors handles */
                 {
-                    0x001Eu, /* Handle of the Characteristic User Description descriptor */ 
+                    0x0032u, /* Handle of the Characteristic User Description descriptor */ 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                 }, 
@@ -178,23 +117,23 @@ const CYBLE_CUSTOMS_T cyBle_customs[0x06u] = {
 
             /* Security type characteristic */
             {
-                0x0020u, /* Handle of the Security type characteristic */ 
+                0x0034u, /* Handle of the Security type characteristic */ 
                 
                 /* Array of Descriptors handles */
                 {
-                    0x0021u, /* Handle of the Valid Range descriptor */ 
-                    0x0022u, /* Handle of the Characteristic User Description descriptor */ 
+                    0x0035u, /* Handle of the Valid Range descriptor */ 
+                    0x0036u, /* Handle of the Characteristic User Description descriptor */ 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                 }, 
             },
 
             /* Wifi enable characteristic */
             {
-                0x0024u, /* Handle of the Wifi enable characteristic */ 
+                0x0038u, /* Handle of the Wifi enable characteristic */ 
                 
                 /* Array of Descriptors handles */
                 {
-                    0x0025u, /* Handle of the Characteristic User Description descriptor */ 
+                    0x0039u, /* Handle of the Characteristic User Description descriptor */ 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                 }, 
@@ -202,132 +141,12 @@ const CYBLE_CUSTOMS_T cyBle_customs[0x06u] = {
 
             /* Wifi Connection State characteristic */
             {
-                0x0027u, /* Handle of the Wifi Connection State characteristic */ 
+                0x003Bu, /* Handle of the Wifi Connection State characteristic */ 
                 
                 /* Array of Descriptors handles */
                 {
-                    0x0028u, /* Handle of the Characteristic User Description descriptor */ 
-                    0x0029u, /* Handle of the Client Characteristic Configuration descriptor */ 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                }, 
-            },
-        }, 
-    },
-
-    /* Heddoko: Raw data service */
-    {
-        0x002Au, /* Handle of the Heddoko: Raw data service */ 
-        {
-
-            /* Raw data characteristic */
-            {
-                0x002Cu, /* Handle of the Raw data characteristic */ 
-                
-                /* Array of Descriptors handles */
-                {
-                    0x002Du, /* Handle of the Characteristic User Description descriptor */ 
-                    0x002Eu, /* Handle of the Client Characteristic Configuration descriptor */ 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                }, 
-            },
-            {
-                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                
-                /* Array of Descriptors handles */
-                {
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                }, 
-            },
-            {
-                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                
-                /* Array of Descriptors handles */
-                {
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                }, 
-            },
-            {
-                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                
-                /* Array of Descriptors handles */
-                {
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                }, 
-            },
-            {
-                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                
-                /* Array of Descriptors handles */
-                {
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                }, 
-            },
-        }, 
-    },
-
-    /* Heddoko: BrainPack Status service */
-    {
-        0x002Fu, /* Handle of the Heddoko: BrainPack Status service */ 
-        {
-
-            /* BP-Status characteristic */
-            {
-                0x0031u, /* Handle of the BP-Status characteristic */ 
-                
-                /* Array of Descriptors handles */
-                {
-                    0x0032u, /* Handle of the Client Characteristic Configuration descriptor */ 
-                    0x0033u, /* Handle of the Characteristic User Description descriptor */ 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                }, 
-            },
-
-            /* Sensor Mask characteristic */
-            {
-                0x0035u, /* Handle of the Sensor Mask characteristic */ 
-                
-                /* Array of Descriptors handles */
-                {
-                    0x0036u, /* Handle of the Characteristic User Description descriptor */ 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                }, 
-            },
-            {
-                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                
-                /* Array of Descriptors handles */
-                {
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                }, 
-            },
-            {
-                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                
-                /* Array of Descriptors handles */
-                {
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                }, 
-            },
-            {
-                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                
-                /* Array of Descriptors handles */
-                {
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
-                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    0x003Cu, /* Handle of the Characteristic User Description descriptor */ 
+                    0x003Du, /* Handle of the Client Characteristic Configuration descriptor */ 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                 }, 
             },
@@ -336,28 +155,28 @@ const CYBLE_CUSTOMS_T cyBle_customs[0x06u] = {
 
     /* Heddoko: Recording Control service */
     {
-        0x004Fu, /* Handle of the Heddoko: Recording Control service */ 
+        0x003Eu, /* Handle of the Heddoko: Recording Control service */ 
         {
 
             /* Recording State characteristic */
             {
-                0x0051u, /* Handle of the Recording State characteristic */ 
+                0x0040u, /* Handle of the Recording State characteristic */ 
                 
                 /* Array of Descriptors handles */
                 {
-                    0x0052u, /* Handle of the Characteristic User Description descriptor */ 
-                    0x0053u, /* Handle of the Client Characteristic Configuration descriptor */ 
+                    0x0041u, /* Handle of the Characteristic User Description descriptor */ 
+                    0x0042u, /* Handle of the Client Characteristic Configuration descriptor */ 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                 }, 
             },
 
             /* Recording Request characteristic */
             {
-                0x0055u, /* Handle of the Recording Request characteristic */ 
+                0x0044u, /* Handle of the Recording Request characteristic */ 
                 
                 /* Array of Descriptors handles */
                 {
-                    0x0056u, /* Handle of the Characteristic User Description descriptor */ 
+                    0x0045u, /* Handle of the Characteristic User Description descriptor */ 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                 }, 
@@ -365,23 +184,23 @@ const CYBLE_CUSTOMS_T cyBle_customs[0x06u] = {
 
             /* Current Time characteristic */
             {
-                0x0058u, /* Handle of the Current Time characteristic */ 
+                0x0047u, /* Handle of the Current Time characteristic */ 
                 
                 /* Array of Descriptors handles */
                 {
-                    0x0059u, /* Handle of the Client Characteristic Configuration descriptor */ 
-                    0x005Au, /* Handle of the Characteristic User Description descriptor */ 
+                    0x0048u, /* Handle of the Client Characteristic Configuration descriptor */ 
+                    0x0049u, /* Handle of the Characteristic User Description descriptor */ 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                 }, 
             },
 
             /* Request Current Time characteristic */
             {
-                0x005Cu, /* Handle of the Request Current Time characteristic */ 
+                0x004Bu, /* Handle of the Request Current Time characteristic */ 
                 
                 /* Array of Descriptors handles */
                 {
-                    0x005Du, /* Handle of the Characteristic User Description descriptor */ 
+                    0x004Cu, /* Handle of the Characteristic User Description descriptor */ 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                     CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                 }, 
@@ -389,13 +208,194 @@ const CYBLE_CUSTOMS_T cyBle_customs[0x06u] = {
 
             /* Event characteristic */
             {
-                0x005Fu, /* Handle of the Event characteristic */ 
+                0x004Eu, /* Handle of the Event characteristic */ 
                 
                 /* Array of Descriptors handles */
                 {
-                    0x0060u, /* Handle of the Custom Descriptor descriptor */ 
+                    0x004Fu, /* Handle of the Custom Descriptor descriptor */ 
+                    0x0050u, /* Handle of the Characteristic User Description descriptor */ 
+                    0x0051u, /* Handle of the Client Characteristic Configuration descriptor */ 
+                }, 
+            },
+        }, 
+    },
+
+    /* Heddoko: GPS service */
+    {
+        0x0052u, /* Handle of the Heddoko: GPS service */ 
+        {
+
+            /* GPS data characteristic */
+            {
+                0x0054u, /* Handle of the GPS data characteristic */ 
+                
+                /* Array of Descriptors handles */
+                {
+                    0x0055u, /* Handle of the Characteristic User Description descriptor */ 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+
+            /* Location and Speed characteristic */
+            {
+                0x0057u, /* Handle of the Location and Speed characteristic */ 
+                
+                /* Array of Descriptors handles */
+                {
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+            {
+                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                
+                /* Array of Descriptors handles */
+                {
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+            {
+                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                
+                /* Array of Descriptors handles */
+                {
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+            {
+                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                
+                /* Array of Descriptors handles */
+                {
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+        }, 
+    },
+
+    /* Server_UART service */
+    {
+        0x0058u, /* Handle of the Server_UART service */ 
+        {
+
+            /* Server_UART_Tx_data characteristic */
+            {
+                0x005Au, /* Handle of the Server_UART_Tx_data characteristic */ 
+                
+                /* Array of Descriptors handles */
+                {
+                    0x005Bu, /* Handle of the Client Characteristic Configuration descriptor */ 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+
+            /* Server_UART_Rx_data characteristic */
+            {
+                0x005Du, /* Handle of the Server_UART_Rx_data characteristic */ 
+                
+                /* Array of Descriptors handles */
+                {
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+            {
+                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                
+                /* Array of Descriptors handles */
+                {
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+            {
+                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                
+                /* Array of Descriptors handles */
+                {
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+            {
+                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                
+                /* Array of Descriptors handles */
+                {
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+        }, 
+    },
+
+    /* Heddoko: Raw data service */
+    {
+        0x005Eu, /* Handle of the Heddoko: Raw data service */ 
+        {
+
+            /* Raw data characteristic */
+            {
+                0x0060u, /* Handle of the Raw data characteristic */ 
+                
+                /* Array of Descriptors handles */
+                {
                     0x0061u, /* Handle of the Characteristic User Description descriptor */ 
                     0x0062u, /* Handle of the Client Characteristic Configuration descriptor */ 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+            {
+                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                
+                /* Array of Descriptors handles */
+                {
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+            {
+                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                
+                /* Array of Descriptors handles */
+                {
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+            {
+                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                
+                /* Array of Descriptors handles */
+                {
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                }, 
+            },
+            {
+                CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                
+                /* Array of Descriptors handles */
+                {
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
+                    CYBLE_GATT_INVALID_ATTR_HANDLE_VALUE, 
                 }, 
             },
         }, 

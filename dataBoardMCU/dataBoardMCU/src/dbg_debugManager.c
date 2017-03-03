@@ -301,8 +301,7 @@ status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cm
 	}	
 	else if(strncmp(command, "getTime\r\n",cmdSize) == 0)
 	{
-		snprintf(responseBuffer, MAX_RESPONSE_STRING_SIZE,"Time: %s\r\n",getTimeString());
-        
+		snprintf(responseBuffer, MAX_RESPONSE_STRING_SIZE,"Time: %s\r\n",getTimeString());        
 	}
     else if(strncmp(command, "debugEn1\r\n",cmdSize) == 0)
 	{

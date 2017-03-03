@@ -45,7 +45,7 @@ nvmSettings_t defaultSettings =		// default settings that are loaded if the flas
  *			uint32_t size: size of the external structure
  * @return STATUS_PASS if successful, STATUS_FAIL if there is an error
  ***********************************************************************************************/
-status_t nvm_writeToFlash(nvmSettings_t *p_settings)
+status_t nvm_writeToFlash(nvmSettings_t *p_settings, uint32_t signature)
 {
 	uint32_t size = sizeof(nvmSettings_t); 
     if (p_settings == NULL)
@@ -56,7 +56,7 @@ status_t nvm_writeToFlash(nvmSettings_t *p_settings)
 	//erase the user signature. 
     flash_erase_user_signature();
     
-	p_settings->validSignature = NVM_SETTINGS_VALID_SIGNATURE;	// assign a valid signature before writing
+	p_settings->validSignature = signature;	// assign a valid signature before writing
 	memcpy(memBuffer, p_settings, sizeof(nvmSettings_t)); 
 	// write the data to flash
 	if (flash_write_user_signature(memBuffer, 128) == 0)
@@ -67,13 +67,13 @@ status_t nvm_writeToFlash(nvmSettings_t *p_settings)
 	else
 	{
 		// failed to write
-		dbg_printString(DBG_LOG_LEVEL_ERROR, "Failed to write to Flash\r\n");
+		//dbg_printString(DBG_LOG_LEVEL_ERROR, "Failed to write to Flash\r\n");
 		return STATUS_FAIL;
 	}
 }
 
 /***********************************************************************************************
- * nvm_writeToFlash(nvmSettings_t *p_settings, uint32_t size)
+ * nvm_readFromFlash(nvmSettings_t *p_settings, uint32_t size)
  * @brief Read settings structure from flash
  * @param nvmSettings_t *p_settings: pointer to external structure holding settings data,
  *			uint32_t size: size of the external structure
@@ -92,13 +92,13 @@ status_t nvm_readFromFlash(nvmSettings_t *p_settings)
 	if (flash_read_user_signature(memBuffer, 128) == 0)
 	{
 		memcpy(p_settings,memBuffer,sizeof(nvmSettings_t)); 
-        if (p_settings->validSignature != NVM_SETTINGS_VALID_SIGNATURE)
+        if (p_settings->validSignature != NVM_SETTINGS_VALID_SIGNATURE && p_settings->validSignature != NVM_SETTINGS_NEW_FIRMWARE_FLAG)
 		{
 			// the flash has not been written before.
-			dbg_printString(DBG_LOG_LEVEL_WARNING, "Flash has never been written to\r\n");
+			//dbg_printString(DBG_LOG_LEVEL_WARNING, "Flash has never been written to\r\n");
 			
 			// write the default settings 
-			if (nvm_writeToFlash(&defaultSettings)	== STATUS_PASS)
+			if (nvm_writeToFlash(&defaultSettings,NVM_SETTINGS_VALID_SIGNATURE)	== STATUS_PASS)
 			{
 				memcpy(p_settings, &defaultSettings, sizeof(nvmSettings_t));
 				return STATUS_PASS;	// default settings written successfully
@@ -113,7 +113,7 @@ status_t nvm_readFromFlash(nvmSettings_t *p_settings)
 	else
 	{
 		// failed to write
-		dbg_printString(DBG_LOG_LEVEL_ERROR, "Failed to read Flash\r\n");
+		//dbg_printString(DBG_LOG_LEVEL_ERROR, "Failed to read Flash\r\n");
 		return STATUS_FAIL;
 	}
 }

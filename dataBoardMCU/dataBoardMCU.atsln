@@ -7,17 +7,23 @@ Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "dataBoardMCU", "dataBoardMC
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Bootloader|ARM = Bootloader|ARM
 		Debug|ARM = Debug|ARM
 		DebugOnHW|ARM = DebugOnHW|ARM
 		Release|ARM = Release|ARM
+		ReleaseHW|ARM = ReleaseHW|ARM
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{103BCAAA-9896-4430-9E37-B62CE3E4F04B}.Bootloader|ARM.ActiveCfg = Bootloader|ARM
+		{103BCAAA-9896-4430-9E37-B62CE3E4F04B}.Bootloader|ARM.Build.0 = Bootloader|ARM
 		{103BCAAA-9896-4430-9E37-B62CE3E4F04B}.Debug|ARM.ActiveCfg = Debug|ARM
 		{103BCAAA-9896-4430-9E37-B62CE3E4F04B}.Debug|ARM.Build.0 = Debug|ARM
 		{103BCAAA-9896-4430-9E37-B62CE3E4F04B}.DebugOnHW|ARM.ActiveCfg = DebugOnHW|ARM
 		{103BCAAA-9896-4430-9E37-B62CE3E4F04B}.DebugOnHW|ARM.Build.0 = DebugOnHW|ARM
 		{103BCAAA-9896-4430-9E37-B62CE3E4F04B}.Release|ARM.ActiveCfg = Release|ARM
 		{103BCAAA-9896-4430-9E37-B62CE3E4F04B}.Release|ARM.Build.0 = Release|ARM
+		{103BCAAA-9896-4430-9E37-B62CE3E4F04B}.ReleaseHW|ARM.ActiveCfg = ReleaseHW|ARM
+		{103BCAAA-9896-4430-9E37-B62CE3E4F04B}.ReleaseHW|ARM.Build.0 = ReleaseHW|ARM
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

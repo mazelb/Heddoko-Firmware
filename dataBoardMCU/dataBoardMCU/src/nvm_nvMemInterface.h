@@ -15,6 +15,7 @@
 #include "dbg_debugManager.h"
 
 #define NVM_SETTINGS_VALID_SIGNATURE	0x900df00f
+#define NVM_SETTINGS_NEW_FIRMWARE_FLAG  0xB16B00B5
 #define NVM_MAX_SUIT_NAME_SIZE			10
 #pragma pack(push, 1)
 typedef struct  
@@ -31,7 +32,7 @@ typedef struct
     dbg_debugConfiguration_t debugCfg;
 }nvmSettings_t;
 #pragma	pack(pop)
-status_t nvm_writeToFlash(nvmSettings_t *p_settings);
+status_t nvm_writeToFlash(nvmSettings_t *p_settings, uint32_t signature);
 status_t nvm_readFromFlash(nvmSettings_t *p_settings);
 status_t nvm_eraseFlash(void);
 
