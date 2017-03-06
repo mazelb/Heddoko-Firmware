@@ -41,9 +41,11 @@
 #include "mgr_managerTask.h"
 #include "dat_dataRouter.h"
 #include "chrg_chargeMonitor.h"
+#include "bootloader.h"
 
 extern void xPortSysTickHandler(void);
 extern void vApplicationMallocFailedHook( void );
+extern drv_uart_config_t uart1Config;
 void HardFault_Handler()
 {
 	while(1); 
@@ -83,6 +85,13 @@ int main (void)
 	sysclk_init();	
 	
 	board_init();
+    #ifdef BOOTLOADER
+    if(drv_uart_init(&uart1Config) != STATUS_PASS)
+    {
+        while(1); //spin here
+    }
+    runBootloader();
+    #else    
 	brd_enableWatchdog();
 	//drv_gpio_initializeAll();
 	//drv_gpio_setPinState(DRV_GPIO_PIN_LED_RED, DRV_GPIO_PIN_STATE_LOW);
@@ -113,4 +122,5 @@ int main (void)
 			ioport_set_pin_level(LED_0_PIN, !LED_0_ACTIVE);
 		}
 	}
+    #endif
 }

@@ -112,7 +112,6 @@ status_t pkt_processIncomingByte(pkt_rawPacket_t* rawPacket, uint8_t byte)
 		if(rawPacket->bytesReceived > 0)
 		{
 			//this means there was an error receiving a packet
-			//debugStructure.receiveErrorCount++;
 			errorCount++; //not sure what this will do...
 		}
 		//reset the counts and everything for reception of the packet
