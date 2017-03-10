@@ -334,7 +334,7 @@ __attribute__(( naked )) void PendSV_Handler( void )
 	);
 }
 /*-----------------------------------------------------------*/
-
+#ifndef BOOTLOADER
 void SysTick_Handler( void )
 {
 	/* If using preemption, also force a context switch. */
@@ -356,6 +356,7 @@ void SysTick_Handler( void )
 	}
 	portCLEAR_INTERRUPT_MASK_FROM_ISR( 0 );
 }
+#endif
 /*-----------------------------------------------------------*/
 
 #if configUSE_TICKLESS_IDLE == 1

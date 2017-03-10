@@ -52,6 +52,8 @@ src\LTC2941-1.c
 
 src\mgr_managerTask.c
 
+src\nvm_nvMemInterface.c
+
 src\pkt_packetParser.c
 
 src\sen_sensorHandler.c

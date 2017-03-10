@@ -187,20 +187,6 @@ void mgr_managerTask(void *pvParameters)
 			}
 		}
 		vTaskDelay(10);
-		//drv_gpio_getPinState(DRV_GPIO_PIN_PWR_BTN,&pwrButtonState);
-		//if(pwrButtonState == DRV_GPIO_PIN_STATE_LOW)
-		//{
-			//pwrButtonHeldLowCount++;
-		//}
-		//else
-		//{
-			//pwrButtonHeldLowCount = 0;
-		//}
-		//if(pwrButtonHeldLowCount == 75)
-		//{
-			////reset the board.
-			//rstc_start_software_reset(RSTC);
-		//}
 	}
 }
 

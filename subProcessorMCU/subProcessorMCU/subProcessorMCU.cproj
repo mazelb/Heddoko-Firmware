@@ -700,7 +700,6 @@
       <Value>ARM_MATH_CM4=false</Value>
       <Value>printf=iprintf</Value>
       <Value>UDD_ENABLE</Value>
-      <Value>__FREERTOS__</Value>
       <Value>BOOTLOADER</Value>
     </ListValues>
   </armgcc.compiler.symbols.DefSymbols>
@@ -1066,6 +1065,12 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\mgr_managerTask.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\nvm_nvMemInterface.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\nvm_nvMemInterface.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\pkt_packetCommandsList.h">

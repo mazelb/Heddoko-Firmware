@@ -197,7 +197,7 @@ void sen_sensorHandlerTask(void *pvParameters)
 				status = pkt_getPacketVarSizeTimed(sensorPortConfig, &tempPacket, 1);					// NOTE: needs a pointer to the packet and not the packet.payload
 
 				//status = STATUS_PASS;
-				// perform a short check to verify the integrity of the packet (tempPacket.payloadSize >= (SEN_DEFAULT_DATA_FRAME_LENGTH-1)) ||
+				// perform a short check to verify the integrity of the packet
                 
 				if (status != STATUS_PASS ||  
 					(isExpectedSensorId(sensorFullFrame[bufferOffset + SEN_SENSOR_FRAME_SENID_OFFSET], sensorID)) != STATUS_PASS

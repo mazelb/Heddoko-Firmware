@@ -12,7 +12,9 @@
 #include <string.h> 
 #include "drv_gpio.h"
 #include "drv_led.h"
-//#include "nvm_nvMemInterface.h"
+#include "drv_uart.h"
+#include "pkt_packetParser.h"
+#include "nvm_nvMemInterface.h"
 //#include "Board_Init.h"
 
 #define FIRMWARE_LOCATION 0x00010000u + IFLASH0_ADDR
@@ -22,6 +24,8 @@
 #define FIRMWARE_IMAGE_NAME "0:firmware.bin"
 #define CRCCU_TIMEOUT   0xFFFFFFFF
 #define FIRMWARE_BUFFER_SIZE 512
+
+extern drv_uart_config_t uart1Config;
 
 //FATFS fs;
 COMPILER_ALIGNED (512)
@@ -34,6 +38,11 @@ static void start_application(void);
 status_t __attribute__((optimize("O0"))) loadNewFirmware(char* filename);
 static void errorBlink(); 
 static void successBlink();
+static status_t getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* packet, uint32_t maxTime);
+static status_t processPacket(pkt_rawPacket_t *packet); 
+static void sendBeginFlashProcessMessage();
+
+volatile uint32_t sgSysTickCount = 0; 
 
 typedef struct 
 {
@@ -44,6 +53,17 @@ typedef struct
     uint32_t pbCRC; 
 }firmwareHeader_t;
 
+
+/**
+ * \brief Handler for System Tick interrupt.
+ */
+#ifdef BOOTLOADER
+void SysTick_Handler(void)
+{
+	sgSysTickCount++;
+}
+#endif
+
 /**
  * runBootloader(void)
  * @brief This is the bootloader program, it is run only when the binary is compiled in bootloader mode. 
@@ -53,34 +73,64 @@ typedef struct
  */
 void runBootloader()
 {
-	//nvmSettings_t settings;
-    //
-    //nvm_readFromFlash(&settings); 
-    
+	nvmSettings_t settings;
+	
+	nvm_readFromFlash(&settings);
+    char c; 
+    pkt_rawPacket_t packet; 
     status_t status = STATUS_PASS; 
-	drv_gpio_initializeAll();
-	//pmc_enable_periph_clk(ID_CRCCU);   		    
+	drv_gpio_pin_state_t pwrButtonState = DRV_GPIO_PIN_STATE_HIGH;  		    
 	board_init();	
-    
-	drv_gpio_pin_state_t sw1State = DRV_GPIO_PIN_STATE_HIGH, sw2State = DRV_GPIO_PIN_STATE_HIGH, lboState = DRV_GPIO_PIN_STATE_HIGH; 	
-	//check pins for seeing if the bootloader should be entered. 
 	uint32_t enterBootloader = 0;
-	//drv_gpio_getPinState(DRV_GPIO_PIN_AC_SW1,&sw1State);
-	//drv_gpio_getPinState(DRV_GPIO_PIN_AC_SW2,&sw2State);
 	int i = 0; 
+    int failCount = 0;
+    uint16_t packetCount; 
 	drv_gpio_setPinState(DRV_GPIO_PIN_LED_GREEN, DRV_GPIO_PIN_STATE_LOW);
 	drv_gpio_setPinState(DRV_GPIO_PIN_LED_BLUE, DRV_GPIO_PIN_STATE_LOW); 
-
+    //check the nvm signature
+    if(settings.validSignature == NVM_SETTINGS_NEW_FIRMWARE_FLAG)
+    {
+        enterBootloader = 1; 
+    }    
 	if(enterBootloader == 1)
 	{
-		//load the new firmware only if the card was initialized. 		
-		if(status == STATUS_PASS)
+		drv_gpio_initializeAll();
+        drv_uart_init(&uart1Config); 
+        //enable the systick timer
+        SysTick->LOAD = ( sysclk_get_cpu_hz() / 1000 ) - 1UL; //set the systick load to trigger every ms
+        SysTick->CTRL = SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk;	        
+        //turn on the power for the data board       
+        drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_HIGH);
+        //wait until we get a packet from the data board to know it is alive. 
+        if(getPacketTimed(&uart1Config, &packet, 3000) == STATUS_PASS)
+        {
+            processPacket(&packet); 
+        }        
+        //send the enter bootloader command   
+        sendBeginFlashProcessMessage();         
+            
+		while(1)
+        {
+            if(getPacketTimed(&uart1Config, &packet, 1000) == STATUS_PASS)
+            {
+                processPacket(&packet);
+            }
+            else
+            {
+                failCount++;
+                if(failCount > 10)
+                {
+                    status = STATUS_FAIL
+                    break; 
+                }
+            }            
+        }
+        if(status == STATUS_PASS)
 		{		
 			//set the LED to purple during the firmware load
 			drv_gpio_setPinState(DRV_GPIO_PIN_LED_GREEN, DRV_GPIO_PIN_STATE_HIGH);
 			drv_gpio_setPinState(DRV_GPIO_PIN_LED_BLUE, DRV_GPIO_PIN_STATE_LOW); 
-			drv_gpio_setPinState(DRV_GPIO_PIN_LED_RED, DRV_GPIO_PIN_STATE_LOW); 
-			status = loadNewFirmware(FIRMWARE_IMAGE_NAME);						
+			drv_gpio_setPinState(DRV_GPIO_PIN_LED_RED, DRV_GPIO_PIN_STATE_LOW); 				
 		}
 		if(status != STATUS_PASS)
 		{
@@ -91,8 +141,7 @@ void runBootloader()
 		{
 			successBlink();    
 		}
-		//unmount the drive
-		//f_mount(LUN_ID_SD_MMC_0_MEM, NULL);		
+        SysTick->CTRL = SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_CLKSOURCE_Msk; //disable the systick			
 	} 	   
 	start_application();	
 }
@@ -214,4 +263,58 @@ static void successBlink()
 		delay_ms(200); 
 		drv_gpio_togglePin(DRV_GPIO_PIN_LED_GREEN); 	
 	}	
+}
+
+
+static status_t getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* packet, uint32_t maxTime)
+{
+    status_t result = STATUS_PASS;
+    char val;
+    int pointer = 0;
+    uint32_t startTime = sgSysTickCount;
+    while(1)
+    {
+        result = drv_uart_getChar(uartConfig,&val);
+        if(result == STATUS_PASS)
+        {
+            //process the byte as it comes in
+            if(pkt_processIncomingByte(packet,val) == STATUS_PASS)
+            {
+                //the packet is complete
+                result = STATUS_PASS;
+                break;
+            }
+        }
+        else
+        {
+            //check if we've timed out yet...
+            if(sgSysTickCount > (startTime + maxTime))
+            {
+                //return fail, we've timed out.
+                result = STATUS_FAIL;
+                break;
+            }            
+        }
+    }
+    return result;
+}
+
+static status_t processPacket(pkt_rawPacket_t *packet)
+{
+    status_t status = STATUS_PASS;
+    
+    return status; 
+    
+}
+
+static void sendBeginFlashProcessMessage()
+{
+    uint8_t packetData[6] = {0}; 
+    packetData[0] = PACKET_TYPE_SUB_PROCESSOR;
+    packetData[1] = PACKET_COMMAND_ID_SUBP_BEGIN_FLASH_PROCESS;
+    packetData[2] = 0x55;
+    packetData[3] = 0xAA;
+    packetData[4] = 0x55;
+    packetData[5] = 0xAA;
+    pkt_sendRawPacket(&uart1Config, packetData, 6);
 }
