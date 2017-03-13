@@ -46,7 +46,7 @@ SEARCH_DIR(.)
 /* Memory Spaces Definitions */
 MEMORY
 {
-	rom (rx)  : ORIGIN = 0x00400000, LENGTH = 0x00020000 /* flash, 128K */
+	rom (rx)  : ORIGIN = 0x0045C000, LENGTH = 0x0001A400 /* flash, 107K for release version */
 	ram (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00010000 /* sram, 64K */
 }
 

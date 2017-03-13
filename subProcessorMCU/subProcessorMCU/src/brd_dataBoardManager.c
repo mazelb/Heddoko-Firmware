@@ -17,6 +17,7 @@
 #include "drv_gpio.h"
 #include "drv_uart.h"
 #include "LTC2941-1.h"
+#include "nvm_nvMemInterface.h"
 
 /*	Local defines	*/
 #define DATA_BOARD_STATUS_MSG_DELAY		30	// actual delay is 200 times this value in milliseconds
@@ -38,7 +39,7 @@ void vPwrDwnRspTimerCallback(xTimerHandle xTimer);
 /*	Extern variables	*/
 extern xQueueHandle mgr_eventQueue;
 extern drv_uart_config_t uart0Config, uart1Config;
-
+extern  nvmSettings_t settings; 
 /*	Local variables	*/
 pkt_rawPacket_t dataBoardPacket;
 xQueueHandle queue_dataBoard = NULL;		// queue to pass data to the data router
@@ -47,6 +48,7 @@ xTimerHandle pwrDwnRspTimeoutTimer = NULL;
 static bool pwrDwnRspTimerActive = false;
 bool usbCommState = false;	// indicates whether comm is detected on USB
 static drv_uart_config_t *dataBoardPortConfig;
+
 
 /*	Function definitions	*/
 
@@ -139,8 +141,7 @@ void processPacket(pkt_rawPacket_t *packet)
 				// use semaphore to access the UART
 				getSystemStatus(&systemStatus);
 				if (xSemaphoreTake(semaphore_dataBoardUart, 100) == pdTRUE)
-				{
-					
+				{					
                     sendStatus(systemStatus);
 					xSemaphoreGive(semaphore_dataBoardUart);
 				}
@@ -193,7 +194,16 @@ void processPacket(pkt_rawPacket_t *packet)
                 {
                     rstc_start_software_reset(RSTC);	
                 }                    
+			break; 
+			case PACKET_COMMAND_ID_SUBP_ENTER_BOOTLOADER:
+			//check verification bytes to make sure the packet is valid.
+			if((packet->payload[2] == 0x55) && (packet->payload[3] == 0xAA))
+			{
+    			nvm_writeToFlash(&settings, NVM_SETTINGS_NEW_FIRMWARE_FLAG); 
+                rstc_start_software_reset(RSTC);
+			}
 			break;            
+                       
 			default:
 			break;
 		}
@@ -292,8 +302,7 @@ static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet)
  ************************************************************************/
 static void sendDateTimeResp(status_t status)
 {
-	uint8_t response[3] = {0};
-		
+	uint8_t response[3] = {0};		
 	if (status == STATUS_PASS)		// date and time successfully written
 	{
 		response[0] = PACKET_TYPE_SUB_PROCESSOR;

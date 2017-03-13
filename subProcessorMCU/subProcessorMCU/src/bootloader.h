@@ -16,6 +16,7 @@
 #ifndef BOOTLOADER_H_
 #define BOOTLOADER_H_
 
+#define FIRMWARE_BLOCK_SIZE 512
 
 void runBootloader(); 
 

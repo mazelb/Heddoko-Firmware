@@ -15,13 +15,17 @@
 #include "drv_uart.h"
 #include "pkt_packetParser.h"
 #include "nvm_nvMemInterface.h"
+#include "pkt_packetCommandsList.h"
 //#include "Board_Init.h"
 
-#define FIRMWARE_LOCATION 0x00010000u + IFLASH0_ADDR
-#define APP_START_ADDRESS 0x00410000u //in final it will go to 0x00410000
+//Bootloader has a max size of 0x5800 = 44*512 pages = 22528
+//Max space on processor is 0x20000 = 256*512 pages = 131072
+//Max code size is 0x1A800 = 212*512 pages = 108544
+
+#define FIRMWARE_LOCATION 0x00005800u + IFLASH0_ADDR
+#define APP_START_ADDRESS 0x00458000u 
+#define APP_END_ADDRESS 0x00420000u 
 #define FIRMWARE_FILE_HEADER_BYTES 0x55AA55AA
-#define FIRMWARE_TEMPORARY_LOCATION 0x00488000
-#define FIRMWARE_IMAGE_NAME "0:firmware.bin"
 #define CRCCU_TIMEOUT   0xFFFFFFFF
 #define FIRMWARE_BUFFER_SIZE 512
 
@@ -35,14 +39,18 @@ static status_t initializeSDCard();
 static void start_application(void);
 //static uint32_t compute_crc(uint8_t *p_buffer, uint32_t ul_length,
 //uint32_t ul_polynomial_type);
-status_t __attribute__((optimize("O0"))) loadNewFirmware(char* filename);
 static void errorBlink(); 
 static void successBlink();
 static status_t getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* packet, uint32_t maxTime);
 static status_t processPacket(pkt_rawPacket_t *packet); 
+static status_t processFirmwareDataBlock(pkt_rawPacket_t *packet);
 static void sendBeginFlashProcessMessage();
+static void prepareForNewFirmware(); 
+static void sendFirmwareBlockAck(uint16_t blockNumber);
 
 volatile uint32_t sgSysTickCount = 0; 
+volatile uint16_t totalFirmwareBlocks = 0;
+volatile uint16_t lastReceivedFirmwareBlocks = 0;
 
 typedef struct 
 {
@@ -84,7 +92,7 @@ void runBootloader()
 	uint32_t enterBootloader = 0;
 	int i = 0; 
     int failCount = 0;
-    uint16_t packetCount; 
+
 	drv_gpio_setPinState(DRV_GPIO_PIN_LED_GREEN, DRV_GPIO_PIN_STATE_LOW);
 	drv_gpio_setPinState(DRV_GPIO_PIN_LED_BLUE, DRV_GPIO_PIN_STATE_LOW); 
     //check the nvm signature
@@ -107,31 +115,77 @@ void runBootloader()
             processPacket(&packet); 
         }        
         //send the enter bootloader command   
-        sendBeginFlashProcessMessage();         
-            
-		while(1)
+        sendBeginFlashProcessMessage();   
+        while(failCount < 5)
         {
             if(getPacketTimed(&uart1Config, &packet, 1000) == STATUS_PASS)
             {
-                processPacket(&packet);
+                if(packet.payload[1] == PACKET_COMMAND_ID_SUBP_BEGIN_FLASH_RESP)
+                {
+                    if(packet.payload[2] == 1)
+                    {
+                        //read the total firmware block count. 
+                        totalFirmwareBlocks = (uint16_t)(packet.payload[3] << 8) + packet.payload[2];
+                        prepareForNewFirmware();
+                    }
+                    else
+                    {
+                        //failed to begin firmware update
+                        errorBlink();
+                        //reset the update firmware flag in the NVM
+                        nvm_writeToFlash(&settings, NVM_SETTINGS_VALID_SIGNATURE);
+                        //reset the processor
+                        rstc_start_software_reset(RSTC);                        
+                    }
+                    break;
+                }
+            }
+            failCount++;          
+        }
+        if(status == STATUS_PASS)
+        {
+            //set the LED to purple during the firmware load
+            drv_gpio_setPinState(DRV_GPIO_PIN_LED_GREEN, DRV_GPIO_PIN_STATE_HIGH);
+            drv_gpio_setPinState(DRV_GPIO_PIN_LED_BLUE, DRV_GPIO_PIN_STATE_LOW);
+            drv_gpio_setPinState(DRV_GPIO_PIN_LED_RED, DRV_GPIO_PIN_STATE_LOW);
+        }      
+        //if we have reached here it means we are starting the load process. 
+        //send ACK block 0, to start the process. 
+        lastReceivedFirmwareBlocks = 0;
+        sendFirmwareBlockAck(lastReceivedFirmwareBlocks);                  
+		while(1)
+        {
+            if(getPacketTimed(&uart1Config, &packet, 1000) == STATUS_PASS)
+            {                
+                if(processFirmwareDataBlock(&packet) == STATUS_PASS)
+                {
+                    failCount = 0;
+                    sendFirmwareBlockAck(lastReceivedFirmwareBlocks);    
+                    //we received all the blocks
+                    if(lastReceivedFirmwareBlocks == totalFirmwareBlocks)
+                    {
+                        //write the flag to make the processor boot normally.
+                        nvm_writeToFlash(&settings, NVM_SETTINGS_VALID_SIGNATURE);
+                        status = STATUS_PASS; 
+                        break;
+                    } 
+                }
+                else
+                {
+                   sendFirmwareBlockAck(lastReceivedFirmwareBlocks);  
+                }
+                
             }
             else
             {
                 failCount++;
                 if(failCount > 10)
                 {
-                    status = STATUS_FAIL
+                    status = STATUS_FAIL;
                     break; 
                 }
             }            
         }
-        if(status == STATUS_PASS)
-		{		
-			//set the LED to purple during the firmware load
-			drv_gpio_setPinState(DRV_GPIO_PIN_LED_GREEN, DRV_GPIO_PIN_STATE_HIGH);
-			drv_gpio_setPinState(DRV_GPIO_PIN_LED_BLUE, DRV_GPIO_PIN_STATE_LOW); 
-			drv_gpio_setPinState(DRV_GPIO_PIN_LED_RED, DRV_GPIO_PIN_STATE_LOW); 				
-		}
 		if(status != STATUS_PASS)
 		{
 			//blink an error, we should still be able to start the firmware afterwards. 
@@ -237,8 +291,7 @@ static void errorBlink()
 {
 	drv_gpio_setPinState(DRV_GPIO_PIN_LED_RED, DRV_GPIO_PIN_STATE_HIGH); 
 	drv_gpio_setPinState(DRV_GPIO_PIN_LED_GREEN, DRV_GPIO_PIN_STATE_HIGH); 
-	drv_gpio_setPinState(DRV_GPIO_PIN_LED_BLUE, DRV_GPIO_PIN_STATE_HIGH); 
-	
+	drv_gpio_setPinState(DRV_GPIO_PIN_LED_BLUE, DRV_GPIO_PIN_STATE_HIGH); 	
 	int i = 0;
 	for(i=0; i<10; i++)
 	{
@@ -302,10 +355,50 @@ static status_t getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* p
 static status_t processPacket(pkt_rawPacket_t *packet)
 {
     status_t status = STATUS_PASS;
-    
+    if(packet->payload[0] == PACKET_TYPE_SUB_PROCESSOR)
+    {
+        switch(packet->payload[1])
+        {
+            case PACKET_COMMAND_ID_SUBP_BEGIN_FLASH_RESP:
+                
+            break;
+            case PACKET_COMMAND_ID_SUBP_FLASH_DATA_BLOCK:
+            
+            break;
+        }
+    }
+    return status;     
+}
+
+static status_t processFirmwareDataBlock(pkt_rawPacket_t *packet)
+{
+    status_t status = STATUS_PASS;
+    uint16_t packetNumber = 0;
+    uint32_t destAddress = 0; 
+    //confirm the packet type
+    if(packet->payload[1] == PACKET_COMMAND_ID_SUBP_FLASH_DATA_BLOCK)
+    {
+        packetNumber = (uint16_t)(packet->payload[3] << 8) + packet->payload[2];   
+        destAddress = APP_START_ADDRESS + (packetNumber-1)*FIRMWARE_BUFFER_SIZE;  
+        if(flash_write(destAddress, (void*)(packet->payload+4),packet->payloadSize-4,0) == 0)
+        {
+            status = STATUS_PASS;
+            lastReceivedFirmwareBlocks = packetNumber; 
+        }
+        else
+        {
+            status = STATUS_FAIL;
+        }
+    }
+    else
+    {
+        status = STATUS_FAIL;
+    }   
     return status; 
     
 }
+
+
 
 static void sendBeginFlashProcessMessage()
 {
@@ -317,4 +410,32 @@ static void sendBeginFlashProcessMessage()
     packetData[4] = 0x55;
     packetData[5] = 0xAA;
     pkt_sendRawPacket(&uart1Config, packetData, 6);
+}
+
+static void prepareForNewFirmware()
+{
+    //once this function is called there is no going back
+    //the previous version of firmware is erased.
+    int i = 0, retVal = 0, error;
+    //unlock the memory location
+    retVal = flash_unlock(APP_START_ADDRESS,0x420000ul,NULL,NULL);	
+    
+    for(i=APP_START_ADDRESS;i< APP_END_ADDRESS;i+=0x200)
+    {
+        retVal = flash_erase_page(i,IFLASH_ERASE_PAGES_4);
+        if(retVal != 0)
+        {
+            error++;
+        }
+    }
+}
+
+static void sendFirmwareBlockAck(uint16_t blockNumber)
+{
+    uint8_t packetData[4] = {0};
+    packetData[0] = PACKET_TYPE_SUB_PROCESSOR;
+    packetData[1] = PACKET_COMMAND_ID_SUBP_FLASH_DATA_BLOCK_ACK;
+    packetData[2] = (uint8_t)(blockNumber & 0xFF);
+    packetData[3] = (uint8_t)((blockNumber >> 8) & 0xFF);
+    pkt_sendRawPacket(&uart1Config, packetData, 4);
 }

@@ -21,7 +21,7 @@
 xQueueHandle mgr_eventQueue = NULL;
 xTimerHandle pwrButtonTimer = NULL;
 volatile mgr_systemStates_t currentSystemState = SYS_STATE_POWER_OFF; 
-
+nvmSettings_t settings;
 //external dependencies
 
 extern drv_uart_config_t uart0Config;
