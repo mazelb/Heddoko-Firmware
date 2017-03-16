@@ -17,7 +17,6 @@
 
 #define FIRMWARE_LOCATION 0x00010000u + IFLASH0_ADDR
 #define APP_START_ADDRESS 0x00410000u //in final it will go to 0x00410000
-#define FIRMWARE_FILE_HEADER_BYTES 0x55AA55AA
 #define FIRMWARE_TEMPORARY_LOCATION 0x00488000
 #define FIRMWARE_IMAGE_NAME "0:firmware.bin"
 #define CRCCU_TIMEOUT   0xFFFFFFFF
@@ -35,14 +34,7 @@ status_t __attribute__((optimize("O0"))) loadNewFirmware(char* filename);
 static void errorBlink(); 
 static void successBlink();
 
-typedef struct 
-{
-	uint32_t fileHeaderBytes;
-	uint32_t dbBinLength; 	
-    uint32_t dbCRC; 
-    uint32_t pbBinLength; 
-    uint32_t pbCRC; 
-}firmwareHeader_t;
+
 
 /**
  * runBootloader(void)

@@ -368,8 +368,7 @@ static void processMessage(msg_message_t message)
         break; 
         case MSG_TYPE_WIFI_CONFIG:
             settingsChanges = true;  //set flag to have settings saved
-            memcpy(&(currentSystemSettings.defaultWifiConfig),message.parameters, sizeof(net_wirelessConfig_t));
-            
+            memcpy(&(currentSystemSettings.defaultWifiConfig),message.parameters, sizeof(net_wirelessConfig_t));            
         break;
 		case MSG_TYPE_SUBP_STATUS:
 		    subpReceivedStatus = (subp_status_t*)message.parameters;		
@@ -392,8 +391,7 @@ static void processMessage(msg_message_t message)
                         else
                         {
                             drv_led_set(DRV_LED_GREEN, DRV_LED_SOLID);      
-                        }
-                        
+                        }                        
                     }
                 }   
             }                
