@@ -471,8 +471,7 @@ static void sendBlock(uint16_t blockNumber)
             expectedAckedBlock = blockNumber++;    
         }
         drv_gpio_setPinState(DRV_GPIO_PIN_AUX_GPIO, DRV_GPIO_PIN_STATE_LOW);
-        //get ready to receive the response
-        //net_receiveUdpPacket(&transferSocket,transferSocket.buffer, transferSocket.bufferLength, 0);        
+        //get ready to receive the response    
     }
     else
     {

@@ -14,6 +14,7 @@
 #include "dbg_debugManager.h"
 #include "heddokoPacket.pb-c.h"
 #include "pkt_packetParser.h"
+#include "bootloader.h"
 
 #define FIRMWARE_BLOCK_SIZE 512
 
@@ -32,6 +33,9 @@ static status_t setDateTimeFromPacket(pkt_rawPacket_t *packet);
 static void processStreamConfig(subp_streamConfig_t* streamConfig);
 static void processRecordConfig(subp_recordingConfig_t* recordConfig);
 static status_t beginBootloadingProcess();
+static void sendBeginFlashResponse(drv_uart_config_t* uartConfig, status_t status);
+static void sendFirmwareBlock(drv_uart_config_t* uartConfig, uint16_t blockNumber);
+
 void protoPacketInit();
 //state change event functions
 static status_t recordingStateEntry();
@@ -80,6 +84,7 @@ uint8_t serializedDataBuffer[MAX_SERIALIZED_DATA_LENGTH]; //storage buffer for t
 
 volatile uint8_t dataLogBufferA[DATALOG_MAX_BUFFER_SIZE] = {0} , dataLogBufferB[DATALOG_MAX_BUFFER_SIZE] = {0};
 volatile uint16_t firmwareBlockCount = 0; 
+volatile size_t pbFirmwareBinStart = 0;
 sdc_file_t dataLogFile =
 {
 	.bufferIndexA = 0,
@@ -236,11 +241,7 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 						net_sendUdpPacket(&streamingSocket, serializedDataBuffer, serializedLength);
 					}
 				}
-				lastTimeStamp = rawFullFrame->timeStamp;
-                if(rawFullFrame->sensorCount != 9)
-                {
-				    //dbg_printf(DBG_LOG_LEVEL_DEBUG,"%d,%d,%d,%d,%d \r\n",packetReceivedCount++,rawFullFrame->timeStamp,result,errorCount,drv_uart_getDroppedBytes(&subpUart));
-                }                
+				lastTimeStamp = rawFullFrame->timeStamp;            
 								
 			break;
 			case PACKET_COMMAND_ID_SUBP_GET_DATE_TIME_RESP:
@@ -645,6 +646,8 @@ static status_t beginBootloadingProcess()
             {           
                 //calculate block count    
                 firmwareBlockCount = ((uint16_t)firmwareHeader.pbBinLength / FIRMWARE_BLOCK_SIZE);
+                //calculate the start of sub processor firmware
+                pbFirmwareBinStart = firmwareHeader.dbBinLength + sizeof(firmwareHeader_t); 
                 if((firmwareHeader.pbBinLength%FIRMWARE_BLOCK_SIZE) > 0)
                 {
                     firmwareBlockCount++; //add extra block for left overs
@@ -663,7 +666,7 @@ static status_t beginBootloadingProcess()
     return status;
 }
 
-void sendBeginFlashResponse(drv_uart_config_t* uartConfig, status_t status)
+static void sendBeginFlashResponse(drv_uart_config_t* uartConfig, status_t status)
 {
 	uint8_t flashResponseBytes[5] = {0};
     flashResponseBytes[0] = 0x01;
@@ -674,16 +677,25 @@ void sendBeginFlashResponse(drv_uart_config_t* uartConfig, status_t status)
 	pkt_sendRawPacket(uartConfig,flashResponseBytes, sizeof(flashResponseBytes));    
 }
 
-void sendFirmwareBlock(drv_uart_config_t* uartConfig, uint16_t blockNumber)
+static void sendFirmwareBlock(drv_uart_config_t* uartConfig, uint16_t blockNumber)
 {    
-    size_t fileOffset = blockNumber*FIRMWARE_BLOCK_SIZE;
+    size_t fileOffset = blockNumber*FIRMWARE_BLOCK_SIZE + pbFirmwareBinStart;
+    size_t blockLength = FIRMWARE_BLOCK_SIZE;
     serializedDataBuffer[0] = 1;
     serializedDataBuffer[1] = PACKET_COMMAND_ID_SUBP_FLASH_DATA_BLOCK;
     serializedDataBuffer[2] = blockNumber & 0xFF;
-    serializedDataBuffer[3] = blockNumber >> 8;    
-    int i = 0;
-    if(sdc_readFromFile(&dataLogFile,serializedDataBuffer + 4,fileOffset, FIRMWARE_BLOCK_SIZE) == STATUS_PASS)
+    serializedDataBuffer[3] = blockNumber >> 8;   
+    //make sure we don't go over the size of the file
+    if((fileOffset + FIRMWARE_BLOCK_SIZE) > dataLogFile.fileObj.fsize)
     {
-        //send the packet               
-    }    
+        blockLength = dataLogFile.fileObj.fsize - fileOffset;         
+    }   
+    if(dataLogFile.fileOpen)
+    {       
+        if(sdc_readFromFile(&dataLogFile,serializedDataBuffer + 4,fileOffset, blockLength) == STATUS_PASS)
+        {
+            //send the packet  
+            pkt_sendRawPacket(uartConfig,serializedDataBuffer, blockLength+4);                 
+        }
+    }        
 }

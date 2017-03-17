@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h> 
+#include "bootloader.h"
 #include "drv_gpio.h"
 #include "drv_led.h"
 #include "nvm_nvMemInterface.h"
