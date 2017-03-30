@@ -35,6 +35,8 @@ static void processRecordConfig(subp_recordingConfig_t* recordConfig);
 static status_t beginBootloadingProcess();
 static void sendBeginFlashResponse(drv_uart_config_t* uartConfig, status_t status);
 static void sendFirmwareBlock(drv_uart_config_t* uartConfig, uint16_t blockNumber);
+static void processFirmwareAckPacket(drv_uart_config_t* uartConfig, pkt_rawPacket_t* packet);
+static void sendEnterBootloaderCommand(drv_uart_config_t* uartConfig);
 
 void protoPacketInit();
 //state change event functions
@@ -150,6 +152,9 @@ void subp_subProcessorTask(void *pvParameters)
 	
 	//send the get time command to the power board
 	sendGetTimeRequestMessage(&subpUart);
+    //send the ready internal message
+    msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_SUB_PROCESSOR, MSG_TYPE_READY, NULL);
+    
 	//start the main thread where we listen for packets and messages	
 	while (1)
 	{
@@ -263,7 +268,7 @@ static void processRawPacket(pkt_rawPacket_t* packet)
                 }
             break;
             case PACKET_COMMAND_ID_SUBP_FLASH_DATA_BLOCK_ACK:
-                
+                processFirmwareAckPacket(&subpUart,packet);
             break;
 			default:
 			
@@ -349,7 +354,11 @@ static void processMessage(msg_message_t message)
 			{
 				wifiConnected = true; 
 			}
-		}		
+		}
+        case MSG_TYPE_FW_UPDATE_START_PB_UPDATE:
+            vTaskDelay(500); //wait for SD card to shut down
+            sendEnterBootloaderCommand(&subpUart);
+        break;		
 		default:
 		break;
 		
@@ -429,8 +438,7 @@ void processStatusMessage(uint8_t* packet)
 {
 	//copy the packet to the local structure
 	memcpy(&subp_CurrentStatus,packet, sizeof(subp_status_t));
-	//do something with this status... should we send it around everywhere, or just leave it for other modules to grab?
-	
+	//do something with this status... should we send it around everywhere, or just leave it for other modules to grab?	
 }
 
 
@@ -629,13 +637,19 @@ static status_t beginBootloadingProcess()
 {
     status_t status = STATUS_FAIL; 
     firmwareHeader_t firmwareHeader; 
+    int maxWaitCount = 10; 
     //check that we can actually go into load mode
-    if(subpState != SYSTEM_STATE_IDLE)
+    //if(subpState != SYSTEM_STATE_IDLE)
+    //{
+        //return STATUS_FAIL; 
+    //}    
+    while((sdc_getSdCardStatus() != SD_CARD_MOUNTED) && maxWaitCount!= 0)
     {
-        return STATUS_FAIL; 
-    }    
+        vTaskDelay(100);
+        maxWaitCount--;
+    }
     //open the firmware file    
-    status = sdc_openFile(&dataLogFile, "0:firmware.bin", SDC_FILE_OPEN_READ_ONLY);     
+    status = sdc_openFile(&dataLogFile, "firmware.bin", SDC_FILE_OPEN_READ_ONLY);     
     if(status == STATUS_PASS)
     {       
         //read the firmware header
@@ -645,7 +659,7 @@ static status_t beginBootloadingProcess()
             if(firmwareHeader.fileHeaderBytes == FIRMWARE_FILE_HEADER_BYTES)
             {           
                 //calculate block count    
-                firmwareBlockCount = ((uint16_t)firmwareHeader.pbBinLength / FIRMWARE_BLOCK_SIZE);
+                firmwareBlockCount = (uint16_t)(firmwareHeader.pbBinLength / FIRMWARE_BLOCK_SIZE);
                 //calculate the start of sub processor firmware
                 pbFirmwareBinStart = firmwareHeader.dbBinLength + sizeof(firmwareHeader_t); 
                 if((firmwareHeader.pbBinLength%FIRMWARE_BLOCK_SIZE) > 0)
@@ -679,7 +693,7 @@ static void sendBeginFlashResponse(drv_uart_config_t* uartConfig, status_t statu
 
 static void sendFirmwareBlock(drv_uart_config_t* uartConfig, uint16_t blockNumber)
 {    
-    size_t fileOffset = blockNumber*FIRMWARE_BLOCK_SIZE + pbFirmwareBinStart;
+    size_t fileOffset = (blockNumber-1)*FIRMWARE_BLOCK_SIZE + pbFirmwareBinStart;
     size_t blockLength = FIRMWARE_BLOCK_SIZE;
     serializedDataBuffer[0] = 1;
     serializedDataBuffer[1] = PACKET_COMMAND_ID_SUBP_FLASH_DATA_BLOCK;
@@ -698,4 +712,25 @@ static void sendFirmwareBlock(drv_uart_config_t* uartConfig, uint16_t blockNumbe
             pkt_sendRawPacket(uartConfig,serializedDataBuffer, blockLength+4);                 
         }
     }        
+}
+
+static void processFirmwareAckPacket(drv_uart_config_t* uartConfig, pkt_rawPacket_t* packet)
+{
+    uint16_t blockNumber = 0;
+    if(packet->payload[1] == PACKET_COMMAND_ID_SUBP_FLASH_DATA_BLOCK_ACK)
+    {
+        blockNumber = (uint16_t)packet->payload[2] + (uint16_t)(packet->payload[3] << 8);
+        sendFirmwareBlock(uartConfig,++blockNumber);     
+    }    
+}
+
+static void sendEnterBootloaderCommand(drv_uart_config_t* uartConfig)
+{
+	uint8_t enterBootloaderBytes[4] = {0};
+	enterBootloaderBytes[0] = 0x01;
+	enterBootloaderBytes[1] = PACKET_COMMAND_ID_SUBP_ENTER_BOOTLOADER;
+	enterBootloaderBytes[2] = 0x55; //set the key bytes
+	enterBootloaderBytes[3] = 0xAA;    
+    pkt_sendRawPacket(uartConfig,enterBootloaderBytes, sizeof(enterBootloaderBytes));   
+    
 }

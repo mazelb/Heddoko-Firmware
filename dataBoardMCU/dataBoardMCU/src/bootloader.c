@@ -78,7 +78,7 @@ void runBootloader()
 		    delay_ms(100); 			
 	    }			
 	}
-    else if(settings.validSignature == NVM_SETTINGS_NEW_FIRMWARE_FLAG)
+    else if(settings.firmwareUpdateMode == NVM_SETTINGS_FIRMWARE_DB_UPDATE)
     {
       enterBootloader = 1;   
     }	
@@ -109,14 +109,15 @@ void runBootloader()
 		if(status != STATUS_PASS)
 		{
 			//blink an error, we should still be able to start the firmware afterwards. 
-			errorBlink(); 
+			settings.firmwareUpdateMode = NVM_SETTINGS_FIRMWARE_DB_FAIL; 
+            errorBlink(); 
 		}
 		else
 		{
-			successBlink();
-            nvm_writeToFlash(&settings, NVM_SETTINGS_VALID_SIGNATURE); 
-            
+			settings.firmwareUpdateMode = NVM_SETTINGS_FIRMWARE_DB_DONE;             
+            successBlink();            
 		}
+        nvm_writeToFlash(&settings,NVM_SETTINGS_VALID_SIGNATURE); 
 		//unmount the drive
 		//f_mount(LUN_ID_SD_MMC_0_MEM, NULL);		
 	} 	   
@@ -300,7 +301,7 @@ status_t __attribute__((optimize("O0"))) loadNewFirmware(char* filename)
 		
 	uint32_t i = 0, error = 0;
 	//erase the program space first
-	for(i=0x424000ul;i< 0x440000ul;i+=0x4000)
+	for(i=0x410000ul;i< 0x440000ul;i+=0x4000)
 	{
 		resultTest = flash_erase_page(i,IFLASH_ERASE_PAGES_32);
 		if(resultTest != 0)

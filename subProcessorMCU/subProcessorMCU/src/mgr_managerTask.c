@@ -17,6 +17,7 @@
 #include "chrg_chargeMonitor.h"
 #include "sen_sensorHandler.h"
 #include "brd_dataBoardManager.h"
+#include "nvm_nvMemInterface.h"
 
 xQueueHandle mgr_eventQueue = NULL;
 xTimerHandle pwrButtonTimer = NULL;
@@ -73,7 +74,15 @@ void mgr_managerTask(void *pvParameters)
 	drv_gpio_config_interrupt_handler(DRV_GPIO_PIN_PWR_BTN, DRV_GPIO_INTERRUPT_LOW_EDGE,powerButtonHandler_LowEdge);
 	mgr_eventQueue = xQueueCreate( 10, sizeof(mgr_eventMessage_t));
 	//pwrButtonTimer = xTimerCreate("PowerBnt timer", (SLEEP_ENTRY_WAIT_TIME/portTICK_RATE_MS), pdFALSE, NULL, powerButtonTimerCallback);
-	//start all the other tasks
+	//load the settings
+    nvm_readFromFlash(&settings); 
+    if(settings.validSignature == NVM_SETTINGS_NEW_FIRMWARE_FLAG)
+    {
+        //reset the update firmware flag in the NVM
+        nvm_writeToFlash(&settings, NVM_SETTINGS_VALID_SIGNATURE);        
+    }
+    
+    //start all the other tasks
 	int retCode = 0;
 	retCode = xTaskCreate(chrg_task_chargeMonitor, "CHRG", TASK_CHRG_MON_STACK_SIZE, &chargeMonitorConfiguration, TASK_CHRG_MON_STACK_PRIORITY, NULL);
 	if (retCode != pdPASS)
@@ -363,7 +372,7 @@ static void PreSleepProcess()
 {
 	drv_led_set(DRV_LED_OFF,DRV_LED_SOLID);	
 	//supc_disable_brownout_detector(SUPC);	
-	SysTick->CTRL = SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_CLKSOURCE_Msk;	//disable the systick timer
+	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk;	//disable the systick timer
 	drv_gpio_disable_interrupt_all();
 	//disable the watchdog
 	drv_gpio_config_interrupt(DRV_GPIO_PIN_PWR_BTN, DRV_GPIO_INTERRUPT_LOW_EDGE);

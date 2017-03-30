@@ -33,7 +33,8 @@ nvmSettings_t defaultSettings =		// default settings that are loaded if the flas
     .streamCfg.ipaddress = 0xFFFFFFFF,
     .streamCfg.streamPort = 6669,
     .debugCfg.debugPort = 6667,
-    .debugCfg.logLevel = DBG_LOG_LEVEL_VERBOSE
+    .debugCfg.logLevel = DBG_LOG_LEVEL_VERBOSE,
+    .firmwareUpdateMode = NVM_SETTINGS_FIRMWARE_DB_UPDATE
 };
 
 /*	Function definitions	*/
@@ -92,7 +93,7 @@ status_t nvm_readFromFlash(nvmSettings_t *p_settings)
 	if (flash_read_user_signature(memBuffer, 128) == 0)
 	{
 		memcpy(p_settings,memBuffer,sizeof(nvmSettings_t)); 
-        if (p_settings->validSignature != NVM_SETTINGS_VALID_SIGNATURE && p_settings->validSignature != NVM_SETTINGS_NEW_FIRMWARE_FLAG)
+        if (p_settings->validSignature != NVM_SETTINGS_VALID_SIGNATURE) 
 		{
 			// the flash has not been written before.
 			//dbg_printString(DBG_LOG_LEVEL_WARNING, "Flash has never been written to\r\n");

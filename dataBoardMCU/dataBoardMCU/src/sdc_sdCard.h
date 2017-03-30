@@ -101,5 +101,11 @@ status_t sdc_closeFile(sdc_file_t* fileObject);
  * @return void
  ***********************************************************************************************/
 status_t sdc_checkFileSize(sdc_file_t* fileObject, size_t *size);
+/***********************************************************************************************
+ * sdc_getSdCardStatus()
+ * @brief Returns the current status of the sd card
+ * @return sd_card_status_t
+ ***********************************************************************************************/
+sd_card_status_t sdc_getSdCardStatus(); 
 
 #endif /* SDC_SDCARD_H_ */

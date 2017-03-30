@@ -58,6 +58,10 @@ static void processEvent(msg_message_t message)
 		case MSG_TYPE_USB_CONNECTED:
 		case MSG_TYPE_CHARGER_EVENT:
 		case MSG_TYPE_COMMAND_PACKET_RECEIVED:
+            break;
+        case MSG_TYPE_FW_UPDATE_START_PB_UPDATE:
+            unInitializeSdCard();
+            break;
 		default:
 		break;
 	}
@@ -538,6 +542,11 @@ status_t sdc_closeFile(sdc_file_t* fileObject)
 	fileObject->fileOpen = false; 		
 	unregisterOpenFile(fileObject);
 	return status;
+}
+
+sd_card_status_t sdc_getSdCardStatus()
+{
+    return sdCardStatus; 
 }
 
 void initSdGpio()

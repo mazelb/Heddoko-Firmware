@@ -23,7 +23,7 @@
 //Max code size is 0x1A800 = 212*512 pages = 108544
 
 #define FIRMWARE_LOCATION 0x00005800u + IFLASH0_ADDR
-#define APP_START_ADDRESS 0x00458000u 
+#define APP_START_ADDRESS 0x0045800u 
 #define APP_END_ADDRESS 0x00420000u 
 #define FIRMWARE_FILE_HEADER_BYTES 0x55AA55AA
 #define CRCCU_TIMEOUT   0xFFFFFFFF
@@ -79,11 +79,11 @@ void SysTick_Handler(void)
  * The bootloader program is always loaded onto a release board at location 0x00000000 and executes the main
  * program. 
  */
-void runBootloader()
+void __attribute__((optimize("O0"))) runBootloader()
 {
 	nvmSettings_t settings;
 	
-	nvm_readFromFlash(&settings);
+	//nvm_readFromFlash(&settings);
     char c; 
     pkt_rawPacket_t packet; 
     status_t status = STATUS_PASS; 
@@ -92,28 +92,31 @@ void runBootloader()
 	uint32_t enterBootloader = 0;
 	int i = 0; 
     int failCount = 0;
-
+    drv_gpio_initializeAll();
 	drv_gpio_setPinState(DRV_GPIO_PIN_LED_GREEN, DRV_GPIO_PIN_STATE_LOW);
 	drv_gpio_setPinState(DRV_GPIO_PIN_LED_BLUE, DRV_GPIO_PIN_STATE_LOW); 
     //check the nvm signature
-    if(settings.validSignature == NVM_SETTINGS_NEW_FIRMWARE_FLAG)
-    {
+    //if(settings.validSignature == NVM_SETTINGS_NEW_FIRMWARE_FLAG)
+    //{
         enterBootloader = 1; 
-    }    
+    //}    
 	if(enterBootloader == 1)
 	{
 		drv_gpio_initializeAll();
         drv_uart_init(&uart1Config); 
         //enable the systick timer
         SysTick->LOAD = ( sysclk_get_cpu_hz() / 1000 ) - 1UL; //set the systick load to trigger every ms
-        SysTick->CTRL = SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk;	        
+        SysTick->CTRL = SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk;	        
         //turn on the power for the data board       
+        drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_LOW);
+        delay_ms(1000);   
         drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_HIGH);
         //wait until we get a packet from the data board to know it is alive. 
-        if(getPacketTimed(&uart1Config, &packet, 3000) == STATUS_PASS)
+        if(getPacketTimed(&uart1Config, &packet, 5000) == STATUS_PASS)
         {
             processPacket(&packet); 
-        }        
+        }  
+        delay_ms(5000);       
         //send the enter bootloader command   
         sendBeginFlashProcessMessage();   
         while(failCount < 5)
@@ -122,10 +125,10 @@ void runBootloader()
             {
                 if(packet.payload[1] == PACKET_COMMAND_ID_SUBP_BEGIN_FLASH_RESP)
                 {
-                    if(packet.payload[2] == 1)
+                    if(packet.payload[2] == STATUS_PASS)
                     {
                         //read the total firmware block count. 
-                        totalFirmwareBlocks = (uint16_t)(packet.payload[3] << 8) + packet.payload[2];
+                        totalFirmwareBlocks = (uint16_t)(packet.payload[4] << 8) + packet.payload[3];
                         prepareForNewFirmware();
                     }
                     else
@@ -140,7 +143,8 @@ void runBootloader()
                     break;
                 }
             }
-            failCount++;          
+            failCount++;   
+            wdt_restart(WDT);       
         }
         if(status == STATUS_PASS)
         {
@@ -152,10 +156,12 @@ void runBootloader()
         //if we have reached here it means we are starting the load process. 
         //send ACK block 0, to start the process. 
         lastReceivedFirmwareBlocks = 0;
+        //send ack block zero to start the process
         sendFirmwareBlockAck(lastReceivedFirmwareBlocks);                  
-		while(1)
+		failCount = 0;
+        while(1)
         {
-            if(getPacketTimed(&uart1Config, &packet, 1000) == STATUS_PASS)
+            if(getPacketTimed(&uart1Config, &packet, 3000) == STATUS_PASS)
             {                
                 if(processFirmwareDataBlock(&packet) == STATUS_PASS)
                 {
@@ -174,7 +180,7 @@ void runBootloader()
                 {
                    sendFirmwareBlockAck(lastReceivedFirmwareBlocks);  
                 }
-                
+                drv_gpio_togglePin(DRV_GPIO_PIN_LED_BLUE);                
             }
             else
             {
@@ -184,7 +190,8 @@ void runBootloader()
                     status = STATUS_FAIL;
                     break; 
                 }
-            }            
+            }
+            wdt_restart(WDT);            
         }
 		if(status != STATUS_PASS)
 		{
@@ -195,7 +202,8 @@ void runBootloader()
 		{
 			successBlink();    
 		}
-        SysTick->CTRL = SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_CLKSOURCE_Msk; //disable the systick			
+        SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk; //disable the systick		
+        drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_LOW);	
 	} 	   
 	start_application();	
 }
@@ -346,7 +354,9 @@ static status_t getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* p
                 //return fail, we've timed out.
                 result = STATUS_FAIL;
                 break;
-            }            
+            }
+            delay_ms(1);  
+            wdt_restart(WDT);              
         }
     }
     return result;

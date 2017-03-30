@@ -135,6 +135,7 @@ static void sendStateChangeMessage(sys_manager_systemState_t state);
 static void processMessage(msg_message_t message);
 static void processWifiControlEvent(uint32_t requestedState);
 static void processButtonEvent(uint32_t data);
+static void processReadyMessage(msg_message_t* message);
 /*	Extern functions	*/
 /*	Extern variables	*/
 
@@ -226,7 +227,22 @@ void sys_systemManagerTask(void* pvParameters)
     	dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create cfg task\r\n");
 	}
     vTaskDelay(200); 
-	sendStateChangeMessage(SYSTEM_STATE_INIT); 	
+	if(currentSystemSettings.firmwareUpdateMode == NVM_SETTINGS_FIRMWARE_DB_DONE)
+    {
+        //this is the first boot after loading the firmware.         
+        nvm_writeToFlash(&currentSystemSettings, NVM_SETTINGS_VALID_SIGNATURE);  
+        //now we should trigger a power board firmware update       
+        //start the power board firmware update process. 
+    }
+    else if(currentSystemSettings.validSignature == NVM_SETTINGS_UPDATE_PB_FLAG)
+    {
+        //power up after 
+    }
+    else
+    {
+          
+    }
+    sendStateChangeMessage(SYSTEM_STATE_INIT); 	  
     
     
 	while (1)
@@ -247,6 +263,9 @@ static void processMessage(msg_message_t message)
 	{
 		case MSG_TYPE_ENTERING_NEW_STATE:
 		break;
+        case MSG_TYPE_READY:
+            processReadyMessage(&message);
+        break;
 		case MSG_TYPE_ERROR:
             drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));
             //drv_piezo_playPattern(errorTone, (sizeof(errorTone) / sizeof(drv_piezo_noteElement_t)));
@@ -416,7 +435,8 @@ static void processMessage(msg_message_t message)
             sgCurrentState = message.data; 
         break;
         case MSG_TYPE_FW_UPDATE_RESTART_REQUEST:
-            nvm_writeToFlash(&currentSystemSettings, NVM_SETTINGS_NEW_FIRMWARE_FLAG);
+            currentSystemSettings.firmwareUpdateMode = NVM_SETTINGS_FIRMWARE_DB_UPDATE;
+            nvm_writeToFlash(&currentSystemSettings, NVM_SETTINGS_VALID_SIGNATURE);
             subp_sendForcedRestartMessage();
         break;
         default:
@@ -559,4 +579,22 @@ static void processButtonEvent(uint32_t data)
 		default:
 		break;
 	}
+}
+
+static void processReadyMessage(msg_message_t* message)
+{
+    //the ready message is sent by the modules once they are initialized. 
+    
+    //for now just process the sub_processor module. 
+    if(message->source == MODULE_SUB_PROCESSOR)
+    {
+        if(currentSystemSettings.firmwareUpdateMode == NVM_SETTINGS_FIRMWARE_DB_DONE)
+        {
+            //this means we have to start the update process on the power board. 
+            currentSystemSettings.firmwareUpdateMode = NVM_SETTINGS_FIRMWARE_GOOD; //set the flag to firmware good, since it is. 
+            nvm_writeToFlash(&currentSystemSettings, NVM_SETTINGS_VALID_SIGNATURE); 
+            msg_sendMessageSimple(MODULE_SUB_PROCESSOR,MODULE_SYSTEM_MANAGER, MSG_TYPE_FW_UPDATE_START_PB_UPDATE, NULL);
+            msg_sendMessageSimple(MODULE_SDCARD,MODULE_SYSTEM_MANAGER, MSG_TYPE_FW_UPDATE_START_PB_UPDATE, NULL);
+        }
+    }
 }

@@ -14,9 +14,16 @@
 #include "subp_subProcessor.h"
 #include "dbg_debugManager.h"
 
-#define NVM_SETTINGS_VALID_SIGNATURE	0x900df00f
+#define NVM_SETTINGS_VALID_SIGNATURE	0x900df00d
 #define NVM_SETTINGS_NEW_FIRMWARE_FLAG  0xB16B00B5
+#define NVM_SETTINGS_UPDATE_PB_FLAG     0x0B00B135
 #define NVM_MAX_SUIT_NAME_SIZE			10
+
+#define NVM_SETTINGS_FIRMWARE_GOOD      0x00000001
+#define NVM_SETTINGS_FIRMWARE_DB_UPDATE 0x00000002
+#define NVM_SETTINGS_FIRMWARE_DB_DONE   0x00000003
+#define NVM_SETTINGS_FIRMWARE_DB_FAIL   0x00000004
+#define NVM_SETTINGS_FIRMWARE_SUBP_UPADTE 0x00000005
 #pragma pack(push, 1)
 typedef struct  
 {
@@ -30,6 +37,7 @@ typedef struct
 	subp_streamConfig_t streamCfg;              // stream configuration 
 	uint16_t advPortNumber;						// advertisement port number
     dbg_debugConfiguration_t debugCfg;
+    uint32_t firmwareUpdateMode;                //The firmware update mode of the processor. 
 }nvmSettings_t;
 #pragma	pack(pop)
 status_t nvm_writeToFlash(nvmSettings_t *p_settings, uint32_t signature);
