@@ -992,12 +992,6 @@
     <Compile Include="src\ASF\thirdparty\freertos\freertos-7.3.0\source\FreeRTOS_CLI.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\bootloader.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\bootloader.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\brd_board.c">
       <SubType>compile</SubType>
     </Compile>

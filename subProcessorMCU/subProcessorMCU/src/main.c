@@ -36,15 +36,12 @@
 #include <stdint.h>
 #include <string.h>
 #include <asf.h>
-#ifdef BOOTLOADER
-#include "bootloader.h"
-#else
 #include "brd_board.h"
 #include "cmd_commandProc.h"
 #include "mgr_managerTask.h"
 #include "dat_dataRouter.h"
 #include "chrg_chargeMonitor.h"
-#endif
+
 
 
 void HardFault_Handler()
@@ -69,28 +66,7 @@ void vApplicationMallocFailedHook( void )
 	while(1);
 }
 
-///**
- //* \brief Handler for System Tick interrupt.
- //*/
-//void SysTick_Handler(void)
-//{
-	////sgSysTickCount++;
-	//xPortSysTickHandler();
-//}
-#ifdef BOOTLOADER
-int main (void)
-{
-    irq_initialize_vectors();
-    cpu_irq_enable();
-    ////Initialize system clock and peripherals
-    sysclk_init();
-    
-    board_init();
-    
-    runBootloader();
-    
-}    
-#else
+
 
 int main (void)
 {
@@ -133,4 +109,3 @@ int main (void)
 	}
    
 }
- #endif
