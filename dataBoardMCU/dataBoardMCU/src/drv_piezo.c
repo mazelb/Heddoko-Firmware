@@ -1,10 +1,10 @@
-/*
- * drv_piezo.c
- *
- * Created: 8/31/2016 4:22:00 PM
- *  Author: Hriday Mehta
- */ 
-
+/**
+* @file drv_piezo.c
+* @brief Driver for the piezo electric speaker
+* @author Hriday Mehta
+* @date August 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 #include "drv_piezo.h"
 
 /*	Static function declarations	*/

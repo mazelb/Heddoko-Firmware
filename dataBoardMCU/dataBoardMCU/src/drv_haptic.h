@@ -1,17 +1,10 @@
 /**
- * \file
- *
-* Copyright Heddoko(TM) 2015, all rights reserved
- * \brief 
- *
- */
-/*
- * drv_haptic.h
- *
- * Created: 9/7/2016 9:48:41 AM
- *  Author: Hriday Mehta
- */ 
-
+* @file drv_haptic.h
+* @brief Driver for Haptic Motor controller
+* @author Hriday Mehta (Hriday@heddoko.com)
+* @date September 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 
 #ifndef DRV_HAPTIC_H_
 #define DRV_HAPTIC_H_

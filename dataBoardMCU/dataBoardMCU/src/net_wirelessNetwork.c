@@ -1,9 +1,10 @@
-/*
- * net_wirelessNetwork.c
- *
- * Created: 8/5/2016 2:44:03 PM
- *  Author: sean
- */ 
+/**
+* @file net_wirelessNetwork.c
+* @brief Interprocess messenger module, routes messages to each module.
+* @author Sean Cloghesy (sean@heddoko.com)
+* @date August 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 #include <asf.h>
 #include <string.h>
 

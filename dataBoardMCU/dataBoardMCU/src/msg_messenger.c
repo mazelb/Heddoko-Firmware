@@ -1,10 +1,10 @@
-/*
- * msg_messenger.c
- *
- * Created: 5/24/2016 1:31:30 PM
- *  Author: sean
- */ 
-
+/**
+* @file msg_messenger.c
+* @brief Interprocess messenger module, routes messages to each module. 
+* @author Sean Cloghesy (sean@heddoko.com)
+* @date May 2016
+* Copyright Heddoko(TM) 2015, all rights reserved
+*/
 #include "msg_messenger.h"
 #include "string.h"
 

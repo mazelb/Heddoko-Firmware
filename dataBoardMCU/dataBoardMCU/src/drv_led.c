@@ -1,18 +1,10 @@
 /**
- * \file
- *
+* @file drv_led.c
+* @brief Driver for RGB LED
+* @author Hriday Mehta (Hriday@heddoko.com)
+* @date October 2015
 * Copyright Heddoko(TM) 2015, all rights reserved
- * \brief 
- *
- */
-/*
- * drv_led.c
- *
- * Created: 10/27/2015 10:45:28 AM
- *  Author: Hriday Mehta
- * Copyright Heddoko(TM) 2015, all rights reserved
- */ 
-
+*/
 #include "drv_led.h"
 
 //local structure to store led configuration

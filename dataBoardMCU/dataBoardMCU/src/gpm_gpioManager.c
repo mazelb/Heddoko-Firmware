@@ -1,10 +1,11 @@
-/*
- * gpm_gpioManager.c
- *
- * Created: 9/8/2016 10:07:45 AM
- *  Author: Hriday Mehta
- */ 
-
+/**
+* @file gpm_gpioManager.c
+* @brief Driver for handling the button GPIO, creates events based on different
+*       button combinations. 
+* @author Hriday Mehta (Hriday@heddoko.com)
+* @date September 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 #include "gpm_gpioManager.h"
 #include "dbg_debugManager.h"
 #include "msg_messenger.h"

@@ -173,8 +173,7 @@ void mgr_managerTask(void *pvParameters)
 					//toggle fast Charge
 					drv_gpio_setPinState(DRV_GPIO_PIN_CHRG_SEL, DRV_GPIO_PIN_STATE_LOW);
 					vTaskDelay(200);
-					drv_gpio_setPinState(DRV_GPIO_PIN_CHRG_SEL, DRV_GPIO_PIN_STATE_HIGH);
-					
+					drv_gpio_setPinState(DRV_GPIO_PIN_CHRG_SEL, DRV_GPIO_PIN_STATE_HIGH);					
 				}
 				break;
 				case SYS_EVENT_USB_DISCONNECTED:

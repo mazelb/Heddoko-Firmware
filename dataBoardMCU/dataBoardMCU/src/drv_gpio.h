@@ -1,10 +1,10 @@
-/*
- * drv_gpio.h
- *
- * Created: 9/25/2015 8:12:59 AM
- *  Author: Sean Cloghesy
- * Copyright Heddoko(TM) 2015, all rights reserved
- */ 
+/**
+* @file drv_gpio.h
+* @brief Driver for General Purpose IO (GPIO)
+* @author Sean Cloghesy (sean@heddoko.com)
+* @date September 2015
+* Copyright Heddoko(TM) 2015, all rights reserved
+*/
 
 #include "asf.h"
 #include "common.h"

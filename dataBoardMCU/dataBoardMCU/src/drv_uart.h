@@ -1,20 +1,11 @@
-/*
- * drv_uart.h
- *
- * Created: 9/21/2015 8:27:36 AM
- *  Author: Sean Cloghesy
- * Q1 is connected to USART1 (PA22 = TX, PA21 = RX)
- * Q2 is connected to UART0  (PA10 = TX, PA9 = RX)
- * Q3 is connected to USART0 (PA6 = TX, PA5 = RX)
- */ 
 /**
- * @file  drv_uart.h
- * @brief Low level uart driver with circular buffer on receive
- * @author Heddoko
- * @note This driver can be used on UART0, UART1, USART0 and USART1
- *
- * Copyright Heddoko(TM) 2015, all rights reserved
- */
+* @file drv_uart.c
+* @brief Low level uart driver with circular buffer on receive
+* @author Sean Cloghesy (sean@heddoko.com)
+* @date September 2015
+* @note This driver can be used on UART0, UART1, USART0 and USART1
+* Copyright Heddoko(TM) 2015, all rights reserved
+*/
 #include "common.h"
 #include "asf.h"
 

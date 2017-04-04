@@ -1,10 +1,12 @@
-/*
- * dbg_debugManager.h
- *
- * Created: 7/12/2016 10:25:54 AM
- *  Author: sean
- */ 
-
+/**
+* @file dbg_debugManager.c
+* @brief Contains code relevant to debug prints, logging and string command interpreter.
+* The string command interpreter listens on connection to a wifi network, through the
+* USB and debug com ports.
+* @author Sean Cloghesy (sean@heddoko.com)
+* @date July 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 
 #ifndef DBG_DEBUGMANAGER_H_
 #define DBG_DEBUGMANAGER_H_

@@ -1,18 +1,12 @@
-/*
- * drv_uart.c
- *
- * Created: 9/21/2015 8:27:54 AM
- *  Author: Sean Cloghesy 
- * Copyright Heddoko(TM) 2015, all rights reserved
- */ 
 /**
- * @file  drv_uart.c
- * @brief Low level uart driver with circular buffer on receive
- * @author Heddoko
- * @note This driver can be used on UART0, UART1, USART0 and USART1
- *
- * @copy Heddoko (2015)
- */
+* @file drv_uart.c
+* @brief Low level uart driver with circular buffer on receive
+* @author Sean Cloghesy (sean@heddoko.com)
+* @date September 2015
+* @note This driver can be used on UART0, UART1, USART0 and USART1
+* Copyright Heddoko(TM) 2015, all rights reserved
+*/
+
 #include "drv_uart.h"
 #include "pkt_packetParser.h"
 #include <interrupt.h>

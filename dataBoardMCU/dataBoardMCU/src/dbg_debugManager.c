@@ -23,17 +23,17 @@
 
 
 /* Global Variables */
-xQueueHandle queue_debugManager = NULL;
-xSemaphoreHandle semaphore_dbgUartWrite = NULL; 
-dbg_debugLogLevel_t debugLogLevel = DBG_LOG_LEVEL_DEBUG; //default the log level to debug for now. 
+static xQueueHandle sgQueue_debugManager = NULL;
+static xSemaphoreHandle sgSemaphore_dbgUartWrite = NULL; 
+static dbg_debugLogLevel_t sgDebugLogLevel = DBG_LOG_LEVEL_DEBUG; //default the log level to debug for now. 
 
-volatile uint8_t debugLogBufferA[DEBUGLOG_MAX_BUFFER_SIZE] = {0} , debugLogBufferB[DEBUGLOG_MAX_BUFFER_SIZE] = {0};
-sdc_file_t debugLogFile =
+volatile uint8_t gaDebugLogBufferA[DEBUGLOG_MAX_BUFFER_SIZE] = {0} , gaDebugLogBufferB[DEBUGLOG_MAX_BUFFER_SIZE] = {0};
+static sdc_file_t sgDebugLogFile =
 {
 	.bufferIndexA = 0,
 	.bufferIndexB = 0,
-	.bufferPointerA = debugLogBufferA,
-	.bufferPointerB = debugLogBufferB,
+	.bufferPointerA = gaDebugLogBufferA,
+	.bufferPointerB = gaDebugLogBufferB,
 	.bufferSize = DEBUGLOG_MAX_BUFFER_SIZE,
 	.fileObj = NULL,
 	.fileName = "sysHdk",
@@ -42,7 +42,7 @@ sdc_file_t debugLogFile =
 	.sem_bufferAccess = NULL
 };
 
-const char* moduleNameString[] = {
+const char* gaModuleNameString[] = {
 	"MODULE_SYSTEM_MANAGER",
 	"MODULE_SDCARD",
 	"MODULE_WIFI",
@@ -55,7 +55,7 @@ const char* moduleNameString[] = {
 	"MODULE_NUMBER_OF_MODULES"
 };
 
-const char* systemStateString[] = {
+const char* gaSystemStateString[] = {
     	"SYSTEM_STATE_SLEEP",
     	"SYSTEM_STATE_INIT",
     	"SYSTEM_STATE_CONNECTING",
@@ -68,10 +68,10 @@ const char* systemStateString[] = {
     	"SYSTEM_STATE_SYNCING"
 };
 
-static bool debugMsgOverUsb = false; 
+static bool sgDebugMsgOverUsb = false; 
 
 
-drv_uart_config_t debugUartConfig =
+drv_uart_config_t gDebugUartConfig =
 {
     .p_usart = UART1,
     .mem_index = 1,
@@ -85,7 +85,7 @@ drv_uart_config_t debugUartConfig =
     .mode = DRV_UART_MODE_INTERRUPT
 };
 
-net_wirelessConfig_t wirelessConfig =
+static net_wirelessConfig_t sgWirelessConfig =
 {
     .securityType = M2M_WIFI_SEC_WPA_PSK,
     .passphrase = "test$891",
@@ -110,7 +110,7 @@ static status_t processFileTransferTest(tftp_transferType_t transferType, char* 
 /*	Extern functions	*/
 /*	Extern variables	*/
 extern nvmSettings_t currentSystemSettings;
-net_socketConfig_t debugServer =
+static net_socketConfig_t sgDebugServer =
 {
     .endpoint.sin_addr = 0, //irrelevant for the server
     .endpoint.sin_family = AF_INET,
@@ -124,49 +124,55 @@ net_socketConfig_t debugServer =
 };
 
 
-
+/***********************************************************************************************
+* @brief The debug manager task. Is executed by the free rtos
+* main task and loops while the brainpack is functional.
+* Processes text debug commands and messages from other modules
+* @param pvParameters, pointer to the initialization variables for the task (none for this task)
+* @return void
+ ***********************************************************************************************/
 void dbg_debugTask(void* pvParameters)
 {
-	status_t status = STATUS_PASS;
-	char buffer[200] = {0};
-	msg_message_t eventMessage;	
+	char vaBuffer[200] = {0};
+	msg_message_t vEventMessage;	
 	//register for system messages
-	queue_debugManager = xQueueCreate(10, sizeof(msg_message_t));
-	if (queue_debugManager != 0)
+	sgQueue_debugManager = xQueueCreate(10, sizeof(msg_message_t));
+	if (sgQueue_debugManager != 0)
 	{
-		msg_registerForMessages(MODULE_DEBUG, 0xff, queue_debugManager);
+		msg_registerForMessages(MODULE_DEBUG, 0xff, sgQueue_debugManager);
 	}
 	//initialize the semaphore
-	semaphore_dbgUartWrite = xSemaphoreCreateMutex();
+	sgSemaphore_dbgUartWrite = xSemaphoreCreateMutex();
 	configure_console(); //enable printf... consider removing
 	//initialize the debug uart
-	status = drv_uart_init(&debugUartConfig);
+	drv_uart_init(&gDebugUartConfig);
 	dbg_printString(DBG_LOG_LEVEL_DEBUG, "Debug Task Started\r\n");
 	while(1)
 	{
-		if(drv_uart_getlineTimed(&debugUartConfig,buffer,sizeof(buffer),5) == STATUS_PASS)
+		if(drv_uart_getlineTimed(&gDebugUartConfig,vaBuffer,sizeof(vaBuffer),5) == STATUS_PASS)
 		{			
-			dbg_processCommand(DBG_CMD_SOURCE_SERIAL,buffer,strlen(buffer));
+			dbg_processCommand(DBG_CMD_SOURCE_SERIAL,vaBuffer,strlen(vaBuffer));
 		}
-		if(xQueueReceive(queue_debugManager, &(eventMessage), 1) == true)
+		if(xQueueReceive(sgQueue_debugManager, &(vEventMessage), 1) == true)
 		{
-			processEvent(&eventMessage);		
+			processEvent(&vEventMessage);		
 		}
 		vTaskDelay(200);		
 	}
 }
-
-status_t dbg_init()
-{
-	status_t status = STATUS_PASS;
-	status = drv_uart_init(&debugUartConfig); 
-	return status; 
-}
-
-void dbg_printf(dbg_debugLogLevel_t msgLogLevel, char *fmt, ...) 
+/***********************************************************************************************
+ * dbg_printf(dbg_debugLogLevel_t vMsgLogLevel, char *fmt, ...)
+ * @brief processes debug messages from all of the other modules, uses standard printf formatting. 
+ *      prints the debug string on all enabled channels. (USB, SERIAL, NETWORK) 
+ * @param vMsgLogLevel, The log level of the debug message, from debug to error
+ * @param fmt, printf formatted string
+ * @param ..., parameters for the printf command  
+ * @return void
+ ***********************************************************************************************/
+void dbg_printf(dbg_debugLogLevel_t vMsgLogLevel, char *fmt, ...) 
 {
 	char buffer[200];
-	if(msgLogLevel <= debugLogLevel)
+	if(vMsgLogLevel <= sgDebugLogLevel)
 	{	
 		va_list va;
 		va_start (va, fmt);
@@ -175,56 +181,63 @@ void dbg_printf(dbg_debugLogLevel_t msgLogLevel, char *fmt, ...)
 		printString(buffer); 
 	}
 }
-
-
-void dbg_printString(dbg_debugLogLevel_t msgLogLevel, char* string)
+/***********************************************************************************************
+ * dbg_printString(dbg_debugLogLevel_t msgLogLevel, char* string)
+ * @brief processes debug messages from all of the other modules and prints the 
+ *      debug string on all enabled channels. (USB, SERIAL, NETWORK) 
+ * @param vMsgLogLevel, The log level of the debug message, from debug to error
+ * @param pointer to string that is to be printed
+ * @return void
+ ***********************************************************************************************/
+void dbg_printString(dbg_debugLogLevel_t vMsgLogLevel, char* vpString)
 {
-	char buffer[200];
+	char vaBuffer[200];
     //only process the message if the log level is below the 
-	if(msgLogLevel <= debugLogLevel)
+	if(vMsgLogLevel <= sgDebugLogLevel)
 	{
-		strncpy(buffer,string, strlen(string)); 
-        printString(buffer); 	
+		strncpy(vaBuffer,vpString, strlen(vpString)); 
+        printString(vaBuffer); 	
 	}
 	
 }
 
 
+
+#define MAX_RESPONSE_STRING_SIZE 255
+char newSerialNumber[10] = {0}; 
+char responseBuffer[MAX_RESPONSE_STRING_SIZE] = {0}; 
 /***********************************************************************************************
- * processCommand(char* command, size_t cmdSize)
+ * dbg_processCommand(dbg_commandSource_t source, char* command, size_t cmdSize)
  * @brief A general Command processor which receives commands from Serial terminal and executes them
+ * @param source, Where the command came from, can be USB, Serial, or network (used for routing return)
  * @param command, pointer to char array of the command 
  * @param cmdSize, length of the command. 
  * @return STATUS_PASS if successful, STATUS_FAIL if there is an error 
  ***********************************************************************************************/
-#define MAX_RESPONSE_STRING_SIZE 255
-char newSerialNumber[10] = {0}; 
-char responseBuffer[MAX_RESPONSE_STRING_SIZE] = {0}; 
-
-status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cmdSize)
+status_t dbg_processCommand(dbg_commandSource_t vSource, char* vpCommand, size_t vCmdSize)
 {
-	status_t status = STATUS_PASS; 
-	size_t responseLength = 0;
-    int cmdLength = 0;
+	status_t vStatus = STATUS_PASS; 
+	size_t vResponseLength = 0;
+    int vCmdLength = 0;
     
-	if(strncmp(command, "Record\r\n",cmdSize) == 0)
+	if(strncmp(vpCommand, "Record\r\n",vCmdSize) == 0)
 	{		
 		msg_sendBroadcastMessageSimple(MODULE_DEBUG, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_RECORDING);
         strncpy(responseBuffer,"Starting to record!\r\n", MAX_RESPONSE_STRING_SIZE);
 	}
-	else if(strncmp(command, "Idle\r\n",cmdSize) == 0)
+	else if(strncmp(vpCommand, "Idle\r\n",vCmdSize) == 0)
 	{		
 		msg_sendBroadcastMessageSimple(MODULE_DEBUG, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_IDLE);
 		strncpy(responseBuffer,"Entering Idle!\r\n", MAX_RESPONSE_STRING_SIZE);
 	}	
-	else if(strncmp(command, "Stream\r\n",cmdSize) == 0)
+	else if(strncmp(vpCommand, "Stream\r\n",vCmdSize) == 0)
 	{		
 		msg_sendBroadcastMessageSimple(MODULE_DEBUG, MSG_TYPE_ENTERING_NEW_STATE, SYSTEM_STATE_STREAMING);
         strncpy(responseBuffer,"Starting to Stream!\r\n", MAX_RESPONSE_STRING_SIZE);		
 	}
-    else if(strncmp(command, "recordCfg",9) == 0)
+    else if(strncmp(vpCommand, "recordCfg",9) == 0)
 	{		
-		if(processRecordCfg(command+9) == STATUS_PASS)
+		if(processRecordCfg(vpCommand+9) == STATUS_PASS)
         {
             strncpy(responseBuffer,"ACK\r\n", MAX_RESPONSE_STRING_SIZE);
         }
@@ -234,9 +247,9 @@ status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cm
         }             
         		
 	}	
-    else if(strncmp(command, "streamCfg",9) == 0)
+    else if(strncmp(vpCommand, "streamCfg",9) == 0)
 	{		
-		if(processStreamCfg(command+9) == STATUS_PASS)
+		if(processStreamCfg(vpCommand+9) == STATUS_PASS)
         {
             strncpy(responseBuffer,"ACK\r\n", MAX_RESPONSE_STRING_SIZE);
         }
@@ -245,9 +258,9 @@ status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cm
             strncpy(responseBuffer,"NACK\r\n", MAX_RESPONSE_STRING_SIZE);
         }        		
 	}	    
-    else if(strncmp(command, "wifiCfg",7) == 0)
+    else if(strncmp(vpCommand, "wifiCfg",7) == 0)
 	{		
-		if(processWifiCfg(command+7) == STATUS_PASS)
+		if(processWifiCfg(vpCommand+7) == STATUS_PASS)
         {
             strncpy(responseBuffer,"ACK\r\n", MAX_RESPONSE_STRING_SIZE);
         }
@@ -257,70 +270,70 @@ status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cm
         }             
         		
 	}
-    else if(strncmp(command,"setSerial",9) == 0)
+    else if(strncmp(vpCommand,"setSerial",9) == 0)
     {
-        cmdLength = strlen(command+9); 
-        strncpy(newSerialNumber, command+9, 7); 
-        snprintf(responseBuffer, MAX_RESPONSE_STRING_SIZE,"Serial Set: %s %d\r\n",newSerialNumber, cmdLength);
+        vCmdLength = strlen(vpCommand+9); 
+        strncpy(newSerialNumber, vpCommand+9, 7); 
+        snprintf(responseBuffer, MAX_RESPONSE_STRING_SIZE,"Serial Set: %s %d\r\n",newSerialNumber, vCmdLength);
         msg_sendMessage(MODULE_SYSTEM_MANAGER,MODULE_DEBUG,MSG_TYPE_SET_SERIAL,newSerialNumber);         
     }
-    else if(strncmp(command,"saveConfig",10) == 0)
+    else if(strncmp(vpCommand,"saveConfig",10) == 0)
     {
         msg_sendMessage(MODULE_SYSTEM_MANAGER,MODULE_DEBUG,MSG_TYPE_SAVE_SETTINGS,NULL); 
         strncpy(responseBuffer,"ACK\r\n", MAX_RESPONSE_STRING_SIZE);
     }        		
-	else if(strncmp(command, "?\r\n",cmdSize) == 0)
+	else if(strncmp(vpCommand, "?\r\n",vCmdSize) == 0)
 	{
 		strncpy(responseBuffer,"Brain pack alive!\r\n", MAX_RESPONSE_STRING_SIZE);        
 	}
-    else if(strncmp(command, "getSettings\r\n",cmdSize) == 0)
+    else if(strncmp(vpCommand, "getSettings\r\n",vCmdSize) == 0)
     {
            snprintf(responseBuffer,MAX_RESPONSE_STRING_SIZE,"SSID:%s\r\nkey:%s\r\nAdvertisingPort:%d\r\nConfigPort:%d\r\nStreamPort:%d\r\n",
            currentSystemSettings.defaultWifiConfig.ssid,currentSystemSettings.defaultWifiConfig.passphrase,currentSystemSettings.advPortNumber,
            currentSystemSettings.serverPortNumber, currentSystemSettings.streamCfg.streamPort);
     }        
-	else if(strncmp(command, "wifiConnect\r\n",cmdSize) == 0)
+	else if(strncmp(vpCommand, "wifiConnect\r\n",vCmdSize) == 0)
 	{
-		net_connectToNetwork(&wirelessConfig);
+		net_connectToNetwork(&sgWirelessConfig);
 	}
-	else if(strncmp(command, "wifiDisconnect\r\n",cmdSize) == 0)
+	else if(strncmp(vpCommand, "wifiDisconnect\r\n",vCmdSize) == 0)
 	{
 		net_disconnectFromNetwork();
 	}
-	else if (strncmp(command, "buzz1\r\n",cmdSize) == 0)
+	else if (strncmp(vpCommand, "buzz1\r\n",vCmdSize) == 0)
 	{
 		drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_LOW);
 	}
-	else if (strncmp(command, "buzz0\r\n",cmdSize) == 0)
+	else if (strncmp(vpCommand, "buzz0\r\n",vCmdSize) == 0)
 	{
 		drv_gpio_setPinState(DRV_GPIO_PIN_HAPTIC_OUT, DRV_GPIO_PIN_STATE_HIGH);
 	}
-	else if(strncmp(command, "powerDown\r\n",cmdSize) == 0)
+	else if(strncmp(vpCommand, "powerDown\r\n",vCmdSize) == 0)
 	{
 		msg_sendMessageSimple(MODULE_SUB_PROCESSOR,MODULE_DEBUG, MSG_TYPE_SUBP_POWER_DOWN_READY, 0x00);
 	}	
-	else if(strncmp(command, "getTime\r\n",cmdSize) == 0)
+	else if(strncmp(vpCommand, "getTime\r\n",vCmdSize) == 0)
 	{
 		snprintf(responseBuffer, MAX_RESPONSE_STRING_SIZE,"Time: %s\r\n",getTimeString());        
 	}
-    else if(strncmp(command, "debugEn1\r\n",cmdSize) == 0)
+    else if(strncmp(vpCommand, "debugEn1\r\n",vCmdSize) == 0)
 	{
-		debugMsgOverUsb = true; 
+		sgDebugMsgOverUsb = true; 
         strncpy(responseBuffer,"ACK\r\n", MAX_RESPONSE_STRING_SIZE);
 	}
-    else if(strncmp(command, "debugEn0\r\n",cmdSize) == 0)
+    else if(strncmp(vpCommand, "debugEn0\r\n",vCmdSize) == 0)
 	{
-		debugMsgOverUsb = false; 
+		sgDebugMsgOverUsb = false; 
         strncpy(responseBuffer,"ACK\r\n", MAX_RESPONSE_STRING_SIZE);
 	}         
-    else if((cmdSize > 10) && strncmp(command, "PwrBrdMsg:",10) == 0)
+    else if((vCmdSize > 10) && strncmp(vpCommand, "PwrBrdMsg:",10) == 0)
     {
-        strncpy(responseBuffer, command, sizeof(responseBuffer));
+        strncpy(responseBuffer, vpCommand, sizeof(responseBuffer));
     }
-    else if((cmdSize > 10) && strncmp(command, "sendFile",8) == 0)
+    else if((vCmdSize > 10) && strncmp(vpCommand, "sendFile",8) == 0)
     {
         
-        if(processFileTransferTest(TFTP_TRANSFER_TYPE_SEND_FILE,command+8) == STATUS_PASS)
+        if(processFileTransferTest(TFTP_TRANSFER_TYPE_SEND_FILE,vpCommand+8) == STATUS_PASS)
         {
             strncpy(responseBuffer,"ACK\r\n", MAX_RESPONSE_STRING_SIZE);
         }
@@ -329,10 +342,10 @@ status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cm
             strncpy(responseBuffer,"NACK\r\n", MAX_RESPONSE_STRING_SIZE);
         }
     }    
-    else if((cmdSize > 10) && strncmp(command, "getFile",7) == 0)
+    else if((vCmdSize > 10) && strncmp(vpCommand, "getFile",7) == 0)
     {
         
-        if(processFileTransferTest(TFTP_TRANSFER_TYPE_GET_FILE,command+7) == STATUS_PASS)
+        if(processFileTransferTest(TFTP_TRANSFER_TYPE_GET_FILE,vpCommand+7) == STATUS_PASS)
         {
             strncpy(responseBuffer,"ACK\r\n", MAX_RESPONSE_STRING_SIZE);
         }
@@ -341,32 +354,32 @@ status_t dbg_processCommand(dbg_commandSource_t source, char* command, size_t cm
             strncpy(responseBuffer,"NACK\r\n", MAX_RESPONSE_STRING_SIZE);
         }
     }  
-    else if(strncmp(command, "disablePiezo\r\n",cmdSize)==0)
+    else if(strncmp(vpCommand, "disablePiezo\r\n",vCmdSize)==0)
     {
         drv_piezo_togglePiezo(false);
     }    
-    else if(strncmp(command, "sendBleInit\r\n",cmdSize)==0)
+    else if(strncmp(vpCommand, "sendBleInit\r\n",vCmdSize)==0)
     {
         msg_sendMessageSimple(MODULE_BLE, MODULE_DEBUG, MSG_TYPE_DEBUG_BLE, 0);
     }
-    responseLength = strlen(responseBuffer);
-    if(responseLength > 0)
+    vResponseLength = strlen(responseBuffer);
+    if(vResponseLength > 0)
     {
-        if(source == DBG_CMD_SOURCE_SERIAL)
+        if(vSource == DBG_CMD_SOURCE_SERIAL)
         {
-            drv_uart_putData(&debugUartConfig, responseBuffer,responseLength);
+            drv_uart_putData(&gDebugUartConfig, responseBuffer,vResponseLength);
         }
-        else if(source == DBG_CMD_SOURCE_NET)
+        else if(vSource == DBG_CMD_SOURCE_NET)
         {
-            net_sendPacketToClientSock(&debugServer, responseBuffer, responseLength,false); 
+            net_sendPacketToClientSock(&sgDebugServer, responseBuffer, vResponseLength,false); 
         }
-        else if(source == DBG_CMD_SOURCE_USB)
+        else if(vSource == DBG_CMD_SOURCE_USB)
         {
-            subp_sendStringToUSB(responseBuffer,responseLength); 
+            subp_sendStringToUSB(responseBuffer,vResponseLength); 
         }   
         responseBuffer[0] = 0; //clear the string           
     }        
-	return status;	
+	return vStatus;	
 }
 static void processEvent(msg_message_t* message)
 {
@@ -374,7 +387,7 @@ static void processEvent(msg_message_t* message)
 	switch(message->msgType)
 	{
 		case MSG_TYPE_ENTERING_NEW_STATE:
-			dbg_printf(DBG_LOG_LEVEL_DEBUG,"New State: %s\r\n",systemStateString[message->data]);			
+			dbg_printf(DBG_LOG_LEVEL_DEBUG,"New State: %s\r\n",gaSystemStateString[message->data]);			
 		break; 
 		case MSG_TYPE_SDCARD_STATE:
 			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received SD Card state Event:%d\r\n",message->data);
@@ -384,7 +397,7 @@ static void processEvent(msg_message_t* message)
             if(message->data == NET_WIFI_STATE_CONNECTED)
             {
                 dbg_printf(DBG_LOG_LEVEL_DEBUG,"Wifi Connected\r\n");
-                if(net_createServerSocket(&debugServer, 255) == STATUS_PASS)
+                if(net_createServerSocket(&sgDebugServer, 255) == STATUS_PASS)
                 {
                     dbg_printf(DBG_LOG_LEVEL_DEBUG,"Initializing server socket\r\n");
                 }
@@ -396,11 +409,11 @@ static void processEvent(msg_message_t* message)
             else if(message->data == NET_WIFI_STATE_DISCONNECTED)
             {
                dbg_printf(DBG_LOG_LEVEL_DEBUG,"Wifi Disconnected\r\n");
-               net_closeSocket(&debugServer);  
+               net_closeSocket(&sgDebugServer);  
             }                                
 		break;
 		case MSG_TYPE_ERROR:
-			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received Error from Module: %s\r\n", moduleNameString[message->source]);
+			dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received Error from Module: %s\r\n", gaModuleNameString[message->source]);
 		break;		
 		case MSG_TYPE_SUBP_STATUS:
 			//dbg_printf(DBG_LOG_LEVEL_DEBUG,"Received subp status\r\n");
@@ -409,27 +422,29 @@ static void processEvent(msg_message_t* message)
 		break;
 	}
 } 
+
+
 static void printString(char* str)
 {
 	//if the semaphore is initialized, use it, otherwise just send the data.
-	if(semaphore_dbgUartWrite != NULL)
+	if(sgSemaphore_dbgUartWrite != NULL)
 	{
-		if(xSemaphoreTake(semaphore_dbgUartWrite,5) == true)
+		if(xSemaphoreTake(sgSemaphore_dbgUartWrite,5) == true)
 		{
-			drv_uart_putString(&debugUartConfig, str);
-			xSemaphoreGive(semaphore_dbgUartWrite);
+			drv_uart_putString(&gDebugUartConfig, str);
+			xSemaphoreGive(sgSemaphore_dbgUartWrite);
 		}
 	}
 	else
 	{
-		drv_uart_putString(&debugUartConfig, str);
+		drv_uart_putString(&gDebugUartConfig, str);
 	}
-    if(debugServer.clientSocketId > -1)
+    if(sgDebugServer.clientSocketId > -1)
     {        
-        net_sendPacketToClientSock(&debugServer, str, strlen(str),true); 
+        net_sendPacketToClientSock(&sgDebugServer, str, strlen(str),true); 
     }
     
-    if(debugMsgOverUsb)
+    if(sgDebugMsgOverUsb)
     {
         subp_sendStringToUSB(str,strlen(str));     
     }    
@@ -479,7 +494,7 @@ static void debugSocketEventCallback(SOCKET socketId, net_socketStatus_t status)
         case NET_SOCKET_STATUS_SERVER_OPEN_FAILED:
             printString("Debug Server Open Failed!\r\n");
             //close the debug server socket
-            net_closeSocket(&debugServer);
+            net_closeSocket(&sgDebugServer);
         break;
         case NET_SOCKET_STATUS_CLIENT_CONNECTED:
             printString("Client Connected!\r\n");
@@ -539,7 +554,7 @@ static status_t processWifiCfg(char* command)
 {
     int securitySetting = 0; 
     //the format of the streamCfg command is, "wifiCfg,<SSID>,<Passphrase><securityMode 1 = none, 2 = WPA, 3 = WEP>\r\n"   
-    int ret = sscanf(command, ", %s , %s ,%d\r\n",&(wirelessConfig.ssid),&(wirelessConfig.passphrase),&securitySetting); 
+    int ret = sscanf(command, ", %s , %s ,%d\r\n",&(sgWirelessConfig.ssid),&(sgWirelessConfig.passphrase),&securitySetting); 
     //the ret value should be 3 if the information was correctly parsed. 
     if(ret == 3)
     {
@@ -549,8 +564,8 @@ static status_t processWifiCfg(char* command)
             //invalid security setting
             return STATUS_FAIL;
         }
-        wirelessConfig.securityType = securitySetting; 
-        msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_DEBUG, MSG_TYPE_WIFI_CONFIG,&wirelessConfig);    
+        sgWirelessConfig.securityType = securitySetting; 
+        msg_sendMessage(MODULE_SYSTEM_MANAGER, MODULE_DEBUG, MSG_TYPE_WIFI_CONFIG,&sgWirelessConfig);    
         return STATUS_PASS;
     }
     else

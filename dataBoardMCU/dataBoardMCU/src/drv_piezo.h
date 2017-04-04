@@ -1,10 +1,10 @@
-/*
- * drv_piezo.h
- *
- * Created: 8/31/2016 4:21:47 PM
- *  Author: Hriday Mehta
- */ 
-
+/**
+* @file drv_piezo.h
+* @brief Driver for the piezo electric speaker
+* @author Hriday Mehta
+* @date August 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 
 #ifndef DRV_PIEZO_H_
 #define DRV_PIEZO_H_
@@ -16,7 +16,6 @@
 typedef struct  
 {
 	drv_gpio_pins_t gpioPin;	// pin connected to the piezo buzzer
-	// add more stuff as required
 }drv_piezo_config_t;
 
 typedef struct 
