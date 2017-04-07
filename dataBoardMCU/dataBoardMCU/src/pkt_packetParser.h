@@ -1,10 +1,10 @@
-/*
- * pkt_packetParser.h
- *
- * Created: 3/21/2016 9:57:17 AM
- *  Author: sean
- */ 
-
+/**
+* @file pkt_packetParser.h
+* @brief Processor for incoming raw packets
+* @author Sean Cloghesy
+* @date March 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 
 #ifndef PKT_PACKETPARSER_H_
 #define PKT_PACKETPARSER_H_

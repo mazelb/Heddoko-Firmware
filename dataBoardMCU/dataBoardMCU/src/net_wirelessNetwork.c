@@ -26,6 +26,20 @@ static status_t sendAdvertisingPacket(net_socketConfig_t* advertisingSocket, net
 xSemaphoreHandle semaphore_wifiAccess = NULL;
 xQueueHandle queue_netManager = NULL;
 net_socketConfig_t* registeredSockets[MAX_NUMBER_OF_SOCKETS] = {0};
+static uint8_t wifi_connected = M2M_WIFI_DISCONNECTED;
+static uint8_t tcp_connected = 0;
+
+/** TCP client socket. */
+static SOCKET tcp_client_socket = -1;
+//UDP socket
+static SOCKET udp_socket = -1;
+//static function forward declarations
+
+uint8_t receiveBuffer[512] = {0};
+    
+net_wifiState_t currentWifiState = NET_WIFI_STATE_DISCONNECTED;
+net_moduleConfig_t taskConfiguration = {6668,NULL,5};
+
 //advertising socket lives here. 
 net_socketConfig_t advertisingSocket =
 {
@@ -40,36 +54,16 @@ net_socketConfig_t advertisingSocket =
 };
 	
 /*	Extern functions	*/
-
 /*	Extern variables	*/
-
 /*	Function Definitions	*/
 
-
-
-
-static uint8_t wifi_connected = M2M_WIFI_DISCONNECTED;
-static uint8_t tcp_connected = 0;
-/** TCP server socket. */
-static SOCKET tcp_server_socket = -1;
-
-/** TCP client socket. */
-static SOCKET tcp_client_socket = -1;
-//UDP socket
-static SOCKET udp_socket = -1;
-//static function forward declarations
-
-uint8_t receiveBuffer[512] = {0};
-	
-net_wifiState_t currentWifiState = NET_WIFI_STATE_DISCONNECTED; 	
-net_moduleConfig_t taskConfiguration = {6668,NULL,5};
-	
-struct sockaddr_in udpAddr = 
-{
-	.sin_family = AF_INET,
-	.sin_port = _htons(6667),
-	.sin_addr.s_addr = 0xFFFFFFFF//0x6402A8C0 //192.168.2.100		
-};	
+/***********************************************************************************************
+ * net_wirelessNetworkTask(void *pvParameters)
+ * @brief Handles the wifi module, calls the wifi modules  
+ * @param pvParameters: pointer to the intial parameters of the module including serial number
+ *      advertising interval and port (see struct net_moduleConfig_t)
+ * @return void
+ ***********************************************************************************************/
 void net_wirelessNetworkTask(void *pvParameters)
 {
 	net_moduleConfig_t* taskConfig = (net_moduleConfig_t*)pvParameters; 
@@ -131,56 +125,19 @@ void net_wirelessNetworkTask(void *pvParameters)
 				advertisingPacketLastSentTime = xTaskGetTickCount();
 				sendAdvertisingPacket(&advertisingSocket, taskConfig);
 			}
-      		//if (tcp_server_socket < 0)
-      		//{
-        		//struct sockaddr_in addr;
-        		//if(xSemaphoreTake(semaphore_wifiAccess, 100) == true)
-        		//{
-          			///* Create TCP server socket. */
-          			//if ((tcp_server_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) //SOCK_STREAM
-          			//{
-            			//dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create TCP server socket!\r\n");
-            			//continue;
-          			//}
-          			///* Initialize socket address structure and bind service. */
-          			//addr.sin_family = AF_INET;
-          			//addr.sin_port = _htons(6666);
-          			//addr.sin_addr.s_addr = 0;
-          			//bind(tcp_server_socket, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
-          			///* Create socket for Tx UDP */
-          			//xSemaphoreGive(semaphore_wifiAccess);
-        		//}
-      		//}
 		}
 		
 		vTaskDelay(1); 
 	}
 }
-
-status_t net_sendPacket(uint8_t* packetBuf, uint32_t packetBufLength)
-{	
-	if(tcp_connected == 1 && tcp_client_socket > -1)
-	{	
-		if(xSemaphoreTake(semaphore_wifiAccess, 100) == true)
-		{
-			send(tcp_client_socket, packetBuf, packetBufLength, 0);
-			xSemaphoreGive(semaphore_wifiAccess);					
-		}
-	}
-	else if(udp_socket > -1)
-	{
-		if(xSemaphoreTake(semaphore_wifiAccess, 100) == true)
-		{
-			int ret = sendto(udp_socket, packetBuf, packetBufLength, 0, (struct sockaddr *)&udpAddr, sizeof(udpAddr));
-			if (ret != M2M_SUCCESS) 
-			{
-				dbg_printString(DBG_LOG_LEVEL_ERROR,"main: failed to send packet!\r\n");
-			}		
-			xSemaphoreGive(semaphore_wifiAccess);			
-		}		
-	}	
-}
-
+/***********************************************************************************************
+ * net_connectToNetwork(net_wirelessConfig_t* wirelessConfig)
+ * @brief Is called externally to initiate a connection to a wireless network, the success of this
+ *      call is sent back via interprocess message. 
+ * @param wirelessConfig: pointer to the connection parameters structure, which contains SSID
+ *      passphrase, security type and channel
+ * @return STATUS_PASS or STATUS_FAIL
+ ***********************************************************************************************/
 status_t net_connectToNetwork(net_wirelessConfig_t* wirelessConfig)
 {
 	status_t status = STATUS_PASS;
@@ -211,6 +168,13 @@ status_t net_connectToNetwork(net_wirelessConfig_t* wirelessConfig)
 	}
 	return status;
 }
+/***********************************************************************************************
+ * net_disconnectFromNetwork()
+ * @brief Is called to disconnect the wifi module from a connected wifi network. Result of connection
+ *      change is returned via interprocess message. 
+ * @param void
+ * @return STATUS_PASS or STATUS_FAIL
+ ***********************************************************************************************/
 status_t net_disconnectFromNetwork()
 {
 	status_t status = STATUS_PASS;
@@ -225,7 +189,13 @@ status_t net_disconnectFromNetwork()
 	}
 	return status;
 }
-
+/***********************************************************************************************
+ * net_createUdpSocket(net_socketConfig_t* sock, size_t bufferSize)
+ * @brief Is called to intialize and create a UDP socket object.  
+ * @param sock: pointer to the socket configuration structure.
+ * @param bufferSize: size of buffer that should be initialized for use. 
+ * @return STATUS_PASS or STATUS_FAIL
+ ***********************************************************************************************/
 status_t net_createUdpSocket(net_socketConfig_t* sock, size_t bufferSize)
 {
 	status_t status = STATUS_PASS;	
@@ -272,7 +242,13 @@ status_t net_createUdpSocket(net_socketConfig_t* sock, size_t bufferSize)
 	}
 	return status;
 }
-
+/***********************************************************************************************
+ * net_bindUpdSocket(net_socketConfig_t* sock,uint16_t port)
+ * @brief Is called to bind a port to a specific UDP socket 
+ * @param sock: pointer to the socket configuration structure.
+ * @param port: port number to bind the socket to
+ * @return STATUS_PASS or STATUS_FAIL
+ ***********************************************************************************************/
 status_t net_bindUpdSocket(net_socketConfig_t* sock,uint16_t port)
 {
     status_t status = STATUS_PASS;
@@ -289,6 +265,14 @@ status_t net_bindUpdSocket(net_socketConfig_t* sock,uint16_t port)
     } 
     return status;     
 }
+/***********************************************************************************************
+ * net_sendUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength)
+ * @brief sends a packet of data via an initialized UDP socket
+ * @param sock: pointer to the socket configuration structure.
+ * @param packetBuf: pointer to data that is to be sent
+ * @param packetBufLength: Length of data to be sent
+ * @return STATUS_PASS or STATUS_FAIL
+ ***********************************************************************************************/
 status_t net_sendUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength)
 {
 	status_t status = STATUS_FAIL;	
@@ -314,6 +298,15 @@ status_t net_sendUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_
 	}
 	return status;	
 }
+/***********************************************************************************************
+ * net_receiveUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength, uint32_t timeoutVal)
+ * @brief Received a packet from a configured udp socket, wait a set amount of time for said packet
+ * @param sock: pointer to the socket configuration structure.
+ * @param packetBuf: pointer to data that is to be received
+ * @param packetBufLength: maximum length of data to be received
+ * @param timeoutVal: maximum amount of time to wait for the packet (in ms)
+ * @return STATUS_PASS or STATUS_FAIL
+ ***********************************************************************************************/
 status_t net_receiveUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength, uint32_t timeoutVal)
 {
     status_t status = STATUS_FAIL;
@@ -339,6 +332,14 @@ status_t net_receiveUdpPacket(net_socketConfig_t* sock, uint8_t* packetBuf, uint
     }
     return status;
 }
+
+/***********************************************************************************************
+ * net_createServerSocket(net_socketConfig_t* sock, size_t receiveBufSize)
+ * @brief Creates a server socket and bind it to a specific port (identified in sock structure)
+ * @param sock: pointer to the socket configuration structure.
+ * @param receiveBufSize: size of received buffer to allocate
+ * @return STATUS_PASS or STATUS_FAIL
+ ***********************************************************************************************/
 status_t net_createServerSocket(net_socketConfig_t* sock, size_t receiveBufSize)
 {
 	status_t status = STATUS_PASS;
@@ -380,9 +381,6 @@ status_t net_createServerSocket(net_socketConfig_t* sock, size_t receiveBufSize)
             else
             {
                 //try to call the bind service. 
-                //addr.sin_family = AF_INET;
-                //addr.sin_port = _htons(6666);
-                //addr.sin_addr.s_addr = 0;
                 bind(sock->socketId, (struct sockaddr *)&(sock->endpoint), sizeof(struct sockaddr_in));                   
             }                
     	}
@@ -390,7 +388,18 @@ status_t net_createServerSocket(net_socketConfig_t* sock, size_t receiveBufSize)
 	}
 	return status;    
 }
-status_t net_sendPacketToClientSock(net_socketConfig_t* sock, uint8_t* packetBuf, uint32_t packetBufLength, bool semaphoreNeeded)
+/***********************************************************************************************
+ * net_sendPacketToClientSock(net_socketConfig_t* sock, uint8_t* packetBuf,
+        uint32_t packetBufLength, bool semaphoreNeeded)
+ * @brief sends a packet to a connected client, client socket specified in the 
+ * @param sock: pointer to the socket configuration structure.
+ * @param packetBuf: pointer to the data that is to be sent
+ * @param packetBufLength: length of data to be sent
+ * @param semaphoreNeeded: boolean representing whether the semaphore must be called before sending 
+ * @return STATUS_PASS or STATUS_FAIL
+ ***********************************************************************************************/
+status_t net_sendPacketToClientSock(net_socketConfig_t* sock, uint8_t* packetBuf, 
+            uint32_t packetBufLength, bool semaphoreNeeded)
 {
     status_t status = STATUS_FAIL;
     bool semaphoreAquired = false; 
@@ -426,6 +435,12 @@ status_t net_sendPacketToClientSock(net_socketConfig_t* sock, uint8_t* packetBuf
     }
     return status;
 }
+/***********************************************************************************************
+ * net_closeSocket(net_socketConfig_t* sock)
+ * @brief Closes a socket
+ * @param sock: pointer to the socket configuration structure.
+ * @return STATUS_PASS or STATUS_FAIL
+ ***********************************************************************************************/
 status_t net_closeSocket(net_socketConfig_t* sock)
 {
 	status_t status = STATUS_PASS;	
@@ -451,7 +466,12 @@ status_t net_closeSocket(net_socketConfig_t* sock)
 	}
 	return status;	
 }
-
+/***********************************************************************************************
+ * void net_processWifiEvents(int waitTime)
+ * @brief calls the handle events function to deal with any interrupts that have occured. 
+ * @param waitTime: amount of time to wait for the semaphore
+ * @return STATUS_PASS or STATUS_FAIL
+ ***********************************************************************************************/
 void net_processWifiEvents(int waitTime)
 {
     if(xSemaphoreTake(semaphore_wifiAccess, waitTime) == true)
@@ -720,8 +740,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
                             socketConfig->clientSocketId = pstrAccept->sock;                   
                         }
                     }
-					//tcp_client_socket = pstrAccept->sock;
-					//tcp_connected = 1;
+                    //TODO Check this out... doesn't make sense... 
 					recv(pstrAccept->sock, receiveBuffer, sizeof(receiveBuffer), 0);
 				}                    
 				
@@ -729,9 +748,6 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			else 
 			{
 				dbg_printString(DBG_LOG_LEVEL_DEBUG,"socket_cb: accept error!\r\n");
-				close(tcp_server_socket);
-				tcp_server_socket = -1;
-				tcp_connected = 0;
 			}
 		}
 		break;
@@ -754,7 +770,6 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 		/* Message send. */
 		case SOCKET_MSG_SEND:
 		{
-			//recv(tcp_client_socket, receiveBuffer, sizeof(receiveBuffer), 0);
             
 		}
 		break;
@@ -783,8 +798,6 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
                 dbg_printf(DBG_LOG_LEVEL_DEBUG,"socket_cb: recv error %d!\r\n", pstrRecv->s16BufferSize);
                 if (sock >= 0)
                 {
-                    //dbg_printString(DBG_LOG_LEVEL_DEBUG,"Close client socket to disconnect.\r\n");
-                    //close(sock);
                     if(socketConfig != NULL)
                     {
                         if(socketConfig->socketStatusCallback != NULL)
@@ -792,11 +805,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
                             socketConfig->socketStatusCallback(sock, NET_SOCKET_STATUS_RECEIVE_FROM_FAILED);    
                         }
                         
-                    }
-                    //if(sock == tcp_client_socket)
-                    //{
-                        //tcp_client_socket = -1;
-                    //}                    
+                    }                    
                 }
                 tcp_connected = 0;
                 break;
@@ -810,13 +819,6 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
 			tstrSocketRecvMsg *pstrRecv = (tstrSocketRecvMsg *)pvMsg;
 			if (pstrRecv && pstrRecv->s16BufferSize > 0) 
 			{
-				//if (!strncmp((char *)pstrRecv->pu8Buffer, REMOTE_CMD_INDICATOR, INDICATOR_STRING_LEN)) {
-					//parse_command((char *)(pstrRecv->pu8Buffer + INDICATOR_STRING_LEN), 1);
-				//} else {
-					//PRINT_REMOTE_MSG(pstrRecv->pu8Buffer);
-				//}
-				//loop back the data!
-				//send(tcp_client_socket, pstrRecv->pu8Buffer, pstrRecv->s16BufferSize, 0);
                 if(socketConfig != NULL)
                 {                    
                     if(socketConfig->socketDataReceivedCallback != NULL)
@@ -826,10 +828,6 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
                     }                    
                     recv(sock, socketConfig->buffer, socketConfig->bufferLength, 0);                        
                 }
-                //else
-                //{
-                    //recv(sock, receiveBuffer, sizeof(receiveBuffer), 0);
-                //}
                 
 			} 
 			else 
@@ -843,11 +841,7 @@ static void socket_cb(SOCKET sock, uint8_t u8Msg, void *pvMsg)
                     {
                         socketConfig->socketStatusCallback(sock, NET_SOCKET_STATUS_CLIENT_DISCONNECTED);
                         socketConfig->clientSocketId = -1;                      
-                    }
-					if(sock == tcp_client_socket)
-					{
-						tcp_client_socket = -1;		
-					}   				
+                    } 				
 				}
 				tcp_connected = 0;
 				break;

@@ -1,9 +1,11 @@
-/*
- * pkt_packetParser.c
- *
- * Created: 3/21/2016 9:52:32 AM
- *  Author: sean
- */ 
+/**
+* @file pkt_packetParser.c
+* @brief Processor for incoming raw packets
+* @author Sean Cloghesy
+* @date March 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
+
 #include <asf.h>
 #include <string.h>
 #include "pkt_packetParser.h"
@@ -16,7 +18,15 @@ static void queueByte(uint8_t byte, uint16_t* index, uint8_t* destination);
 static void queueByteWithEscape(uint8_t byte, uint16_t* index, uint8_t* destination);
 static void sendByte(uint8_t byte, drv_uart_config_t* uartConfig);
 static void sendByteWithEscape(uint8_t byte, drv_uart_config_t* uartConfig);
-
+/***********************************************************************************************
+ * pkt_serializeRawPacket(uint8_t* destination, size_t maxDestinationLength, uint16_t* destinationLength, uint8_t* payload, uint16_t payloadSize)
+ * @brief serializes a packet to a given byte array
+ * @param destination A pointer to the destination memory array
+ * @param maxDestinationLength The length of the destination array (max serialized length)
+ * @param payload the pointer to the source data array
+ * @param payloadSize the size of the payload to be serialized. 
+ * @return STATUS_PASS if a string is returned,	STATUS_FAIL if the serialized payload is larger than the buffer
+ ***********************************************************************************************/	
 status_t pkt_serializeRawPacket(uint8_t* destination, size_t maxDestinationLength, uint16_t* destinationLength, uint8_t* payload, uint16_t payloadSize)
 {
 	int i = 0;
@@ -38,7 +48,14 @@ status_t pkt_serializeRawPacket(uint8_t* destination, size_t maxDestinationLengt
 	}
 	return status;
 }
-
+/***********************************************************************************************
+ * pkt_sendRawPacket(drv_uart_config_t* uartConfig, uint8_t* payload, uint16_t payloadSize)
+ * @brief encodes and then sends a packet via uart
+ * @param uartConfig the configuration structure for the uart
+ * @param packet the pointer to the packet bytes
+ * @param payloadSize The size of the packet byte array
+ * @return STATUS_PASS if a string is returned,	STATUS_FAIL 
+ ***********************************************************************************************/	
 status_t pkt_sendRawPacket(drv_uart_config_t* uartConfig, uint8_t* payload, uint16_t payloadSize)
 {
 	int i = 0;
@@ -61,7 +78,7 @@ status_t pkt_sendRawPacket(drv_uart_config_t* uartConfig, uint8_t* payload, uint
  * @param uartConfig the configuration structure for the uart
  * @param packet the pointer to the packet where the bytes will be stored
  * @param maxTime the maximum time in ticks the function should wait for the response. 
- * @return STATUS_PASS if a string is returned,	STATUS_FAIL if the string found is larger than the buffer, or timed out
+ * @return STATUS_PASS,	STATUS_FAIL 
  ***********************************************************************************************/	
 status_t pkt_getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* packet, uint32_t maxTime)
 {
@@ -103,7 +120,13 @@ status_t pkt_getPacketTimed(drv_uart_config_t* uartConfig, pkt_rawPacket_t* pack
 	}
 	return result; 
 }
-
+/***********************************************************************************************
+ * pkt_processIncomingByte(pkt_rawPacket_t* rawPacket, uint8_t byte)
+ * @brief processes an incoming byte into a rawPacket structure
+ * @param rawPacket pointer to the raw packet structure
+ * @param byte the byte that is to be processed
+ * @return STATUS_PASS when packet is received,	STATUS_FAIL,  STATUS_EAGAIN
+ ***********************************************************************************************/	
 status_t pkt_processIncomingByte(pkt_rawPacket_t* rawPacket, uint8_t byte)
 {
 	status_t status = STATUS_EAGAIN;

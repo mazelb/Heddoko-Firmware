@@ -1,10 +1,10 @@
-/*
- * pkt_packetCommandsList.h
- *
- * Created: 7/29/2016 2:55:22 PM
- *  Author: Hriday Mehta
- */ 
-
+/**
+* @file pkt_packetCommandsList.h
+* @brief List of command codes for interprocessor messages
+* @author Sean Cloghesy
+* @date July 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 
 #ifndef PKT_PACKETCOMMANDSLIST_H_
 #define PKT_PACKETCOMMANDSLIST_H_

@@ -1,11 +1,11 @@
-/*
- * subp_subProcessor.c
- *
- * Created: 6/20/2016 10:33:32 AM
- *  Author: sean
- * 
- */ 
-
+/**
+* @file subp_subProcessor.c
+* @brief Handles all communication with the subprocessor / power board
+*       Is also responsible for packetizing the incoming dataframes into protobuf frames
+* @author Sean Cloghesy
+* @date June 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 #include "subp_subProcessor.h"
 #include "common.h"
 #include "msg_messenger.h"
@@ -195,7 +195,6 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 	size_t serializedProtoPacketLength = 0;
 	uint16_t serializedLength = 0;
 	//check which type of packet it is.
-	//All the packets should be of this type... we're not on a 485 bus. 
 	int i =0;	
 	int result = 0;
 	if(packet->payload[0] == PACKET_TYPE_SUB_PROCESSOR)
@@ -275,7 +274,6 @@ static void processRawPacket(pkt_rawPacket_t* packet)
 			break;
 		}
 	}	
-	//dbg_printString("Received a packet!!!!"); 
 }
 
 static void processMessage(msg_message_t message)

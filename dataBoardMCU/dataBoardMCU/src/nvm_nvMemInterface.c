@@ -1,10 +1,10 @@
-/*
- * nvm_nvMemInterface.c
- *
- * Created: 9/22/2016 9:41:25 AM
- *  Author: Hriday Mehta
- */ 
-
+/**
+* @file nvm_nvMemInterface.c
+* @brief Handles saving data to the user space non volatile memory of the processor
+* @author Hriday Mehta 
+* @date September 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 #include <asf.h>
 #include "nvm_nvMemInterface.h"
 #include "dbg_debugManager.h"

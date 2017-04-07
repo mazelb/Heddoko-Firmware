@@ -1,10 +1,10 @@
-/*
- * sdc_sdCard.c
- *
- * Created: 5/24/2016 11:17:49 AM
- * Author: sean
- * Copyright Heddoko(TM) 2015, all rights reserved
- */ 
+/**
+* @file sdc_sdCard.c
+* @brief Handler for the SD card
+* @author Sean Cloghesy
+* @date May 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 #include <asf.h>
 #include "sdc_sdCard.h"
 #include "string.h"
@@ -16,7 +16,6 @@
 
 /*	Static function forward declarations	*/
 bool sdCardPresent();															//check if the SD-card is present
-static void initSdGpio();																//initialize the GPIO associated with SD-card
 static status_t initializeSdCard();													//initializes the SD card, and mounts the drive
 static status_t unInitializeSdCard();													//uninitializes the SD card, and puts the drive in an uninitialized state. 
 static status_t write_to_sd_card(sdc_file_t *fileObject);								//write calls from the main thread
@@ -68,7 +67,13 @@ static void processEvent(msg_message_t message)
 	
 	
 }
-
+/***********************************************************************************************
+ * sdc_sdCardTask(void *pvParameters)
+ * @brief The task that handles communication with the SD card. This task initializes the SD card,
+ *	and provides asynchronous writes to the SD card. 
+ * @param pvParameters, null right now, but can change. 
+ * @return void
+ ***********************************************************************************************/
 void sdc_sdCardTask(void *pvParameters)
 {
 	FRESULT res;
@@ -84,7 +89,6 @@ void sdc_sdCardTask(void *pvParameters)
 		msg_registerForMessages(MODULE_SDCARD, 0xff, msg_queue_sdCard);
 	}
 	
-	initSdGpio();
 	semaphore_fatFsAccess = xSemaphoreCreateMutex();
 	//initialize the SD card... Todo add check of CD first
 	cardInsertedCall();
@@ -134,92 +138,12 @@ void sdc_sdCardTask(void *pvParameters)
 	}
 }
 
-status_t write_to_sd_card(sdc_file_t *fileObject)
-{
-	FRESULT res;
-	UINT numBytesWritten = 0;
-	uint32_t totalBytesWritten = 0, totalBytesToWrite = 0;
-	status_t status;
-	
-	if (fileObject == NULL)
-	{
-		return STATUS_FAIL;
-	}
-	
-	if (fileObject->fileOpen == TRUE)
-	{
-		if (xSemaphoreTake(fileObject->sem_bufferAccess, 10) == true)
-		{
-			changeActiveBuffer(fileObject);
-			xSemaphoreGive(fileObject->sem_bufferAccess);
-		}
-		else
-		{
-			dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to get semaphore - Buffer read\r");
-		}
-		/// wow this isn't confusing at all. 
-		if (fileObject->activeBuffer == fileObject->bufferPointerA)
-		{
-			//use buffer B as we just toggled the buffer
-			if (fileObject->bufferIndexB > 0)
-			{
-				totalBytesToWrite = fileObject->bufferIndexB;
-				numBytesWritten = 0;
-				totalBytesWritten = 0;
-				while (totalBytesToWrite > 0)
-				{
-					res = f_write(&fileObject->fileObj, (void*)fileObject->bufferPointerB + totalBytesWritten,
-					totalBytesToWrite,	&numBytesWritten);
-					if (res != FR_OK)
-					{
-						dbg_printString(DBG_LOG_LEVEL_ERROR,"Write to SD-card failed\r\n");
-						//msg_sendBroadcastMessageSimple(MODULE_SDCARD,MSG_TYPE_SDCARD_STATE, SD)
-						status = STATUS_FAIL;
-						break;
-					}
-					res = f_sync(&fileObject->fileObj);
-					totalBytesToWrite -= numBytesWritten;
-					totalBytesWritten += numBytesWritten;
-					vTaskDelay(1);
-				}
-				if (totalBytesToWrite == 0)
-				{
-					fileObject->bufferIndexB = 0;
-				}
-			}
-		}
-		else
-		{
-			//use buffer A as we just toggled the buffer
-			if (fileObject->bufferIndexA > 0)
-			{
-				totalBytesToWrite = fileObject->bufferIndexA;
-				numBytesWritten = 0;
-				totalBytesWritten = 0;
-				while (totalBytesToWrite > 0)
-				{
-					res = f_write(&fileObject->fileObj, (void*)fileObject->bufferPointerA + totalBytesWritten,
-					totalBytesToWrite, &numBytesWritten);
-					if (res != FR_OK)
-					{
-						dbg_printString(DBG_LOG_LEVEL_ERROR,"Write to SD-card failed\r");
-						status = STATUS_FAIL;
-						break;
-					}
-					res = f_sync(&fileObject->fileObj);
-					totalBytesToWrite -= numBytesWritten;
-					totalBytesWritten += numBytesWritten;
-					vTaskDelay(1);
-				}
-				if (totalBytesToWrite == 0)
-				{
-					fileObject->bufferIndexA = 0;
-				}
-			}
-		}
-	}
-}
-
+/***********************************************************************************************
+ * sdc_writeToFile(sdc_file_t* fileObject, void* data, size_t size)
+ * @brief Write to a file, this does not write directly to the file, but to a buffer.  
+ * @param fileObject, data: pointer to data buffer, size: number of bytes to write
+ * @return void
+ ***********************************************************************************************/
 status_t sdc_writeToFile(sdc_file_t* fileObject, void* data, size_t size)
 {
 	status_t status = STATUS_PASS;
@@ -321,6 +245,13 @@ status_t sdc_writeDirectToFile(sdc_file_t* fileObject, void* data, size_t fileOf
     }
     return status;
 }
+/***********************************************************************************************
+ * sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t mode);
+ * @brief Opens a file based on which mode is set, and the filename. Populates the fileObject,
+	allocates the memory for the file buffers
+ * @param fileObject, filename, mode
+ * @return void
+ ***********************************************************************************************/
 status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t mode)
 {
 	status_t status = STATUS_PASS;
@@ -507,7 +438,12 @@ status_t sdc_openFile(sdc_file_t* fileObject, char* filename, sdc_FileOpenMode_t
 	
 	return status;
 }
-
+/***********************************************************************************************
+ * sdc_closeFile(sdc_file_t* fileObject)
+ * @brief Asynchronously closes the file, frees the memory used by the buffers.  
+ * @param fileObject
+ * @return void
+ ***********************************************************************************************/
 status_t sdc_closeFile(sdc_file_t* fileObject)
 {
 	status_t status = STATUS_FAIL;
@@ -543,23 +479,16 @@ status_t sdc_closeFile(sdc_file_t* fileObject)
 	unregisterOpenFile(fileObject);
 	return status;
 }
-
+/***********************************************************************************************
+ * sdc_getSdCardStatus()
+ * @brief Returns the current status of the sd card
+ * @return sd_card_status_t
+ ***********************************************************************************************/
 sd_card_status_t sdc_getSdCardStatus()
 {
     return sdCardStatus; 
 }
 
-void initSdGpio()
-{
-	//gpio_configure_pin(SD_MMC_0_CD_GPIO, SD_MMC_0_CD_FLAGS);
-	///* Configure HSMCI pins */
-	//gpio_configure_pin(PIN_HSMCI_MCCDA_GPIO, PIN_HSMCI_MCCDA_FLAGS);
-	//gpio_configure_pin(PIN_HSMCI_MCCK_GPIO, PIN_HSMCI_MCCK_FLAGS);
-	//gpio_configure_pin(PIN_HSMCI_MCDA0_GPIO, PIN_HSMCI_MCDA0_FLAGS);
-	//gpio_configure_pin(PIN_HSMCI_MCDA1_GPIO, PIN_HSMCI_MCDA1_FLAGS);
-	//gpio_configure_pin(PIN_HSMCI_MCDA2_GPIO, PIN_HSMCI_MCDA2_FLAGS);
-	//gpio_configure_pin(PIN_HSMCI_MCDA3_GPIO, PIN_HSMCI_MCDA3_FLAGS);
-}
 
 status_t  __attribute__((optimize("O0"))) initializeSdCard()
 {
@@ -647,6 +576,91 @@ status_t  __attribute__((optimize("O0"))) initializeSdCard()
 	return result;
 }
 
+status_t write_to_sd_card(sdc_file_t *fileObject)
+{
+    FRESULT res;
+    UINT numBytesWritten = 0;
+    uint32_t totalBytesWritten = 0, totalBytesToWrite = 0;
+    status_t status;
+    
+    if (fileObject == NULL)
+    {
+        return STATUS_FAIL;
+    }
+    
+    if (fileObject->fileOpen == TRUE)
+    {
+        if (xSemaphoreTake(fileObject->sem_bufferAccess, 10) == true)
+        {
+            changeActiveBuffer(fileObject);
+            xSemaphoreGive(fileObject->sem_bufferAccess);
+        }
+        else
+        {
+            dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to get semaphore - Buffer read\r");
+        }
+        /// wow this isn't confusing at all.
+        if (fileObject->activeBuffer == fileObject->bufferPointerA)
+        {
+            //use buffer B as we just toggled the buffer
+            if (fileObject->bufferIndexB > 0)
+            {
+                totalBytesToWrite = fileObject->bufferIndexB;
+                numBytesWritten = 0;
+                totalBytesWritten = 0;
+                while (totalBytesToWrite > 0)
+                {
+                    res = f_write(&fileObject->fileObj, (void*)fileObject->bufferPointerB + totalBytesWritten,
+                    totalBytesToWrite,	&numBytesWritten);
+                    if (res != FR_OK)
+                    {
+                        dbg_printString(DBG_LOG_LEVEL_ERROR,"Write to SD-card failed\r\n");
+                        //msg_sendBroadcastMessageSimple(MODULE_SDCARD,MSG_TYPE_SDCARD_STATE, SD)
+                        status = STATUS_FAIL;
+                        break;
+                    }
+                    res = f_sync(&fileObject->fileObj);
+                    totalBytesToWrite -= numBytesWritten;
+                    totalBytesWritten += numBytesWritten;
+                    vTaskDelay(1);
+                }
+                if (totalBytesToWrite == 0)
+                {
+                    fileObject->bufferIndexB = 0;
+                }
+            }
+        }
+        else
+        {
+            //use buffer A as we just toggled the buffer
+            if (fileObject->bufferIndexA > 0)
+            {
+                totalBytesToWrite = fileObject->bufferIndexA;
+                numBytesWritten = 0;
+                totalBytesWritten = 0;
+                while (totalBytesToWrite > 0)
+                {
+                    res = f_write(&fileObject->fileObj, (void*)fileObject->bufferPointerA + totalBytesWritten,
+                    totalBytesToWrite, &numBytesWritten);
+                    if (res != FR_OK)
+                    {
+                        dbg_printString(DBG_LOG_LEVEL_ERROR,"Write to SD-card failed\r");
+                        status = STATUS_FAIL;
+                        break;
+                    }
+                    res = f_sync(&fileObject->fileObj);
+                    totalBytesToWrite -= numBytesWritten;
+                    totalBytesWritten += numBytesWritten;
+                    vTaskDelay(1);
+                }
+                if (totalBytesToWrite == 0)
+                {
+                    fileObject->bufferIndexA = 0;
+                }
+            }
+        }
+    }
+}
 bool sdCardPresent()
 {
 	//NOTE: Change as per the board in use
