@@ -98,13 +98,21 @@ status_t ltc2941GetCharge(slave_twi_config_t* slaveConfig, uint16_t *charge)
 	return STATUS_PASS;
 }
 //[?3/?25/?2016 2:19 PM] Hriday Mehta: 
-status_t getCalculatedPercentage(slave_twi_config_t* slaveConfig, uint32_t *percent)
+status_t getCalculatedPercentage(slave_twi_config_t* slaveConfig, int32_t *percent)
 {	
 	uint16_t charge = 0;
 	if (ltc2941GetCharge(slaveConfig, &charge) == STATUS_PASS)
 	{
-		*percent = (((charge - CHARGE_EMPTY_VALUE)*100) / (CHARGE_FULL_VALUE - CHARGE_EMPTY_VALUE));
-		return STATUS_PASS;
+		*percent = (int32_t)(((charge - CHARGE_EMPTY_VALUE)*100) / (CHARGE_FULL_VALUE - CHARGE_EMPTY_VALUE));
+		if(*percent > 100)
+        {
+            *percent = 100; 
+        }
+        if(*percent < 0)
+        {
+            *percent = 0;
+        }
+        return STATUS_PASS;
 	}
 	return STATUS_FAIL;
 } 

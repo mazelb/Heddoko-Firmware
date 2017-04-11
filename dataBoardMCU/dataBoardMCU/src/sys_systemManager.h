@@ -1,10 +1,10 @@
-/*
- * sys_systemManager.h
- *
- * Created: 5/24/2016 3:37:27 PM
- *  Author: sean
- */ 
-
+/**
+* @file sys_systemManager.h
+* @brief: A free running task which listens to the other modules and sends commands, starts other task threads.
+* @author Sean Cloghesy
+* @date May 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 
 #ifndef SYS_SYSTEMMANAGER_H_
 #define SYS_SYSTEMMANAGER_H_

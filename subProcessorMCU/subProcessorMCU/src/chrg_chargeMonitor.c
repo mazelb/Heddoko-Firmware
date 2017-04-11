@@ -45,9 +45,9 @@ uint32_t powerButtonLowCount = 0;
 
 void openSwitch();
 void closeSwitch();
-#define BATTERY_PERCENT_LOW 15
-#define BATTERY_PERCENT_CRITICAL 8
-#define BATTERY_PERCENT_FAULT 5
+//#define BATTERY_PERCENT_LOW 15
+//#define BATTERY_PERCENT_CRITICAL 8
+//#define BATTERY_PERCENT_FAULT 3
 
 
 
@@ -63,7 +63,7 @@ void chrg_task_chargeMonitor(void *pvParameters)
 	chrg_chargeMonitorConfig_t* chargeMonitorConfig = (chrg_chargeMonitorConfig_t*)pvParameters;  	
 	chrg_chargerState_t newChargerState = CHRG_CHARGER_STATE_INVALID_CODE; 
 	mgr_eventMessage_t eventMessage; 
-	uint16_t chargeLevel = 0, newChargeLevel = 0, batteryCharge = 0;
+	int32_t chargeLevel = 0, newChargeLevel = 0, batteryCharge = 0;
 	drv_gpio_pin_state_t usbConnectedState = DRV_GPIO_PIN_STATE_PULLED_HIGH,
 		 newUsbConnectedState = DRV_GPIO_PIN_STATE_LOW; 
 	drv_gpio_pin_state_t pwrButtonState = DRV_GPIO_PIN_STATE_PULLED_HIGH,
@@ -74,19 +74,6 @@ void chrg_task_chargeMonitor(void *pvParameters)
     uint16_t rawChargeLevel = 0;
     #endif
 	char tempString[100] = {0}; 
-        //drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_HIGH);
-        //while(1)
-        //{
-            //
-            //
-            //
-            //vTaskDelay(1000);
-            //openSwitch();
-            //vTaskDelay(1000);
-            //closeSwitch();
-        //}
-        //drv_gpio_setPinState(DRV_GPIO_PIN_GPIO, DRV_GPIO_PIN_STATE_LOW);
-        
 	while(1)
 	{
 
@@ -258,7 +245,7 @@ void chrg_task_chargeMonitor(void *pvParameters)
 					if(mgr_eventQueue != NULL)
 					{
 						dat_sendDebugMsgToDataBoard("PwrBrdMsg:Battery Level Empty\r\n");
-						//don't send the message 
+                        //send the low battery message to shut down brainpack. 
 						//if(xQueueSendToBack(mgr_eventQueue,( void * ) &eventMessage,5) != TRUE)
 						//{
 							////this is an error, we should log it.
@@ -277,8 +264,7 @@ void chrg_task_chargeMonitor(void *pvParameters)
 				}
 				else if(chargeLevel > BATTERY_PERCENT_LOW)
 				{
-					//battery level is good. no need to indicate anything. 
-					//drv_led_set(DRV_LED_BLUE,DRV_LED_SOLID);					
+					//battery level is good. no need to indicate anything. 				
 					drv_led_set(DRV_LED_OFF,DRV_LED_SOLID);
 				}				
 			}

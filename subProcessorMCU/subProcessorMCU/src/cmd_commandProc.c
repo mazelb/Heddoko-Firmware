@@ -38,6 +38,7 @@ void cmd_task_commandProcesor(void *pvParameters)
 	uint16_t chargeLevel = 0; 
 	uint32_t chargeRegValue = 0, chargePercent = 0; 
 	bool forwardCommand = true; 
+    bool processorUnlocked = false;
 	if(cmd_queue_commandQueue == 0)
 	{
 		// Queue was not created this is an error!		
@@ -52,7 +53,17 @@ void cmd_task_commandProcesor(void *pvParameters)
 			if(packet.packetSize > 0)
 			{		
 				forwardCommand = true; //by default always forward the command to the databoard
-				if(strncmp(packet.packetData,"setTime",7)==0)
+				if(strncmp(packet.packetData,"UnlockCommandProc",17)==0)
+				{
+                    processorUnlocked = true; 
+				}               
+                
+                if(!processorUnlocked)
+                {
+                    //do nothing
+                    forwardCommand = false;
+                }
+                else if(strncmp(packet.packetData,"setTime",7)==0)
 				{
 					//handle the set time command. 
 					if(packet.packetSource != CMD_COMMAND_SOURCE_LOCAL)
@@ -62,6 +73,11 @@ void cmd_task_commandProcesor(void *pvParameters)
 							setTimeFromString(packet.packetData+7);
 						}
 					}
+				}
+                else if(strncmp(packet.packetData,"lockCommand",11)==0)
+				{
+					forwardCommand = false; 
+					processorUnlocked = false; 
 				}
 				else if(strncmp(packet.packetData,"pbGetTime",9)==0)
 				{
@@ -235,13 +251,7 @@ void cmd_task_commandProcesor(void *pvParameters)
 				}								
 				else if (strncmp(packet.packetData,"crashSystem",11)==0)
 				{
-					//sprintf(1234213,"crashity crash crash!%s\r\n",NULL);
-					//assert(false);
-					//*((unsigned int*)0) = 0xDEAD;
-					//uint32_t* deadPointer = malloc(10000000000);
-					//strncpy(deadPointer+4, deadPointer+6, 10000);
-					memcpy(0x20000000, packet.packetData, 1000000);
-										
+					memcpy(0x20000000, packet.packetData, 1000000);										
 				}
 				else if (strncmp(packet.packetData,"enterBootloader",11)==0)
 				{

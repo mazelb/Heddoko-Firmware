@@ -1,10 +1,10 @@
-/*
- * tftp_fileTransferClient.c
- *
- * Created: 11/22/2016 2:38:42 PM
- *  Author: sean
- */ 
-
+/**
+* @file tftp_fileTransferClient.c
+* @brief This module handles tftp file transfers
+* @author Sean Cloghesy
+* @date November 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 #include "tftp_fileTransferClient.h"
 #include "msg_messenger.h"
 #include "net_wirelessNetwork.h"

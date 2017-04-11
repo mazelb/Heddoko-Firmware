@@ -1,12 +1,11 @@
-/*
- * sys_systemManager.c
- *
- * Created: 5/24/2016 3:37:09 PM
- *  Author: sean
- */ 
-/*
- * @brief: A free running task which listens to the other modules and sends commands, starts other task threads.
- */
+/**
+* @file sys_systemManager.c
+* @brief: A free running task which listens to the other modules and sends commands, starts other task threads.
+* @author Sean Cloghesy
+* @date May 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
+
 
 #include <asf.h>
 #include <stdarg.h>
@@ -156,7 +155,7 @@ void sys_systemManagerTask(void* pvParameters)
 	};
 	if(nvm_readFromFlash(&currentSystemSettings) != STATUS_PASS)
     {        
-        //umm this is pretty bad, we should do something here.    
+        //TODO: umm this is pretty bad, we should do something here.    
     }
     //copy over the settings to the module configuration structures.  
     subProcessorSettings.recordingConfig = &(currentSystemSettings.recordingCfg); 
@@ -227,21 +226,6 @@ void sys_systemManagerTask(void* pvParameters)
     	dbg_printString(DBG_LOG_LEVEL_ERROR,"Failed to create cfg task\r\n");
 	}
     vTaskDelay(200); 
-	if(currentSystemSettings.firmwareUpdateMode == NVM_SETTINGS_FIRMWARE_DB_DONE)
-    {
-        //this is the first boot after loading the firmware.         
-        nvm_writeToFlash(&currentSystemSettings, NVM_SETTINGS_VALID_SIGNATURE);  
-        //now we should trigger a power board firmware update       
-        //start the power board firmware update process. 
-    }
-    else if(currentSystemSettings.validSignature == NVM_SETTINGS_UPDATE_PB_FLAG)
-    {
-        //power up after 
-    }
-    else
-    {
-          
-    }
     sendStateChangeMessage(SYSTEM_STATE_INIT); 	  
     
     

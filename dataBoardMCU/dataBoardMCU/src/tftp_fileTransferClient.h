@@ -1,17 +1,17 @@
-/*
- * tftp_fileTransferClient.h
- *
- * Created: 11/22/2016 2:38:56 PM
- *  Author: sean
- */ 
-
+/**
+* @file tftp_fileTransferClient.h
+* @brief This module handles tftp file transfers
+* @author Sean Cloghesy
+* @date November 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 
 #ifndef TFTP_FILETRANSFERCLIENT_H_
 #define TFTP_FILETRANSFERCLIENT_H_
 #include "common.h"
 #include "net_wirelessNetwork.h"
 #define TFTP_FILE_BUFFER_SIZE 2000
-#define TFTP_PACKET_TIMEOUT 500 //0.25 seconds for now... TODO update this value
+#define TFTP_PACKET_TIMEOUT 500 //0.5 seconds for now... TODO update this value
 #define TFTP_BLOCK_SIZE 1350
 #define TFTP_BLOCK_SIZE_STRING "1350"
 #define TFTP_MAX_BLOCK_RETRY 20

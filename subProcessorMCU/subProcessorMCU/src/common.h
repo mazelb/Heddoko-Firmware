@@ -86,7 +86,7 @@ typedef enum
 //Charger percentages
 #define BATTERY_PERCENT_LOW 15
 #define BATTERY_PERCENT_CRITICAL 8
-#define BATTERY_PERCENT_FAULT 5
+#define BATTERY_PERCENT_FAULT 3
 
 //int itoa(int value, char* sp, int radix);
 

@@ -1,10 +1,11 @@
-/*
- * subp_subProcessor.h
- *
- * Created: 6/20/2016 10:33:59 AM
- *  Author: sean
- */ 
-
+/**
+* @file subp_subProcessor.h
+* @brief Handles all communication with the subprocessor / power board
+*       Is also responsible for packetizing the incoming dataframes into protobuf frames
+* @author Sean Cloghesy
+* @date June 2016
+* Copyright Heddoko(TM) 2016, all rights reserved
+*/
 
 #ifndef SUBP_SUBPROCESSOR_H_
 #define SUBP_SUBPROCESSOR_H_

@@ -353,6 +353,7 @@ static void processMessage(msg_message_t message)
 				wifiConnected = true; 
 			}
 		}
+        break;
         case MSG_TYPE_FW_UPDATE_START_PB_UPDATE:
             vTaskDelay(500); //wait for SD card to shut down
             sendEnterBootloaderCommand(&subpUart);

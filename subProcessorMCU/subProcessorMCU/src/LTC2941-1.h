@@ -24,7 +24,7 @@
 status_t ltc2941Init(slave_twi_config_t* slaveConfig);
 status_t ltc2941SetCharge(slave_twi_config_t* slaveConfig, uint16_t chargeLevel);
 status_t ltc2941GetCharge(slave_twi_config_t* slaveConfig, uint16_t *charge);
-status_t getCalculatedPercentage(slave_twi_config_t* slaveConfig, uint32_t *percent);
+status_t getCalculatedPercentage(slave_twi_config_t* slaveConfig, int32_t *percent);
 uint32_t getRegValueForPercent(uint32_t percent);
 status_t ltc2941SetChargeComplete(slave_twi_config_t* slaveConfig);
 uint8_t ltc2941GetStatus(slave_twi_config_t* slaveConfig);
